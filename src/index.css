@@ -2,14 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-}
-
-body {
+/* Esto asegura que la aplicación ocupe absolutamente toda la pantalla sin restricciones */
+html, body, #root {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #f8fafc; /* Fondo general slate-50 */
 }
