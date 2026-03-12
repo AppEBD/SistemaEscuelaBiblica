@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Users, LogIn, RefreshCw, CheckSquare } from 'lucide-react';
-// IMPORTA TU FIREBASE AQUÍ (Ajusta la ruta según tu proyecto)
+import { User, Lock, Users, LogIn, RefreshCw } from 'lucide-react';
 import { doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase'; // <--- Asegúrate de que esta ruta sea correcta
+import { db } from '../../config/firebase'; // Asegúrate de tu ruta
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,32 +10,29 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
-  // 1. Cargar datos recordados y sesión activa al iniciar
+  // Saber si el que está intentando entrar es el jefe
+  const isDir = formData.role === 'Administrador / Director';
+
   useEffect(() => {
-    // Revisar si el usuario pidió recordar sus datos
     const savedData = localStorage.getItem('ebd_v2_remember');
     if (savedData) {
       setFormData(JSON.parse(savedData));
       setRememberMe(true);
     }
 
-    // Revisar si hay una sesión en curso (pendiente o aprobada)
     const session = localStorage.getItem('ebd_v2_session');
     if (session) {
       const user = JSON.parse(session);
       setIsLocked(true);
       
-      // ESCUCHADOR EN TIEMPO REAL: Vigilar el documento del usuario en Firebase
       const unsubscribe = onSnapshot(doc(db, 'users', user.id), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.status === 'approved' && user.status !== 'approved') {
-            // ¡El admin lo aprobó en tiempo real!
             localStorage.setItem('ebd_v2_session', JSON.stringify({ ...user, status: 'approved' }));
-            window.location.reload(); // Recarga para entrar al Dashboard
+            window.location.reload(); 
           }
         } else {
-          // Si el documento ya no existe, el admin lo RECHAZÓ
           if (user.role !== 'Administrador / Director') {
             alert("Tu solicitud fue denegada por el Administrador.");
             handleCancel();
@@ -44,7 +40,7 @@ const Login = () => {
         }
       });
 
-      return () => unsubscribe(); // Limpiar el escuchador si el componente se desmonta
+      return () => unsubscribe();
     }
   }, []);
 
@@ -56,30 +52,29 @@ const Login = () => {
     };
 
     if (formData.password === keys[formData.role]) {
-      // Si marcó "Recordar", guardamos los datos tipeados
       if (rememberMe) {
         localStorage.setItem('ebd_v2_remember', JSON.stringify(formData));
       } else {
         localStorage.removeItem('ebd_v2_remember');
       }
 
-      const isDir = formData.role === 'Administrador / Director';
       const userId = `${formData.role}-${formData.username}`.replace(/\s+/g, '').toLowerCase();
-      
       const newUser = { 
         ...formData, 
         id: userId,
         status: isDir ? 'approved' : 'pending' 
       };
       
-      // Guardar en Firebase (Firestore)
       await setDoc(doc(db, 'users', userId), newUser);
-      
-      // Bloquear pantalla localmente
       localStorage.setItem('ebd_v2_session', JSON.stringify(newUser));
-      setIsLocked(true);
 
-      if (isDir) window.location.reload(); // El director entra de golpe
+      if (isDir) {
+        // ¡El Administrador entra directo sin bloquear la pantalla!
+        window.location.reload();
+      } else {
+        // Los demás mortales sí se quedan esperando en gris
+        setIsLocked(true);
+      }
     } else {
       alert("La contraseña no coincide con el cargo seleccionado.");
     }
@@ -88,7 +83,7 @@ const Login = () => {
   const handleCancel = async () => {
     const session = JSON.parse(localStorage.getItem('ebd_v2_session') || '{}');
     if (session.id) {
-      await deleteDoc(doc(db, 'users', session.id)); // Borrar de Firebase
+      await deleteDoc(doc(db, 'users', session.id)); 
     }
     localStorage.removeItem('ebd_v2_session');
     setIsLocked(false);
@@ -98,7 +93,6 @@ const Login = () => {
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 10 - i);
 
-  // Clases dinámicas para el Modo Lectura (Gris)
   const inputClass = `w-full text-center px-4 py-3 sm:py-3.5 rounded-xl border outline-none transition-all text-sm sm:text-base ${
     isLocked ? 'bg-slate-200 border-transparent text-slate-500 cursor-not-allowed' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500'
   }`;
@@ -114,7 +108,7 @@ const Login = () => {
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Iglesia Bitinia</h2>
           <p className="text-blue-100 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold mt-1">Registro V2.0</p>
           
-          {isLocked && (
+          {isLocked && !isDir && (
             <div className="absolute top-4 right-4 p-2 bg-white/20 rounded-full animate-pulse">
               <RefreshCw className="h-5 w-5 text-white animate-spin" />
             </div>
@@ -175,8 +169,8 @@ const Login = () => {
             </label>
           )}
 
-          {/* BOTÓN DINÁMICO */}
-          {isLocked ? (
+          {/* BOTÓN INTELIGENTE */}
+          {isLocked && !isDir ? (
             <div className="w-full flex flex-col gap-2">
               <div className="w-full py-4 mt-2 bg-amber-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg flex justify-center items-center gap-3">
                 <RefreshCw className="w-5 h-5 animate-spin"/> ESPERANDO APROBACIÓN...
@@ -187,7 +181,7 @@ const Login = () => {
             </div>
           ) : (
             <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
-              <LogIn className="w-5 h-5"/> SOLICITAR ACCESO
+              <LogIn className="w-5 h-5"/> {isDir ? 'ENTRAR AL SISTEMA' : 'SOLICITAR ACCESO'}
             </button>
           )}
         </form>
