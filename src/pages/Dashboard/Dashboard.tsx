@@ -4,9 +4,9 @@ import MaestroView from '../maestro/MaestroView';
 import { LogOut } from 'lucide-react';
 
 const WorkInProgress = ({ role }: { role: string }) => (
-  <div className="flex flex-col items-center justify-center text-center p-10 w-full">
-    <h2 className="text-2xl font-black text-slate-700 uppercase tracking-tight">Interfaz de {role}</h2>
-    <p className="text-slate-500 mt-2 font-medium">Estamos trabajando en tu nueva experiencia V2.0...</p>
+  <div className="flex flex-col items-center justify-center p-10 w-full h-full">
+    <h2 className="text-2xl font-black text-slate-700 uppercase">Interfaz de {role}</h2>
+    <p className="text-slate-500 mt-2">Estamos trabajando en tu experiencia V2.0...</p>
   </div>
 );
 
@@ -22,24 +22,31 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="w-full flex flex-col min-h-screen">
+    <div className="w-full min-h-screen flex flex-col bg-slate-50">
       
-      {/* Navbar Centrado (Contenido) */}
-      <nav className="bg-white border-b shadow-sm w-full flex justify-center">
-        <div className="w-full max-w-7xl p-4 flex justify-between items-center">
-          <span className="font-black text-blue-600 italic tracking-widest uppercase">Iglesia Bitinia</span>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{user.username} ({user.role})</span>
-            <button onClick={() => {localStorage.clear(); window.location.reload();}} className="text-slate-400 hover:text-red-500 transition-colors">
-              <LogOut size={20}/>
-            </button>
+      {/* Barra de Navegación 100% Ancho */}
+      <nav className="w-full bg-white border-b border-slate-200 px-6 md:px-12 py-4 flex justify-between items-center shadow-sm z-10">
+        <span className="font-black text-blue-700 tracking-widest uppercase text-lg md:text-xl">
+          Iglesia Bitinia
+        </span>
+        <div className="flex items-center gap-3 md:gap-6">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-slate-800">{user.username}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{user.role}</p>
           </div>
+          <button 
+            onClick={() => {localStorage.clear(); window.location.reload();}} 
+            className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+            title="Cerrar Sesión"
+          >
+            <LogOut size={24}/>
+          </button>
         </div>
       </nav>
 
-      {/* Contenido Principal Centrado */}
-      <main className="flex-1 w-full flex justify-center items-start p-4 md:p-8">
-        <div className="w-full max-w-7xl flex flex-col items-center">
+      {/* Contenedor de la Vista (Se estira según la pantalla) */}
+      <main className="w-full flex-1 p-4 md:p-8 lg:p-12">
+        <div className="w-full h-full mx-auto">
           {renderView()}
         </div>
       </main>
