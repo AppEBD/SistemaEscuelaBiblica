@@ -5,8 +5,8 @@ function App() {
   const session = localStorage.getItem('ebd_v2_session');
 
   return (
-    /* Forzamos a que toda la aplicación sea un contenedor centrado absoluto */
-    <div className="min-h-screen w-full bg-slate-100 text-slate-800 font-sans flex flex-col items-center justify-center overflow-x-hidden">
+    // w-full asegura que tome el 100% del monitor o pantalla del móvil
+    <div className="w-full min-h-screen font-sans text-slate-800">
       {session ? <Dashboard /> : <Login />}
     </div>
   );
