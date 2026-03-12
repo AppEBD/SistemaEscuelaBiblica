@@ -1,126 +1,76 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
-import { loginUsuario } from '../../features/auth/services/authService';
-import { useAuthStore } from '../../features/auth/store/authStore';
+import { User, Lock, LogIn } from 'lucide-react';
 
-export default function Login() {
-  const [correo, setCorreo] = useState('');
+const Login = () => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(false);
-
-  const setUsuario = useAuthStore((state) => state.setUsuario);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setCargando(true);
-
-    const result = await loginUsuario(correo, password);
-
-    if (result.success && result.data) {
-      setUsuario(result.data);
-      
-      // Magia del enrutador: ¡Redirigimos según el rol!
-      const rol = result.data.clase;
-      if (rol === 'Director') navigate('/admin');
-      else if (rol === 'MAESTRO' || rol === 'AUXILIAR') navigate('/maestro');
-      else if (rol === 'SECRETARIA') navigate('/secretaria');
-      else if (rol === 'TESORERO') navigate('/tesorero');
-      else if (rol === 'LOGISTICA') navigate('/logistica');
-      else navigate('/dashboard');
-
-    } else {
-      setError(result.error || 'Ocurrió un error al iniciar sesión.');
-    }
-    
-    setCargando(false);
-  };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200 mb-4">
-          <span className="text-white text-3xl font-black">EBD</span>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-4">
+      {/* Contenedor principal: Ajustable en ancho según el dispositivo */}
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-8">
+        
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <span className="text-white text-2xl font-bold">EBD</span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+            Escuela Bíblica Dominical
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">Acceso al Sistema V2.0</p>
         </div>
-        <h2 className="text-center text-3xl font-black text-slate-800 tracking-tight">
-          Escuela Bíblica Dominical
-        </h2>
-        <p className="mt-2 text-center text-sm font-bold text-slate-500 uppercase tracking-widest">
-          Acceso al Sistema V2.0
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-3xl sm:px-10 border border-slate-100 mx-2">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            
-            {error && (
-              <div className="bg-rose-50 p-4 rounded-2xl flex items-center shadow-sm border border-rose-100 animate-in fade-in">
-                <AlertCircle className="text-rose-500 mr-3 w-5 h-5 shrink-0" />
-                <p className="text-xs font-bold text-rose-700">{error}</p>
-              </div>
-            )}
-
+        <form className="mt-8 space-y-6">
+          <div className="space-y-4">
+            {/* Cambiado de Correo a Usuario */}
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-300" />
+              <label className="block text-sm font-medium text-gray-700">Usuario</label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  placeholder="ejemplo@iglesia.com"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-base"
+                  placeholder="Tu nombre de usuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                Contraseña
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-300" />
+              <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   type="password"
                   required
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-base"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  placeholder="••••••••"
                 />
               </div>
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={cargando}
-              className={`w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-sm font-black text-white transition-all active:scale-95 ${
-                cargando ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
-              }`}
-            >
-              {cargando ? (
-                'Verificando credenciales...'
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5 mr-2" />
-                  Entrar al Sistema
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+              <LogIn className="h-5 w-5 text-blue-300" />
+            </span>
+            Entrar al Sistema
+          </button>
+        </form>
       </div>
     </div>
   );
-}
+};
+
+export default Login;
