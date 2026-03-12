@@ -1,11 +1,7 @@
-import { AppRouter } from './routes/AppRouter';
+import Login from './pages/auth/Login';
+import Dashboard from './pages/Dashboard/Dashboard';
 
 function App() {
-  return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans">
-      <AppRouter />
-    </div>
-  );
+  const session = localStorage.getItem('ebd_v2_session');
+  return session ? <Dashboard /> : <Login />;
 }
-
-export default App;
