@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Users, LogIn, RefreshCw, ShieldAlert, MapPin } from 'lucide-react';
+import { User, Lock, Users, LogIn, RefreshCw, ShieldAlert, MapPin, Trash2 } from 'lucide-react';
 import { doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase'; 
 
@@ -64,7 +64,6 @@ const Login = () => {
       const cleanName = formData.username.replace(/[^a-zA-Z0-9]/g, '');
       const userId = `${cleanRole}-${cleanName}`.toLowerCase();
       
-      // CORRECCIÓN: Ahora unimos la fecha desde el momento 0 del registro
       const newUser = { 
         ...formData, 
         birthDate: `${formData.day}/${formData.month}/${formData.year}`,
@@ -90,6 +89,15 @@ const Login = () => {
     }
     localStorage.removeItem('ebd_v2_session');
     window.location.reload();
+  };
+
+  // NUEVA FUNCIÓN: Limpiar todo el formulario
+  const handleClearForm = () => {
+    if (window.confirm("¿Deseas vaciar el formulario y borrar los datos recordados?")) {
+      setFormData({ role: '', campo: '', username: '', day: '', month: '', year: '', gender: '', password: '' });
+      setRememberMe(false);
+      localStorage.removeItem('ebd_v2_remember');
+    }
   };
 
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -194,12 +202,19 @@ const Login = () => {
             </div>
           </div>
 
-          <label className="flex items-center justify-center gap-2 cursor-pointer w-full text-slate-500 hover:text-blue-600 transition-colors">
-            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
-            <span className="text-xs font-bold uppercase tracking-wider">Recordar mis datos</span>
-          </label>
+          {/* BARRA DE HERRAMIENTAS INFERIOR: RECORDAR Y LIMPIAR */}
+          <div className="flex items-center justify-between w-full px-2 mt-2 border-t border-slate-100 pt-4">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-500 hover:text-blue-600 transition-colors">
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Recordar datos</span>
+            </label>
+            
+            <button type="button" onClick={handleClearForm} className="flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">
+              <Trash2 size={14} /> Limpiar Datos
+            </button>
+          </div>
 
-          <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
+          <button type="submit" className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
             <LogIn className="w-5 h-5"/> {isDir ? 'ENTRAR AL SISTEMA' : 'SOLICITAR ACCESO'}
           </button>
         </form>
