@@ -1,51 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Users, LogIn, RefreshCw } from 'lucide-react';
+import { User, Lock, Users, LogIn, RefreshCw, ShieldAlert } from 'lucide-react';
 import { doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase'; // Revisa que tu ruta sea correcta
+import { db } from '../../config/firebase'; 
 
 const Login = () => {
   const [formData, setFormData] = useState({
     role: '', username: '', day: '', month: '', year: '', gender: '', password: ''
   });
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
+  
+  // Nuevo estado para guardar los datos del usuario actual y mostrarlos en la bienvenida
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const isDir = formData.role === 'Administrador / Director';
 
   useEffect(() => {
-    // Cargar datos recordados
     const savedData = localStorage.getItem('ebd_v2_remember');
     if (savedData) {
       setFormData(JSON.parse(savedData));
       setRememberMe(true);
     }
 
-    // Revisar estado de la sesión
     const sessionStr = localStorage.getItem('ebd_v2_session');
     if (sessionStr) {
       const user = JSON.parse(sessionStr);
+      setCurrentUser(user); // Guardamos el usuario para la pantalla de bienvenida
       
       if (user.status === 'pending') {
-        setIsLocked(true); // Bloqueamos la pantalla en gris
-        
-        // ENCENDEMOS EL RADAR EN TIEMPO REAL
+        // RADAR EN TIEMPO REAL
         const unsubscribe = onSnapshot(doc(db, 'users', user.id), (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.status === 'approved') {
-              // El Admin acaba de aprobar en Firebase. ¡Actualizamos y entramos!
               localStorage.setItem('ebd_v2_session', JSON.stringify({ ...user, status: 'approved' }));
               window.location.reload(); 
             }
           } else {
-            // El documento ya no existe, el admin presionó "Denegar"
             alert("Tu solicitud fue rechazada por el Administrador.");
             localStorage.removeItem('ebd_v2_session');
             window.location.reload();
           }
         });
 
-        return () => unsubscribe(); // Limpiamos el radar si cambia de página
+        return () => unsubscribe(); 
       }
     }
   }, []);
@@ -78,7 +75,7 @@ const Login = () => {
         await setDoc(doc(db, 'users', userId), newUser);
         localStorage.setItem('ebd_v2_session', JSON.stringify(newUser));
         
-        // LA SOLUCIÓN: Recargamos para que el App.tsx evalúe la sesión y el radar inicie
+        // Recargamos para que se active la pantalla de Bienvenida y el radar
         window.location.reload();
       } catch (error) {
         alert("Error de conexión. Verifica Firebase.");
@@ -89,9 +86,8 @@ const Login = () => {
   };
 
   const handleCancel = async () => {
-    const session = JSON.parse(localStorage.getItem('ebd_v2_session') || '{}');
-    if (session.id) {
-      try { await deleteDoc(doc(db, 'users', session.id)); } catch(e) {}
+    if (currentUser?.id) {
+      try { await deleteDoc(doc(db, 'users', currentUser.id)); } catch(e) {}
     }
     localStorage.removeItem('ebd_v2_session');
     window.location.reload();
@@ -101,33 +97,66 @@ const Login = () => {
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 10 - i);
 
-  const inputClass = `w-full text-center px-4 py-3 sm:py-3.5 rounded-xl border outline-none transition-all text-sm sm:text-base ${
-    isLocked ? 'bg-slate-200 border-transparent text-slate-500 cursor-not-allowed' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500'
-  }`;
+  // =========================================================================
+  // PANTALLA DE BIENVENIDA (MODO ESPERA) PARA USUARIOS NO ADMINISTRADORES
+  // =========================================================================
+  if (currentUser && currentUser.status === 'pending') {
+    return (
+      <div className="w-full flex flex-col items-center justify-center p-4 min-h-screen bg-slate-100">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white p-10 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
+          
+          <div className="mx-auto h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 border-4 border-blue-100 shadow-inner">
+            <User className="h-12 w-12 text-blue-500" />
+          </div>
+          
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight uppercase">¡Bienvenido!</h2>
+          <h3 className="text-xl font-bold text-blue-600 mt-1">{currentUser.username}</h3>
+          
+          <div className="mt-8 w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Solicitado</p>
+            </div>
+            <p className="text-lg font-black text-slate-700 uppercase tracking-wider">{currentUser.role}</p>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <RefreshCw className="h-8 w-8 text-amber-500 animate-spin" />
+            <p className="text-sm font-bold text-slate-500 leading-relaxed px-4">
+              Por favor, espera un momento.<br/>El Administrador está revisando tu solicitud para darte acceso al sistema.
+            </p>
+          </div>
+
+          <button onClick={handleCancel} className="mt-10 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 py-2 transition-colors border-b border-transparent hover:border-red-600">
+            Cancelar e Intentar de Nuevo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // PANTALLA DE FORMULARIO DE REGISTRO NORMAL
+  // =========================================================================
+  const inputClass = "w-full text-center px-4 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base";
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md sm:max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white transition-all duration-300">
         
-        <div className="bg-blue-600 p-8 text-center text-white flex flex-col items-center relative">
+        <div className="bg-blue-600 p-8 text-center text-white flex flex-col items-center">
           <div className="h-16 w-16 bg-white/20 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md">
             <Users className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Iglesia Bitinia</h2>
           <p className="text-blue-100 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold mt-1">Registro V2.0</p>
-          
-          {isLocked && !isDir && (
-            <div className="absolute top-4 right-4 p-2 bg-white/20 rounded-full animate-pulse">
-              <RefreshCw className="h-5 w-5 text-white animate-spin" />
-            </div>
-          )}
         </div>
 
         <form onSubmit={handleLogin} className="p-8 flex flex-col gap-5">
           
           <div className="flex flex-col items-center w-full">
              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Cargo en la Iglesia</label>
-             <select disabled={isLocked} className={inputClass} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} required>
+             <select className={inputClass} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} required>
               <option value="">-- Selecciona tu función --</option>
               {['Administrador / Director', 'Maestro', 'Auxiliar', 'Logística', 'Secretaria', 'Tesorero'].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -137,23 +166,23 @@ const Login = () => {
              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Nombre Completo</label>
              <div className="relative w-full flex justify-center">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input readOnly={isLocked} className={inputClass} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.username} placeholder="Ej: Juan Pérez" onChange={e => setFormData({...formData, username: e.target.value})} required />
+                <input className={inputClass} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.username} placeholder="Ej: Juan Pérez" onChange={e => setFormData({...formData, username: e.target.value})} required />
              </div>
           </div>
 
           <div className="flex flex-col items-center w-full">
             <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Fecha de Nacimiento</label>
             <div className="w-full grid grid-cols-3 gap-3">
-              <select disabled={isLocked} className={`${inputClass} px-1`} value={formData.day} onChange={e => setFormData({...formData, day: e.target.value})} required><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
-              <select disabled={isLocked} className={`${inputClass} px-1`} value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} required><option value="">Mes</option>{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
-              <select disabled={isLocked} className={`${inputClass} px-1`} value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} required><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+              <select className={`${inputClass} px-1`} value={formData.day} onChange={e => setFormData({...formData, day: e.target.value})} required><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+              <select className={`${inputClass} px-1`} value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} required><option value="">Mes</option>{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
+              <select className={`${inputClass} px-1`} value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} required><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
             </div>
           </div>
 
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col items-center w-full">
               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Género</label>
-              <select disabled={isLocked} className={inputClass} value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} required>
+              <select className={inputClass} value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} required>
                 <option value="">-- Seleccionar --</option>
                 <option value="Masculino">Masculino</option>
                 <option value="Femenino">Femenino</option>
@@ -164,32 +193,19 @@ const Login = () => {
               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Contraseña</label>
               <div className="relative w-full flex justify-center">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input readOnly={isLocked} type="password" placeholder="Código" className={`${inputClass} tracking-[0.3em]`} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                <input type="password" placeholder="Código" className={`${inputClass} tracking-[0.3em]`} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
               </div>
             </div>
           </div>
 
-          {!isLocked && (
-            <label className="flex items-center justify-center gap-2 cursor-pointer w-full text-slate-500 hover:text-blue-600 transition-colors">
-              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
-              <span className="text-xs font-bold uppercase tracking-wider">Recordar mis datos</span>
-            </label>
-          )}
+          <label className="flex items-center justify-center gap-2 cursor-pointer w-full text-slate-500 hover:text-blue-600 transition-colors">
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+            <span className="text-xs font-bold uppercase tracking-wider">Recordar mis datos</span>
+          </label>
 
-          {isLocked && !isDir ? (
-            <div className="w-full flex flex-col gap-2">
-              <div className="w-full py-4 mt-2 bg-amber-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg flex justify-center items-center gap-3">
-                <RefreshCw className="w-5 h-5 animate-spin"/> ESPERANDO APROBACIÓN...
-              </div>
-              <button type="button" onClick={handleCancel} className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 py-2 transition-colors">
-                Cancelar e Intentar de Nuevo
-              </button>
-            </div>
-          ) : (
-            <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
-              <LogIn className="w-5 h-5"/> {isDir ? 'ENTRAR AL SISTEMA' : 'SOLICITAR ACCESO'}
-            </button>
-          )}
+          <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
+            <LogIn className="w-5 h-5"/> {isDir ? 'ENTRAR AL SISTEMA' : 'SOLICITAR ACCESO'}
+          </button>
         </form>
       </div>
     </div>
