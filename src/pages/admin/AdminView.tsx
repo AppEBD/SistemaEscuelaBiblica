@@ -1,32 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, UserX, ChevronDown, Users, Bell } from 'lucide-react';
-// IMPORTA TU FIREBASE AQUÍ
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase'; // <--- Ajusta la ruta
+import { db } from '../../config/firebase'; // Revisa que tu ruta sea correcta
 
 const AdminView = () => {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [openRole, setOpenRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // ESCUCHADOR EN TIEMPO REAL: Trae todos los usuarios de la colección
-    const usersRef = collection(db, 'users');
-    const unsubscribe = onSnapshot(usersRef, (snapshot) => {
-      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllUsers(usersData);
+    // Escucha en tiempo real todos los usuarios en Firebase
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setAllUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     });
-
-    return () => unsubscribe(); // Limpiar cuando se cierre el panel
+    return () => unsubscribe();
   }, []);
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
-    const userRef = doc(db, 'users', id);
-    if (action === 'approved') {
-      // Actualizamos a aprobado. El Login del maestro escuchará esto y lo dejará entrar.
-      await updateDoc(userRef, { status: 'approved' });
-    } else {
-      // Si lo rechazamos, borramos el documento. El maestro verá "Acceso Denegado".
-      await deleteDoc(userRef);
+    try {
+      const userRef = doc(db, 'users', id);
+      if (action === 'approved') {
+        // En el instante en que esto ocurre, el Login del maestro reacciona
+        await updateDoc(userRef, { status: 'approved' });
+      } else {
+        await deleteDoc(userRef);
+      }
+    } catch (error) {
+      alert("Error al procesar la solicitud en Firebase.");
+      console.error(error);
     }
   };
 
@@ -36,7 +36,6 @@ const AdminView = () => {
   return (
     <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
       
-      {/* Columna Izquierda: Solicitudes en Tiempo Real */}
       <section className="w-full flex flex-col gap-4">
         <div className="flex items-center justify-center md:justify-start gap-2 bg-amber-100 text-amber-800 p-4 rounded-2xl text-center">
           <Bell className="h-6 w-6 animate-bounce" />
@@ -47,7 +46,7 @@ const AdminView = () => {
         
         {pendingUsers.length === 0 ? (
           <div className="w-full p-8 border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-400 font-bold">
-            No hay solicitudes pendientes. Todo al día.
+            No hay solicitudes pendientes en este momento.
           </div>
         ) : (
           <div className="w-full flex flex-col gap-3">
@@ -71,7 +70,6 @@ const AdminView = () => {
         )}
       </section>
 
-      {/* Columna Derecha: Directorio Expandido */}
       <section className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden text-center sm:text-left">
         <div className="p-6 bg-slate-800 text-white flex items-center justify-center sm:justify-start gap-3 w-full">
           <Users size={24} className="text-blue-400" /> 
