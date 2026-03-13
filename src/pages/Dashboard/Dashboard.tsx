@@ -28,7 +28,6 @@ const Dashboard = () => {
   }, [user.id]);
 
   const renderView = () => {
-    // Si es Maestro O Auxiliar, les mostramos la vista dinámica
     if (user.role === 'Administrador / Director') return <AdminView />;
     if (user.role === 'Maestro' || user.role === 'Auxiliar') return <MaestroView />;
     
@@ -40,10 +39,15 @@ const Dashboard = () => {
     );
   };
 
-  // LÓGICA DE COLOR (THEMING)
   const isFemale = user.gender === 'Femenino';
   const logoColor = isFemale ? 'text-rose-600' : 'text-blue-700';
   const badgeColor = isFemale ? 'text-rose-500' : 'text-blue-500';
+
+  const handleLogout = () => {
+    // CORRECCIÓN: Usamos el bisturí en lugar de la excavadora
+    localStorage.removeItem('ebd_v2_session');
+    window.location.reload();
+  };
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-slate-50">
@@ -60,7 +64,7 @@ const Dashboard = () => {
                 <ShieldCheck size={12} /> {user.role}
               </p>
             </div>
-            <button onClick={() => {localStorage.clear(); window.location.reload();}} className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all">
+            <button onClick={handleLogout} className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all" title="Cerrar Sesión">
               <LogOut size={24}/>
             </button>
           </div>
