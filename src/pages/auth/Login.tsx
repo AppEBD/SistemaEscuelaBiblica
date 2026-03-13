@@ -12,7 +12,6 @@ const Login = () => {
 
   const isDir = formData.role === 'Administrador / Director';
 
-  // LA LISTA OFICIAL DE TUS CAMPOS
   const camposOficiales = [
     'Sede Central', 'La Isla', 'El Amatal', 'Las Delicias', 'El Manguito', 
     'Buenos Aires', 'Corozal #1', 'El Porvenir', 'El Caulote', 'Corozal #2', 
@@ -65,7 +64,13 @@ const Login = () => {
       const cleanName = formData.username.replace(/[^a-zA-Z0-9]/g, '');
       const userId = `${cleanRole}-${cleanName}`.toLowerCase();
       
-      const newUser = { ...formData, id: userId, status: isDir ? 'approved' : 'pending' };
+      // CORRECCIÓN: Ahora unimos la fecha desde el momento 0 del registro
+      const newUser = { 
+        ...formData, 
+        birthDate: `${formData.day}/${formData.month}/${formData.year}`,
+        id: userId, 
+        status: isDir ? 'approved' : 'pending' 
+      };
       
       try {
         await setDoc(doc(db, 'users', userId), newUser);
@@ -136,17 +141,16 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleLogin} className="p-8 flex flex-col gap-5">
-          
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col items-center w-full">
-               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Cargo</label>
+               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Cargo</label>
                <select className={inputClass} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} required>
                 <option value="">-- Seleccionar --</option>
                 {['Administrador / Director', 'Maestro', 'Auxiliar', 'Logística', 'Secretaria', 'Tesorero'].map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div className="flex flex-col items-center w-full">
-               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Lugar / Campo</label>
+               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Lugar / Campo</label>
                <select className={inputClass} value={formData.campo} onChange={e => setFormData({...formData, campo: e.target.value})} required>
                 <option value="">-- Seleccionar --</option>
                 {camposOficiales.map(c => <option key={c} value={c}>{c}</option>)}
@@ -155,7 +159,7 @@ const Login = () => {
           </div>
 
           <div className="flex flex-col items-center w-full">
-             <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Nombre Completo</label>
+             <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Nombre Completo</label>
              <div className="relative w-full flex justify-center">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <input className={inputClass} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.username} placeholder="Ej: Juan Pérez" onChange={e => setFormData({...formData, username: e.target.value})} required />
@@ -163,7 +167,7 @@ const Login = () => {
           </div>
 
           <div className="flex flex-col items-center w-full">
-            <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Fecha de Nacimiento</label>
+            <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Fecha de Nacimiento</label>
             <div className="w-full grid grid-cols-3 gap-3">
               <select className={`${inputClass} px-1`} value={formData.day} onChange={e => setFormData({...formData, day: e.target.value})} required><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
               <select className={`${inputClass} px-1`} value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} required><option value="">Mes</option>{months.map(m => <option key={m} value={m}>{m}</option>)}</select>
@@ -173,7 +177,7 @@ const Login = () => {
 
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col items-center w-full">
-              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Género</label>
+              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Género</label>
               <select className={inputClass} value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} required>
                 <option value="">-- Seleccionar --</option>
                 <option value="Masculino">Masculino</option>
@@ -182,7 +186,7 @@ const Login = () => {
             </div>
             
             <div className="flex flex-col items-center w-full">
-              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Contraseña</label>
+              <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 w-full text-center">Contraseña</label>
               <div className="relative w-full flex justify-center">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <input type="password" placeholder="Código" className={`${inputClass} tracking-[0.3em]`} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
