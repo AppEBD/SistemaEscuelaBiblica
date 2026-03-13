@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Users, LogIn, RefreshCw, ShieldAlert } from 'lucide-react';
+import { User, Lock, Users, LogIn, RefreshCw, ShieldAlert, MapPin } from 'lucide-react';
 import { doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase'; 
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    role: '', username: '', day: '', month: '', year: '', gender: '', password: ''
+    role: '', campo: '', username: '', day: '', month: '', year: '', gender: '', password: ''
   });
   const [rememberMe, setRememberMe] = useState(false);
-  
-  // Nuevo estado para guardar los datos del usuario actual y mostrarlos en la bienvenida
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const isDir = formData.role === 'Administrador / Director';
+
+  // AQUÍ PONES LOS 11 CAMPOS DE TU VERSIÓN 1.0
+  const los11Campos = [
+    'Sede Central', 'La Isla', 'El Amatal', 'Las Delicias', 'El Manguito', 
+    'Buenos Aires', 'Corozal #1', 'El Porvenir', 'El Caulote', 'Corozal #2', 'Valle Encantado','La Playa'
+  ];
 
   useEffect(() => {
     const savedData = localStorage.getItem('ebd_v2_remember');
@@ -24,10 +28,9 @@ const Login = () => {
     const sessionStr = localStorage.getItem('ebd_v2_session');
     if (sessionStr) {
       const user = JSON.parse(sessionStr);
-      setCurrentUser(user); // Guardamos el usuario para la pantalla de bienvenida
+      setCurrentUser(user);
       
       if (user.status === 'pending') {
-        // RADAR EN TIEMPO REAL
         const unsubscribe = onSnapshot(doc(db, 'users', user.id), (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -41,7 +44,6 @@ const Login = () => {
             window.location.reload();
           }
         });
-
         return () => unsubscribe(); 
       }
     }
@@ -55,27 +57,18 @@ const Login = () => {
     };
 
     if (formData.password === keys[formData.role]) {
-      if (rememberMe) {
-        localStorage.setItem('ebd_v2_remember', JSON.stringify(formData));
-      } else {
-        localStorage.removeItem('ebd_v2_remember');
-      }
+      if (rememberMe) localStorage.setItem('ebd_v2_remember', JSON.stringify(formData));
+      else localStorage.removeItem('ebd_v2_remember');
 
       const cleanRole = formData.role.replace(/[^a-zA-Z0-9]/g, '');
       const cleanName = formData.username.replace(/[^a-zA-Z0-9]/g, '');
       const userId = `${cleanRole}-${cleanName}`.toLowerCase();
       
-      const newUser = { 
-        ...formData, 
-        id: userId,
-        status: isDir ? 'approved' : 'pending' 
-      };
+      const newUser = { ...formData, id: userId, status: isDir ? 'approved' : 'pending' };
       
       try {
         await setDoc(doc(db, 'users', userId), newUser);
         localStorage.setItem('ebd_v2_session', JSON.stringify(newUser));
-        
-        // Recargamos para que se active la pantalla de Bienvenida y el radar
         window.location.reload();
       } catch (error) {
         alert("Error de conexión. Verifica Firebase.");
@@ -97,53 +90,42 @@ const Login = () => {
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 10 - i);
 
-  // =========================================================================
-  // PANTALLA DE BIENVENIDA (MODO ESPERA) PARA USUARIOS NO ADMINISTRADORES
-  // =========================================================================
   if (currentUser && currentUser.status === 'pending') {
     return (
       <div className="w-full flex flex-col items-center justify-center p-4 min-h-screen bg-slate-100">
-        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white p-10 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
-          
-          <div className="mx-auto h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 border-4 border-blue-100 shadow-inner">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white p-10 flex flex-col items-center text-center">
+          <div className="mx-auto h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 border-4 border-blue-100">
             <User className="h-12 w-12 text-blue-500" />
           </div>
-          
           <h2 className="text-3xl font-black text-slate-800 tracking-tight uppercase">¡Bienvenido!</h2>
           <h3 className="text-xl font-bold text-blue-600 mt-1">{currentUser.username}</h3>
           
-          <div className="mt-8 w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="mt-8 w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-3">
+            <div className="flex items-center justify-center gap-2">
               <ShieldAlert className="h-5 w-5 text-amber-500" />
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Solicitado</p>
+              <span className="text-sm font-black text-slate-700 uppercase tracking-wider">{currentUser.role}</span>
             </div>
-            <p className="text-lg font-black text-slate-700 uppercase tracking-wider">{currentUser.role}</p>
+            <div className="flex items-center justify-center gap-2">
+              <MapPin className="h-5 w-5 text-blue-500" />
+              <span className="text-sm font-black text-slate-700 uppercase tracking-wider">{currentUser.campo}</span>
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-3">
             <RefreshCw className="h-8 w-8 text-amber-500 animate-spin" />
-            <p className="text-sm font-bold text-slate-500 leading-relaxed px-4">
-              Por favor, espera un momento.<br/>El Administrador está revisando tu solicitud para darte acceso al sistema.
-            </p>
+            <p className="text-sm font-bold text-slate-500 leading-relaxed px-4">Esperando aprobación del Administrador...</p>
           </div>
-
-          <button onClick={handleCancel} className="mt-10 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 py-2 transition-colors border-b border-transparent hover:border-red-600">
-            Cancelar e Intentar de Nuevo
-          </button>
+          <button onClick={handleCancel} className="mt-10 text-[10px] font-black uppercase text-red-400 hover:text-red-600 py-2">Cancelar e Intentar de Nuevo</button>
         </div>
       </div>
     );
   }
 
-  // =========================================================================
-  // PANTALLA DE FORMULARIO DE REGISTRO NORMAL
-  // =========================================================================
   const inputClass = "w-full text-center px-4 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base";
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md sm:max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white transition-all duration-300">
-        
         <div className="bg-blue-600 p-8 text-center text-white flex flex-col items-center">
           <div className="h-16 w-16 bg-white/20 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md">
             <Users className="h-8 w-8 text-white" />
@@ -154,12 +136,21 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="p-8 flex flex-col gap-5">
           
-          <div className="flex flex-col items-center w-full">
-             <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Cargo en la Iglesia</label>
-             <select className={inputClass} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} required>
-              <option value="">-- Selecciona tu función --</option>
-              {['Administrador / Director', 'Maestro', 'Auxiliar', 'Logística', 'Secretaria', 'Tesorero'].map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col items-center w-full">
+               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Cargo</label>
+               <select className={inputClass} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} required>
+                <option value="">-- Seleccionar --</option>
+                {['Administrador / Director', 'Maestro', 'Auxiliar', 'Logística', 'Secretaria', 'Tesorero'].map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col items-center w-full">
+               <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Lugar / Campo</label>
+               <select className={inputClass} value={formData.campo} onChange={e => setFormData({...formData, campo: e.target.value})} required>
+                <option value="">-- Seleccionar --</option>
+                {los11Campos.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
 
           <div className="flex flex-col items-center w-full">
