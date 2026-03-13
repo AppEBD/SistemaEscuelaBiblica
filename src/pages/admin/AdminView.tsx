@@ -6,18 +6,35 @@ import { db } from '../../config/firebase';
 const AdminView = () => {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [openRole, setOpenRole] = useState<string | null>(null);
-  
-  // Estado para controlar el modal de edición
   const [editingUser, setEditingUser] = useState<any>(null);
 
-  // LA LISTA OFICIAL DE TUS CAMPOS (Sedes)
   const camposOficiales = [
     'Sede Central', 'La Isla', 'El Amatal', 'Las Delicias', 'El Manguito', 
     'Buenos Aires', 'Corozal #1', 'El Porvenir', 'El Caulote', 'Corozal #2', 
     'Valle Encantado', 'La Playa'
   ];
 
-  // Radar en Tiempo Real de Firebase
+  // Algoritmo para calcular la edad exacta
+  const calcularEdad = (dia: string, mesTexto: string, anio: string) => {
+    if (!dia || !mesTexto || !anio) return 'N/A';
+    const mesesMap: Record<string, number> = {
+      "Enero": 0, "Febrero": 1, "Marzo": 2, "Abril": 3, "Mayo": 4, "Junio": 5, 
+      "Julio": 6, "Agosto": 7, "Septiembre": 8, "Octubre": 9, "Noviembre": 10, "Diciembre": 11
+    };
+    const mesNum = mesesMap[mesTexto];
+    if (mesNum === undefined) return 'N/A';
+    
+    const fechaNac = new Date(Number(anio), mesNum, Number(dia));
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+    
+    if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fechaNac.getDate())) {
+      edad--;
+    }
+    return `${edad} años`;
+  };
+
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
       setAllUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -25,20 +42,18 @@ const AdminView = () => {
     return () => unsubscribe();
   }, []);
 
-  // Aprobar o Rechazar Solicitudes Nuevas
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
     try {
       const userRef = doc(db, 'users', id);
       if (action === 'approved') await updateDoc(userRef, { status: 'approved' });
       else await deleteDoc(userRef);
     } catch (error) {
-      alert("Error al procesar la solicitud en Firebase.");
+      alert("Error al procesar la solicitud.");
     }
   };
 
-  // Eliminar un usuario ya aprobado
   const handleDeleteUser = async (id: string, name: string) => {
-    if (window.confirm(`¿Estás seguro de ELIMINAR a ${name}? Esto cerrará su sesión de inmediato y borrará sus datos.`)) {
+    if (window.confirm(`¿Estás seguro de ELIMINAR a ${name}? Esto cerrará su sesión de inmediato.`)) {
       try {
         await deleteDoc(doc(db, 'users', id));
       } catch (error) {
@@ -47,7 +62,6 @@ const AdminView = () => {
     }
   };
 
-  // Guardar los cambios hechos en el Modal de Edición
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -62,7 +76,7 @@ const AdminView = () => {
         month: editingUser.month,
         year: editingUser.year
       });
-      setEditingUser(null); // Cierra el modal
+      setEditingUser(null); 
     } catch (error) {
       alert("Error al actualizar. Revisa tu conexión.");
     }
@@ -78,9 +92,6 @@ const AdminView = () => {
   return (
     <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-8 items-start relative">
       
-      {/* =====================================================================
-          MODAL DE EDICIÓN CENTRADO Y SIMÉTRICO
-      ====================================================================== */}
       {editingUser && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
           <form onSubmit={handleSaveEdit} className="bg-white p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-lg flex flex-col gap-5 relative text-center">
@@ -140,9 +151,8 @@ const AdminView = () => {
           </form>
         </div>
       )}
-      {/* ===================================================================== */}
 
-      {/* COLUMNA IZQUIERDA: SOLICITUDES ENTRANTES */}
+      {/* SOLICITUDES ENTRANTES */}
       <section className="w-full flex flex-col gap-4">
         <div className="flex items-center justify-center gap-3 bg-amber-100 text-amber-800 p-5 rounded-3xl text-center shadow-sm">
           <Bell className="h-6 w-6 animate-bounce" />
@@ -184,7 +194,7 @@ const AdminView = () => {
         )}
       </section>
 
-      {/* COLUMNA DERECHA: DIRECTORIO GENERAL */}
+      {/* DIRECTORIO GENERAL */}
       <section className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden text-center">
         <div className="p-6 sm:p-8 bg-slate-800 text-white flex flex-col items-center justify-center gap-3 w-full relative">
           <div className="absolute inset-0 bg-slate-900 opacity-50"></div>
@@ -223,9 +233,13 @@ const AdminView = () => {
                               <span className="text-slate-500 bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
                                 {u.gender}
                               </span>
+                              
+                              {/* AQUÍ ESTÁ LA MAGIA DE LA EDAD */}
                               <span className="text-slate-500 bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                NAC: {u.birthDate || `${u.day}/${u.month}/${u.year}`}
+                                NAC: {u.day}/{u.month}/{u.year} ({calcularEdad(u.day, u.month, u.year)})
                               </span>
+                              {/* ----------------------------- */}
+
                             </div>
                           </div>
                           
