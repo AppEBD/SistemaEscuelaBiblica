@@ -12,10 +12,11 @@ const Login = () => {
 
   const isDir = formData.role === 'Administrador / Director';
 
-  // AQUÍ PONES LOS 11 CAMPOS DE TU VERSIÓN 1.0
-  const los11Campos = [
+  // LA LISTA OFICIAL DE TUS CAMPOS
+  const camposOficiales = [
     'Sede Central', 'La Isla', 'El Amatal', 'Las Delicias', 'El Manguito', 
-    'Buenos Aires', 'Corozal #1', 'El Porvenir', 'El Caulote', 'Corozal #2', 'Valle Encantado','La Playa'
+    'Buenos Aires', 'Corozal #1', 'El Porvenir', 'El Caulote', 'Corozal #2', 
+    'Valle Encantado', 'La Playa'
   ];
 
   useEffect(() => {
@@ -148,7 +149,7 @@ const Login = () => {
                <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 text-center w-full">Lugar / Campo</label>
                <select className={inputClass} value={formData.campo} onChange={e => setFormData({...formData, campo: e.target.value})} required>
                 <option value="">-- Seleccionar --</option>
-                {los11Campos.map(c => <option key={c} value={c}>{c}</option>)}
+                {camposOficiales.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           </div>
