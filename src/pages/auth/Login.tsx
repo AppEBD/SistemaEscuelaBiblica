@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Users, LogIn, RefreshCw } from 'lucide-react';
 import { doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase'; // Asegúrate de que esta ruta apunte a tu firebase.ts
+import { db } from '../../config/firebase'; // Revisa que tu ruta sea correcta
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,41 +10,43 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
-  // Saber si el que está intentando entrar es el jefe
   const isDir = formData.role === 'Administrador / Director';
 
   useEffect(() => {
-    // 1. Cargar si hay datos recordados
+    // Cargar datos recordados
     const savedData = localStorage.getItem('ebd_v2_remember');
     if (savedData) {
       setFormData(JSON.parse(savedData));
       setRememberMe(true);
     }
 
-    // 2. Revisar si hay sesión activa o en espera
-    const session = localStorage.getItem('ebd_v2_session');
-    if (session) {
-      const user = JSON.parse(session);
-      setIsLocked(true);
+    // Revisar estado de la sesión
+    const sessionStr = localStorage.getItem('ebd_v2_session');
+    if (sessionStr) {
+      const user = JSON.parse(sessionStr);
       
-      // Escuchar a Firebase en tiempo real
-      const unsubscribe = onSnapshot(doc(db, 'users', user.id), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.status === 'approved' && user.status !== 'approved') {
-            localStorage.setItem('ebd_v2_session', JSON.stringify({ ...user, status: 'approved' }));
-            window.location.reload(); 
+      if (user.status === 'pending') {
+        setIsLocked(true); // Bloqueamos la pantalla en gris
+        
+        // ENCENDEMOS EL RADAR EN TIEMPO REAL
+        const unsubscribe = onSnapshot(doc(db, 'users', user.id), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.status === 'approved') {
+              // El Admin acaba de aprobar en Firebase. ¡Actualizamos y entramos!
+              localStorage.setItem('ebd_v2_session', JSON.stringify({ ...user, status: 'approved' }));
+              window.location.reload(); 
+            }
+          } else {
+            // El documento ya no existe, el admin presionó "Denegar"
+            alert("Tu solicitud fue rechazada por el Administrador.");
+            localStorage.removeItem('ebd_v2_session');
+            window.location.reload();
           }
-        } else {
-          // Si el documento se borra, fue rechazado
-          if (user.role !== 'Administrador / Director') {
-            alert("Tu solicitud fue denegada por el Administrador.");
-            handleCancel();
-          }
-        }
-      });
+        });
 
-      return () => unsubscribe();
+        return () => unsubscribe(); // Limpiamos el radar si cambia de página
+      }
     }
   }, []);
 
@@ -56,14 +58,12 @@ const Login = () => {
     };
 
     if (formData.password === keys[formData.role]) {
-      // Guardar o borrar preferencia de recordar datos
       if (rememberMe) {
         localStorage.setItem('ebd_v2_remember', JSON.stringify(formData));
       } else {
         localStorage.removeItem('ebd_v2_remember');
       }
 
-      // Limpieza del ID para evitar el error de Firebase con la diagonal "/"
       const cleanRole = formData.role.replace(/[^a-zA-Z0-9]/g, '');
       const cleanName = formData.username.replace(/[^a-zA-Z0-9]/g, '');
       const userId = `${cleanRole}-${cleanName}`.toLowerCase();
@@ -75,20 +75,13 @@ const Login = () => {
       };
       
       try {
-        // Enviar a Firebase
         await setDoc(doc(db, 'users', userId), newUser);
-        
-        // Guardar localmente
         localStorage.setItem('ebd_v2_session', JSON.stringify(newUser));
-
-        if (isDir) {
-          window.location.reload(); // Director entra directo
-        } else {
-          setIsLocked(true); // Los demás quedan en gris
-        }
+        
+        // LA SOLUCIÓN: Recargamos para que el App.tsx evalúe la sesión y el radar inicie
+        window.location.reload();
       } catch (error) {
-        alert("Error al conectar con la base de datos. Revisa la consola.");
-        console.error(error);
+        alert("Error de conexión. Verifica Firebase.");
       }
     } else {
       alert("La contraseña no coincide con el cargo seleccionado.");
@@ -98,17 +91,16 @@ const Login = () => {
   const handleCancel = async () => {
     const session = JSON.parse(localStorage.getItem('ebd_v2_session') || '{}');
     if (session.id) {
-      await deleteDoc(doc(db, 'users', session.id)); 
+      try { await deleteDoc(doc(db, 'users', session.id)); } catch(e) {}
     }
     localStorage.removeItem('ebd_v2_session');
-    setIsLocked(false);
+    window.location.reload();
   };
 
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 10 - i);
 
-  // Clases dinámicas para el estado bloqueado (gris) o normal
   const inputClass = `w-full text-center px-4 py-3 sm:py-3.5 rounded-xl border outline-none transition-all text-sm sm:text-base ${
     isLocked ? 'bg-slate-200 border-transparent text-slate-500 cursor-not-allowed' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500'
   }`;
@@ -204,4 +196,4 @@ const Login = () => {
   );
 };
 
-export default Login; // <--- ESTA ES LA LÍNEA QUE LE FALTABA A VERCEL
+export default Login;
