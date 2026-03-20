@@ -8,11 +8,5 @@ export interface AuthUser {
     estado: 'Activo' | 'Pendiente';
     fechaNacimiento?: string;
     edad?: number | null;
-    grupo?: string; // Para logística
-}
-
-export interface LoginResponse {
-    exito: boolean;
-    mensaje?: string;
-    user?: AuthUser;
+    grupo?: string;
 }
