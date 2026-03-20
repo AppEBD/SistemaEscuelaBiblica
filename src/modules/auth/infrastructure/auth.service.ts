@@ -13,45 +13,28 @@ const CLAVES: Record<string, string> = {
 };
 
 export const AuthService = {
-    // Validar clave estática
-    validarCredenciales: (rol: UserRole, clave: string): boolean => {
-        return CLAVES[rol] === clave;
-    },
+    validarCredenciales: (rol: UserRole, clave: string): boolean => CLAVES[rol] === clave,
 
-    // Buscar usuario en Firestore
     buscarUsuario: async (rol: UserRole, nombre: string): Promise<AuthUser | null> => {
-        const q = query(
-            collection(db, "maestros"), 
-            where("nombre", "==", nombre.trim()),
-            where("clase", "==", rol)
-        );
+        const q = query(collection(db, "maestros"), where("nombre", "==", nombre.trim()), where("clase", "==", rol));
         const snapshot = await getDocs(q);
         if (snapshot.empty) return null;
-        
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as AuthUser;
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
     },
 
-    // Registrar solicitud nueva si no existe
     registrarSolicitud: async (datos: Partial<AuthUser>) => {
-        await addDoc(collection(db, "maestros"), {
-            ...datos,
-            estado: 'Pendiente',
-            createdAt: Date.now()
-        });
+        await addDoc(collection(db, "maestros"), { ...datos, estado: 'Pendiente', createdAt: Date.now() });
     },
 
-    // Persistencia en LocalStorage
     sesion: {
         guardar: (rol: string, datos: AuthUser | null) => {
             localStorage.setItem('rol_dominical', rol);
             if (datos) localStorage.setItem('datos_usuario_dominical', JSON.stringify(datos));
         },
-        recuperar: () => {
-            const rol = localStorage.getItem('rol_dominical');
-            const datos = localStorage.getItem('datos_usuario_dominical');
-            return { rol, user: datos ? JSON.parse(datos) : null };
-        },
+        recuperar: () => ({
+            rol: localStorage.getItem('rol_dominical'),
+            user: localStorage.getItem('datos_usuario_dominical') ? JSON.parse(localStorage.getItem('datos_usuario_dominical')!) : null
+        }),
         borrar: () => {
             localStorage.removeItem('rol_dominical');
             localStorage.removeItem('datos_usuario_dominical');
