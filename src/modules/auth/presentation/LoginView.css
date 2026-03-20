@@ -1,0 +1,86 @@
+/* Centrado global de la página */
+.login-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f3f4f6; /* Color de fondo suave */
+    padding: 20px;
+}
+
+/* Estilo para la tarjeta del formulario */
+.login-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px; /* Ancho máximo en pantallas grandes */
+    text-align: center;
+}
+
+/* Título */
+.login-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 28px;
+    color: #1f2937;
+    font-weight: 800;
+}
+
+/* Subtítulo */
+.login-subtitle {
+    margin-bottom: 30px;
+    font-size: 16px;
+    color: #6b7280;
+}
+
+/* Estilos comunes para inputs y selects */
+.login-form input,
+.login-form select {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    font-size: 16px;
+    background-color: #f9fafb;
+}
+
+.login-form input:focus,
+.login-form select:focus {
+    outline: none;
+    border-color: #3b82f6; /* Color azul de enfoque */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Botón Ingresar */
+.login-button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: #3b82f6;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-button:hover {
+    background-color: #2563eb;
+}
+
+/* Ícono de iglesia */
+.login-icon-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.login-icon {
+    font-size: 40px;
+    color: #3b82f6;
+}
