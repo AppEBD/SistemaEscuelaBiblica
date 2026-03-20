@@ -12,9 +12,7 @@ const firebaseConfig = {
   measurementId: "G-V6NZ56D44V"
 };
 
-// Inicialización
 const app = initializeApp(firebaseConfig);
 
-// Exportamos servicios para el resto de la app
 export const db = getFirestore(app);
 export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
