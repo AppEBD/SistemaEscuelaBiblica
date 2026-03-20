@@ -1,51 +1,45 @@
 import React from 'react';
 import { useAuth } from './modules/auth/application/useAuth';
 import { LoginView } from './modules/auth/presentation/LoginView';
-// Importaremos los otros dashboards conforme los vayamos creando
-// import { DashboardView } from './modules/shared/presentation/DashboardView';
 
 const App: React.FC = () => {
   const { userRole, userData, logout } = useAuth();
 
-  // Si no hay usuario, mostramos el login que ya es responsive
+  // Si no ha iniciado sesión, mostramos el Login
   if (!userRole) {
     return <LoginView />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Container Responsive: max-w-7xl en escritorio, full en móvil */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
-        {/* Header Adaptable */}
-        <header className="flex flex-col sm:flex-row justify-between items-center py-6 gap-4 border-b border-slate-200">
-          <div className="text-center sm:text-left">
-            <h1 className="text-2xl font-black text-slate-800">Panel de Control</h1>
-            <p className="text-sm text-slate-500 font-medium">
-              Hola, {userData?.nombre || 'Usuario'} | {userRole}
+    <div className="min-h-screen bg-slate-50">
+      {/* HEADER RESPONSIVE */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 p-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-black text-indigo-600">EBD v2.0</h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {userRole} • {userData?.campo || 'Sede Central'}
             </p>
           </div>
-          
           <button 
             onClick={logout}
-            className="w-full sm:w-auto px-6 py-2 bg-white border border-rose-200 text-rose-500 font-bold rounded-xl shadow-sm hover:bg-rose-50 transition-all"
+            className="w-10 h-10 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
           >
-            <i className="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+            <i className="fas fa-sign-out-alt"></i>
           </button>
-        </header>
+        </div>
+      </header>
 
-        {/* Zona de Contenido Principal Adaptable */}
-        <main className="py-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Aquí se renderizarán los módulos de la V2.0 */}
-            <div className="p-6 bg-white rounded-3xl shadow-sm border border-slate-100">
-                <h3 className="font-bold">Módulo Cargado</h3>
-                <p className="text-sm text-slate-400">Bienvenido al sistema responsive de la Escuela Bíblica.</p>
-            </div>
+      {/* CONTENIDO PRINCIPAL RESPONSIVE */}
+      <main className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Aquí inyectaremos los Dashboards según el rol */}
+          <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
+            <h2 className="font-black text-slate-800">Bienvenido, {userData?.nombre}</h2>
+            <p className="text-sm text-slate-500 mt-2">El sistema se ha adaptado a tu dispositivo.</p>
           </div>
-        </main>
-
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
