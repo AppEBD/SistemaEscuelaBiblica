@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useAuth } from '../application/useAuth';
-import { Button } from '../../../shared/components/Button';
-import { UserRole } from '../domain/auth.model';
+// ¡Aquí conectamos los estilos mágicos!
+import './LoginView.css'; 
 
 export const LoginView: React.FC = () => {
     const { login, isLoading } = useAuth();
-    const [form, setForm] = useState({ rol: '' as UserRole, nombre: '', clave: '', campo: '', fechaNac: '' });
+    const [form, setForm] = useState({ rol: '', nombre: '', clave: '', campo: '', fechaNac: '' });
     const [status, setStatus] = useState({ error: '', info: '' });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus({ error: '', info: '' });
 
-        const res = await login(form.rol, form.clave, form.nombre, form.campo, form.fechaNac);
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, form.fechaNac);
         
         if (!res.exito) {
             setStatus({ ...status, error: res.mensaje });
@@ -22,19 +22,21 @@ export const LoginView: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 bg-slate-100">
-            <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-[32px] shadow-2xl animate-in zoom-in-95">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-3xl sm:text-4xl mx-auto mb-6">
-                    <i className="fas fa-church"></i>
-                </div>
-                
-                <h1 className="text-2xl font-black text-center text-slate-800 mb-2">Gestión EBD</h1>
-                <p className="text-sm text-center text-slate-500 mb-8">Ingresa tus datos para acceder</p>
+        <div className="login-wrapper">
+            <div className="login-card">
+                <i className="fa-solid fa-church login-icon"></i>
+                <h1 className="login-title">Gestión EBD</h1>
+                <p className="login-subtitle">Ingresa tus datos para acceder</p>
 
-                {status.info && <div className="mb-6 p-4 bg-amber-50 rounded-2xl text-xs font-bold text-amber-800 text-center">{status.info}</div>}
+                {status.info && <div className="login-info">{status.info}</div>}
 
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <select className="w-full p-4 rounded-2xl bg-slate-50 outline-none font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all" value={form.rol} onChange={(e) => setForm({...form, rol: e.target.value as UserRole})} required>
+                <form onSubmit={handleLogin}>
+                    <select 
+                        className="login-input" 
+                        value={form.rol} 
+                        onChange={(e) => setForm({...form, rol: e.target.value})} 
+                        required
+                    >
                         <option value="" disabled>Selecciona tu rol...</option>
                         <option value="MAESTRO">Maestro</option>
                         <option value="AUXILIAR">Auxiliar</option>
@@ -45,10 +47,26 @@ export const LoginView: React.FC = () => {
                     </select>
 
                     {form.rol && form.rol !== 'ADMIN' && (
-                        <div className="space-y-4 animate-in fade-in">
-                            <input type="text" placeholder="Nombre Completo" className="w-full p-4 rounded-2xl bg-slate-50 outline-none font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all" onChange={(e) => setForm({...form, nombre: e.target.value})} required />
-                            <input type="date" className="w-full p-4 rounded-2xl bg-slate-50 outline-none font-bold text-slate-700 text-sm focus:ring-2 focus:ring-indigo-100 transition-all" onChange={(e) => setForm({...form, fechaNac: e.target.value})} required />
-                            <select className="w-full p-4 rounded-2xl bg-slate-50 outline-none font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
+                        <>
+                            <input 
+                                type="text" 
+                                placeholder="Nombre Completo" 
+                                className="login-input" 
+                                onChange={(e) => setForm({...form, nombre: e.target.value})} 
+                                required 
+                            />
+                            <input 
+                                type="date" 
+                                className="login-input" 
+                                onChange={(e) => setForm({...form, fechaNac: e.target.value})} 
+                                required 
+                            />
+                            <select 
+                                className="login-input" 
+                                value={form.campo} 
+                                onChange={(e) => setForm({...form, campo: e.target.value})} 
+                                required
+                            >
                                 <option value="" disabled>Selecciona tu campo...</option>
                                 <option value="La Isla">La Isla</option>
                                 <option value="Las Delicias">Las Delicias</option>
@@ -62,14 +80,22 @@ export const LoginView: React.FC = () => {
                                 <option value="Valle Encantado">Valle Encantado</option>
                                 <option value="La Playa">La Playa</option>
                             </select>
-                        </div>
+                        </>
                     )}
 
-                    <input type="password" placeholder="Contraseña" className="w-full p-4 rounded-2xl bg-slate-50 outline-none font-black tracking-widest text-slate-700 text-center text-lg focus:ring-2 focus:ring-indigo-100 transition-all" onChange={(e) => setForm({...form, clave: e.target.value})} required />
+                    <input 
+                        type="password" 
+                        placeholder="Contraseña" 
+                        className="login-input" 
+                        onChange={(e) => setForm({...form, clave: e.target.value})} 
+                        required 
+                    />
 
-                    {status.error && <p className="text-rose-500 text-xs text-center font-bold animate-pulse">{status.error}</p>}
+                    {status.error && <p className="login-error">{status.error}</p>}
 
-                    <Button type="submit" className="w-full py-4 mt-2" isLoading={isLoading}>Ingresar</Button>
+                    <button type="submit" className="login-btn" disabled={isLoading}>
+                        {isLoading ? 'Ingresando...' : 'Ingresar'}
+                    </button>
                 </form>
             </div>
         </div>
