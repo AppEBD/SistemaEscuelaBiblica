@@ -1,25 +1,49 @@
 import React, { useState } from 'react';
 import { useAuth } from '../application/useAuth';
-// ¡Aquí conectamos los estilos mágicos!
-import './LoginView.css'; 
+import './LoginView.css';
 
 export const LoginView: React.FC = () => {
     const { login, isLoading } = useAuth();
-    const [form, setForm] = useState({ rol: '', nombre: '', clave: '', campo: '', fechaNac: '' });
+    const [form, setForm] = useState({
+        rol: '',
+        nombre: '',
+        clave: '',
+        campo: '',
+        fechaNac: '',
+    });
     const [status, setStatus] = useState({ error: '', info: '' });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus({ error: '', info: '' });
 
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, form.fechaNac);
-        
-        if (!res.exito) {
-            setStatus({ ...status, error: res.mensaje });
-        } else if (res.mensaje === "SOLICITUD_ENVIADA" || res.mensaje === "PENDIENTE_APROBACION") {
-            setStatus({ ...status, info: "Tu solicitud está en espera de aprobación por el Director." });
+        try {
+            const res = await login(
+                form.rol as any,
+                form.clave,
+                form.nombre,
+                form.campo,
+                form.fechaNac
+            );
+
+            if (!res.exito) {
+                setStatus({ error: res.mensaje, info: '' });
+            } else if (res.mensaje === 'SOLICITUD_ENVIADA') {
+                setStatus({ error: '', info: 'Tu solicitud fue enviada. El Director debe aprobarte para ingresar.' });
+            } else if (res.mensaje === 'PENDIENTE_APROBACION') {
+                setStatus({ error: '', info: 'Tu cuenta está pendiente de aprobación por el Director.' });
+            }
+        } catch (err) {
+            setStatus({ error: 'Ocurrió un error inesperado.', info: '' });
         }
     };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setStatus({ error: '', info: '' });
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const esAdmin = form.rol === 'ADMIN';
 
     return (
         <div className="login-wrapper">
@@ -30,11 +54,12 @@ export const LoginView: React.FC = () => {
 
                 {status.info && <div className="login-info">{status.info}</div>}
 
-                <form onSubmit={handleLogin}>
-                    <select 
-                        className="login-input" 
-                        value={form.rol} 
-                        onChange={(e) => setForm({...form, rol: e.target.value})} 
+                <form onSubmit={handleLogin} noValidate>
+                    <select
+                        name="rol"
+                        className="login-input"
+                        value={form.rol}
+                        onChange={handleChange}
                         required
                     >
                         <option value="" disabled>Selecciona tu rol...</option>
@@ -46,25 +71,30 @@ export const LoginView: React.FC = () => {
                         <option value="ADMIN">Director (Admin)</option>
                     </select>
 
-                    {form.rol && form.rol !== 'ADMIN' && (
+                    {form.rol && !esAdmin && (
                         <>
-                            <input 
-                                type="text" 
-                                placeholder="Nombre Completo" 
-                                className="login-input" 
-                                onChange={(e) => setForm({...form, nombre: e.target.value})} 
-                                required 
+                            <input
+                                type="text"
+                                name="nombre"
+                                placeholder="Nombre Completo"
+                                className="login-input"
+                                value={form.nombre}
+                                onChange={handleChange}
+                                required
                             />
-                            <input 
-                                type="date" 
-                                className="login-input" 
-                                onChange={(e) => setForm({...form, fechaNac: e.target.value})} 
-                                required 
+                            <input
+                                type="date"
+                                name="fechaNac"
+                                className="login-input"
+                                value={form.fechaNac}
+                                onChange={handleChange}
+                                required
                             />
-                            <select 
-                                className="login-input" 
-                                value={form.campo} 
-                                onChange={(e) => setForm({...form, campo: e.target.value})} 
+                            <select
+                                name="campo"
+                                className="login-input"
+                                value={form.campo}
+                                onChange={handleChange}
                                 required
                             >
                                 <option value="" disabled>Selecciona tu campo...</option>
@@ -83,17 +113,23 @@ export const LoginView: React.FC = () => {
                         </>
                     )}
 
-                    <input 
-                        type="password" 
-                        placeholder="Contraseña" 
-                        className="login-input" 
-                        onChange={(e) => setForm({...form, clave: e.target.value})} 
-                        required 
+                    <input
+                        type="password"
+                        name="clave"
+                        placeholder="Contraseña"
+                        className="login-input"
+                        value={form.clave}
+                        onChange={handleChange}
+                        required
                     />
 
                     {status.error && <p className="login-error">{status.error}</p>}
 
-                    <button type="submit" className="login-btn" disabled={isLoading}>
+                    <button
+                        type="submit"
+                        className="login-btn"
+                        disabled={isLoading || !form.rol || !form.clave}
+                    >
                         {isLoading ? 'Ingresando...' : 'Ingresar'}
                     </button>
                 </form>
