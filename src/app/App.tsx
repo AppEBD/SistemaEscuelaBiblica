@@ -1,41 +1,54 @@
-import React from 'react';
-import { useAuth } from '../modules/auth/application/useAuth';
-import { LoginView } from '../modules/auth/presentation/LoginView';
+body {
+    margin: 0;
+    background-color: #f1f5f9;
+    font-family: system-ui, -apple-system, sans-serif;
+}
 
-const App: React.FC = () => {
-  const { userRole, userData, logout } = useAuth();
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
-  if (!userRole) {
-    return <LoginView />;
-  }
+.app-header-info h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    color: #4f46e5;
+}
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-black text-indigo-600">EBD v2.0</h1>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              {userRole} • {userData?.campo || 'Sede Central'}
-            </p>
-          </div>
-          <button 
-            onClick={logout}
-            className="w-10 h-10 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
-          >
-            <i className="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-      </header>
+.app-header-info p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-      <main className="p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-slate-100">
-          <h2 className="font-black text-2xl text-slate-800">¡Bienvenido, {userData?.nombre || 'Director'}!</h2>
-          <p className="text-sm text-slate-500 mt-2">Pronto conectaremos aquí tu panel de {userRole.toLowerCase()}.</p>
-        </div>
-      </main>
-    </div>
-  );
-};
+.btn-logout {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-export default App;
+.btn-logout:hover {
+    background-color: #fecaca;
+}
+
+.app-main {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
