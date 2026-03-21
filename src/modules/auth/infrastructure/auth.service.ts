@@ -10,23 +10,39 @@ const CLAVES: Record<string, string> = {
 export const AuthService = {
     validarCredenciales: (rol: UserRole, clave: string): boolean => CLAVES[rol] === clave,
 
-    // Función auxiliar para saber en qué colección buscar (ej. "usuarios_maestro")
+    // ¡NUEVO! Crea una carpeta en la base de datos según el rol
     obtenerColeccion: (rol: string) => `usuarios_${rol.toLowerCase()}`,
 
     buscarUsuario: async (rol: UserRole, nombre: string): Promise<AuthUser | null> => {
         const coleccionNombre = AuthService.obtenerColeccion(rol);
-        const q = query(collection(db, coleccionNombre), where("nombre", "==", nombre.trim()));
+        // Normalizamos el nombre (sin espacios extra y en minúsculas) para evitar duplicados
+        const nombreBuscable = nombre.trim().toLowerCase(); 
+        
+        const q = query(collection(db, coleccionNombre), where("nombreNormalizado", "==", nombreBuscable));
         const snapshot = await getDocs(q);
-        if (snapshot.empty) return null;
+        
+        if (snapshot.empty) {
+            // Buscamos a los viejos usuarios (por si tienes algunos creados antes de esta actualización)
+            const qAntiguo = query(collection(db, coleccionNombre), where("nombre", "==", nombre.trim()));
+            const snapAntiguo = await getDocs(qAntiguo);
+            if(snapAntiguo.empty) return null;
+            return { id: snapAntiguo.docs[0].id, ...snapAntiguo.docs[0].data() } as AuthUser;
+        }
+        
         return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
     },
 
     registrarSolicitud: async (datos: Partial<AuthUser>) => {
         const coleccionNombre = AuthService.obtenerColeccion(datos.rol || 'MAESTRO');
+        const nombreBuscable = datos.nombre ? datos.nombre.trim().toLowerCase() : '';
+        
         const docRef = await addDoc(collection(db, coleccionNombre), { 
-            ...datos, estado: 'Pendiente', createdAt: Date.now() 
+            ...datos, 
+            nombreNormalizado: nombreBuscable, // Guardamos el nombre oculto anti-duplicados
+            estado: 'Pendiente', 
+            createdAt: Date.now() 
         });
-        return docRef.id; // Retornamos el ID para escucharlo en tiempo real
+        return docRef.id;
     },
 
     sesion: {
