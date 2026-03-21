@@ -14,6 +14,7 @@ export const LoginView: React.FC = () => {
     
     const [recordar, setRecordar] = useState(true);
     const [isPending, setIsPending] = useState(false);
+    const [isReturning, setIsReturning] = useState(false);
 
     const rolesConfig = [
         { id: 'MAESTRO', name: 'Maestro', icon: 'fa-chalkboard-user' },
@@ -29,8 +30,8 @@ export const LoginView: React.FC = () => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
 
-    // ESCUCHADOR EN TIEMPO REAL Y MEMORIA CACHÉ
     useEffect(() => {
+        // 1. Revisamos si estaba pendiente (prioridad 1)
         const pendingData = localStorage.getItem('usuario_en_espera');
         if (pendingData) {
             const datos = JSON.parse(pendingData);
@@ -38,24 +39,27 @@ export const LoginView: React.FC = () => {
             setIsPending(true);
             setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación por el Director." });
 
-            // Nos suscribimos a los cambios de su documento en tiempo real
             const coleccion = AuthService.obtenerColeccion(datos.form.rol);
             const unsubscribe = onSnapshot(doc(db, coleccion, datos.id), (docSnap) => {
                 if (!docSnap.exists()) {
-                    // SI EL ADMIN LO DENEGÓ / ELIMINÓ
                     localStorage.removeItem('usuario_en_espera');
                     setIsPending(false);
                     setForm(estadoInicial);
                     setStatus({ info: '', error: "Tu solicitud fue DENEGADA. Los datos han sido borrados de la base de datos." });
                 } else if (docSnap.data().estado === 'Activo') {
-                    // SI EL ADMIN LO APROBÓ
                     localStorage.removeItem('usuario_en_espera');
                     AuthService.sesion.guardar(datos.form.rol, { id: docSnap.id, ...docSnap.data() }, recordar);
                     window.location.reload();
                 }
             });
-
             return () => unsubscribe();
+        }
+
+        // 2. Si no estaba pendiente, vemos si es alguien que cerró sesión (prioridad 2)
+        const recentData = localStorage.getItem('usuario_reciente');
+        if (recentData) {
+            setForm(JSON.parse(recentData));
+            setIsReturning(true);
         }
     }, [recordar]);
 
@@ -73,22 +77,31 @@ export const LoginView: React.FC = () => {
             fechaCompleta = `${form.birthYear}-${form.birthMonth}-${form.birthDay}`;
         }
 
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar);
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar, isPending);
         
         if (!res.exito) {
-            setStatus({ ...status, error: res.mensaje });
+            if (res.mensaje === "DENEGADO") {
+                localStorage.removeItem('usuario_en_espera');
+                setIsPending(false); setForm(estadoInicial);
+                setStatus({ info: '', error: "Tu solicitud fue DENEGADA por el Director." });
+            } else {
+                setStatus({ ...status, error: res.mensaje });
+            }
         } else if (res.mensaje === "SOLICITUD_ENVIADA" || res.mensaje === "PENDIENTE_APROBACION") {
-            // Guardamos en memoria para que sobreviva al recargar
             localStorage.setItem('usuario_en_espera', JSON.stringify({ id: res.id, form }));
-            setIsPending(true);
+            setIsPending(true); setIsReturning(false);
             setStatus({ ...status, info: "Tu cuenta está pendiente. Espera a que el Director te apruebe." });
-            window.location.reload(); // Recargamos para activar el listener en tiempo real
+        } else if (res.mensaje === "ACCESO_CONCEDIDO" || res.mensaje === "Bienvenido Director") {
+            // ¡MAGIA! Guardamos sus datos para que al cerrar sesión el formulario esté en gris
+            localStorage.setItem('usuario_reciente', JSON.stringify(form));
+            window.location.reload();
         }
     };
 
-    const cancelarSolicitud = () => {
+    const limpiarCuenta = () => {
         localStorage.removeItem('usuario_en_espera');
-        setIsPending(false);
+        localStorage.removeItem('usuario_reciente');
+        setIsPending(false); setIsReturning(false);
         setForm(estadoInicial);
         setStatus({ info: '', error: '' });
     };
@@ -104,7 +117,7 @@ export const LoginView: React.FC = () => {
                 {status.error && <p className="ebd-error animate-fade-in">{status.error}</p>}
 
                 <form onSubmit={handleLogin}>
-                    <div className={isPending ? "ebd-form-locked" : ""}>
+                    <div className={(isPending || isReturning) ? "ebd-form-locked" : ""}>
                         <p className="ebd-role-selector-title">Tipo de Usuario</p>
                         <div className="ebd-roles-grid">
                             {rolesConfig.map(role => (
@@ -115,7 +128,6 @@ export const LoginView: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* VALIDACIÓN: Bloqueamos los inputs si no ha elegido Rol */}
                         {!form.rol ? (
                             <div className="ebd-info animate-fade-in" style={{ backgroundColor: '#e0e7ff', color: '#4338ca', borderLeftColor: '#4f46e5' }}>
                                 👆 Selecciona tu tipo de usuario arriba para continuar.
@@ -170,19 +182,21 @@ export const LoginView: React.FC = () => {
                         )}
                     </div>
 
-                    <button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || !form.rol}>
+                    <button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || (!form.rol && !isReturning)}>
                         {isLoading ? (
                             <><i className="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...</>
                         ) : isPending ? (
                             <><i className="fa-solid fa-clock mr-2"></i> Esperando Aprobación...</>
+                        ) : isReturning ? (
+                            <><i className="fa-solid fa-arrow-right-to-bracket mr-2"></i> Ingresar de nuevo</>
                         ) : (
                             form.rol === 'ADMIN' ? 'Ingresar como Director' : 'Enviar Solicitud de Registro'
                         )}
                     </button>
                     
-                    {isPending && (
-                        <button type="button" className="ebd-cancel-btn" onClick={cancelarSolicitud}>
-                            Quiero modificar mis datos / Iniciar con otro usuario
+                    {(isPending || isReturning) && (
+                        <button type="button" className="ebd-cancel-btn" onClick={limpiarCuenta}>
+                            {isPending ? 'Quiero modificar mis datos / Cambiar usuario' : 'Ingresar con otra cuenta'}
                         </button>
                     )}
                 </form>
