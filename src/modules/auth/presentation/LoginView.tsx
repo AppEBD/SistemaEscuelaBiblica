@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../application/useAuth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../core/firebase/firebase.config';
+import { AuthService } from '../infrastructure/auth.service';
 import './LoginView.css'; 
 
 export const LoginView: React.FC = () => {
@@ -26,6 +29,36 @@ export const LoginView: React.FC = () => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
 
+    // ESCUCHADOR EN TIEMPO REAL Y MEMORIA CACHÉ
+    useEffect(() => {
+        const pendingData = localStorage.getItem('usuario_en_espera');
+        if (pendingData) {
+            const datos = JSON.parse(pendingData);
+            setForm(datos.form);
+            setIsPending(true);
+            setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación por el Director." });
+
+            // Nos suscribimos a los cambios de su documento en tiempo real
+            const coleccion = AuthService.obtenerColeccion(datos.form.rol);
+            const unsubscribe = onSnapshot(doc(db, coleccion, datos.id), (docSnap) => {
+                if (!docSnap.exists()) {
+                    // SI EL ADMIN LO DENEGÓ / ELIMINÓ
+                    localStorage.removeItem('usuario_en_espera');
+                    setIsPending(false);
+                    setForm(estadoInicial);
+                    setStatus({ info: '', error: "Tu solicitud fue DENEGADA. Los datos han sido borrados de la base de datos." });
+                } else if (docSnap.data().estado === 'Activo') {
+                    // SI EL ADMIN LO APROBÓ
+                    localStorage.removeItem('usuario_en_espera');
+                    AuthService.sesion.guardar(datos.form.rol, { id: docSnap.id, ...docSnap.data() }, recordar);
+                    window.location.reload();
+                }
+            });
+
+            return () => unsubscribe();
+        }
+    }, [recordar]);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus({ error: '', info: '' });
@@ -40,22 +73,24 @@ export const LoginView: React.FC = () => {
             fechaCompleta = `${form.birthYear}-${form.birthMonth}-${form.birthDay}`;
         }
 
-        // Pasamos isPending como parámetro para evitar duplicados
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar, isPending);
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar);
         
         if (!res.exito) {
-            // SI FUE DENEGADO POR EL ADMIN
-            if (res.mensaje === "DENEGADO") {
-                setIsPending(false); // Desbloqueamos
-                setForm(estadoInicial); // Limpiamos todo
-                setStatus({ info: '', error: "Tu solicitud fue denegada por el Director. Los datos han sido borrados de la base de datos." });
-            } else {
-                setStatus({ ...status, error: res.mensaje });
-            }
+            setStatus({ ...status, error: res.mensaje });
         } else if (res.mensaje === "SOLICITUD_ENVIADA" || res.mensaje === "PENDIENTE_APROBACION") {
-            setStatus({ ...status, info: "Tu cuenta está pendiente. Espera a que el Director te apruebe y presiona 'Verificar Aprobación'." });
+            // Guardamos en memoria para que sobreviva al recargar
+            localStorage.setItem('usuario_en_espera', JSON.stringify({ id: res.id, form }));
             setIsPending(true);
+            setStatus({ ...status, info: "Tu cuenta está pendiente. Espera a que el Director te apruebe." });
+            window.location.reload(); // Recargamos para activar el listener en tiempo real
         }
+    };
+
+    const cancelarSolicitud = () => {
+        localStorage.removeItem('usuario_en_espera');
+        setIsPending(false);
+        setForm(estadoInicial);
+        setStatus({ info: '', error: '' });
     };
 
     return (
@@ -66,6 +101,7 @@ export const LoginView: React.FC = () => {
                 <p className="ebd-subtitle">Selecciona tu usuario e ingresa</p>
 
                 {status.info && <div className="ebd-info animate-fade-in">{status.info}</div>}
+                {status.error && <p className="ebd-error animate-fade-in">{status.error}</p>}
 
                 <form onSubmit={handleLogin}>
                     <div className={isPending ? "ebd-form-locked" : ""}>
@@ -79,67 +115,74 @@ export const LoginView: React.FC = () => {
                             ))}
                         </div>
 
-                        {form.rol && form.rol !== 'ADMIN' && (
+                        {/* VALIDACIÓN: Bloqueamos los inputs si no ha elegido Rol */}
+                        {!form.rol ? (
+                            <div className="ebd-info animate-fade-in" style={{ backgroundColor: '#e0e7ff', color: '#4338ca', borderLeftColor: '#4f46e5' }}>
+                                👆 Selecciona tu tipo de usuario arriba para continuar.
+                            </div>
+                        ) : (
                             <div className="animate-fade-in">
-                                <div className="ebd-form-group">
-                                    <label className="ebd-label">Nombre Completo</label>
-                                    <input type="text" placeholder="Ej: Juan Pérez" className="ebd-input" value={form.nombre} onChange={(e) => setForm({...form, nombre: e.target.value})} required />
-                                </div>
+                                {form.rol !== 'ADMIN' && (
+                                    <>
+                                        <div className="ebd-form-group">
+                                            <label className="ebd-label">Nombre Completo</label>
+                                            <input type="text" placeholder="Ej: Juan Pérez" className="ebd-input" value={form.nombre} onChange={(e) => setForm({...form, nombre: e.target.value})} required />
+                                        </div>
+
+                                        <div className="ebd-form-group">
+                                            <label className="ebd-label">Fecha de Nacimiento</label>
+                                            <div className="ebd-date-grid">
+                                                <select className="ebd-input" value={form.birthDay} onChange={(e) => setForm({...form, birthDay: e.target.value})} required>
+                                                    <option value="" disabled>Día</option>
+                                                    {days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}
+                                                </select>
+                                                <select className="ebd-input" value={form.birthMonth} onChange={(e) => setForm({...form, birthMonth: e.target.value})} required>
+                                                    <option value="" disabled>Mes</option>
+                                                    {months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}
+                                                </select>
+                                                <select className="ebd-input" value={form.birthYear} onChange={(e) => setForm({...form, birthYear: e.target.value})} required>
+                                                    <option value="" disabled>Año</option>
+                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="ebd-form-group">
+                                            <label className="ebd-label">Campo / Iglesia</label>
+                                            <select className="ebd-input" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
+                                                <option value="" disabled>Selecciona tu campo...</option>
+                                                <option value="La Isla">La Isla</option><option value="Las Delicias">Las Delicias</option><option value="El Amatal">El Amatal</option><option value="El Manguito">El Manguito</option><option value="Buenos Aires">Buenos Aires</option><option value="Corozal #1">Corozal #1</option><option value="El Porvenir">El Porvenir</option><option value="El Caulote">El Caulote</option><option value="Corozal #2">Corozal #2</option><option value="Valle Encantado">Valle Encantado</option><option value="La Playa">La Playa</option>
+                                            </select>
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="ebd-form-group">
-                                    <label className="ebd-label">Fecha de Nacimiento</label>
-                                    <div className="ebd-date-grid">
-                                        <select className="ebd-input" value={form.birthDay} onChange={(e) => setForm({...form, birthDay: e.target.value})} required>
-                                            <option value="" disabled>Día</option>
-                                            {days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}
-                                        </select>
-                                        <select className="ebd-input" value={form.birthMonth} onChange={(e) => setForm({...form, birthMonth: e.target.value})} required>
-                                            <option value="" disabled>Mes</option>
-                                            {months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}
-                                        </select>
-                                        <select className="ebd-input" value={form.birthYear} onChange={(e) => setForm({...form, birthYear: e.target.value})} required>
-                                            <option value="" disabled>Año</option>
-                                            {years.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
-                                    </div>
+                                    <label className="ebd-label">Contraseña de Acceso</label>
+                                    <input type="password" placeholder="••••••" className="ebd-input" value={form.clave} onChange={(e) => setForm({...form, clave: e.target.value})} required />
                                 </div>
 
-                                <div className="ebd-form-group">
-                                    <label className="ebd-label">Campo / Iglesia</label>
-                                    <select className="ebd-input" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
-                                        <option value="" disabled>Selecciona tu campo...</option>
-                                        <option value="La Isla">La Isla</option><option value="Las Delicias">Las Delicias</option><option value="El Amatal">El Amatal</option><option value="El Manguito">El Manguito</option><option value="Buenos Aires">Buenos Aires</option><option value="Corozal #1">Corozal #1</option><option value="El Porvenir">El Porvenir</option><option value="El Caulote">El Caulote</option><option value="Corozal #2">Corozal #2</option><option value="Valle Encantado">Valle Encantado</option><option value="La Playa">La Playa</option>
-                                    </select>
-                                </div>
+                                <label className="ebd-checkbox-group">
+                                    <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
+                                    Recordar mi contraseña
+                                </label>
                             </div>
                         )}
-
-                        <div className="ebd-form-group">
-                            <label className="ebd-label">Contraseña de Acceso</label>
-                            <input type="password" placeholder="••••••" className="ebd-input" value={form.clave} onChange={(e) => setForm({...form, clave: e.target.value})} required />
-                        </div>
-
-                        <label className="ebd-checkbox-group">
-                            <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
-                            Recordar mi contraseña
-                        </label>
                     </div>
 
-                    {status.error && <p className="ebd-error animate-fade-in">{status.error}</p>}
-
-                    <button type="submit" className="ebd-submit-btn" disabled={isLoading}>
+                    <button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || !form.rol}>
                         {isLoading ? (
                             <><i className="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...</>
                         ) : isPending ? (
-                            <><i className="fa-solid fa-rotate mr-2"></i> Verificar Aprobación</>
+                            <><i className="fa-solid fa-clock mr-2"></i> Esperando Aprobación...</>
                         ) : (
                             form.rol === 'ADMIN' ? 'Ingresar como Director' : 'Enviar Solicitud de Registro'
                         )}
                     </button>
                     
                     {isPending && (
-                        <button type="button" className="ebd-cancel-btn" onClick={() => setIsPending(false)}>
-                            Quiero modificar mis datos / Cambiar usuario
+                        <button type="button" className="ebd-cancel-btn" onClick={cancelarSolicitud}>
+                            Quiero modificar mis datos / Iniciar con otro usuario
                         </button>
                     )}
                 </form>
