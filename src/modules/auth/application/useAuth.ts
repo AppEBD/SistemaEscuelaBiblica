@@ -20,8 +20,7 @@ export const useAuth = () => {
         return edad;
     };
 
-    // NUEVO: Agregamos el parámetro isVerifying
-    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean, isVerifying: boolean = false) => {
+    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean) => {
         setIsLoading(true);
         try {
             if (!AuthService.validarCredenciales(rol, clave)) return { exito: false, mensaje: "Clave incorrecta." };
@@ -34,26 +33,19 @@ export const useAuth = () => {
 
             const usuarioExistente = await AuthService.buscarUsuario(rol, nombre);
             
-            // Si el usuario NO existe
             if (!usuarioExistente) {
-                if (isVerifying) {
-                    // Si estaba verificando y ya no existe, significa que el Admin lo DENEGÓ y borró.
-                    return { exito: false, mensaje: "DENEGADO" };
-                }
-                // Si no estaba verificando, es un registro nuevo
                 const edad = calcularEdad(fechaNac);
-                await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
-                return { exito: true, mensaje: "SOLICITUD_ENVIADA" };
+                const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
+                return { exito: true, mensaje: "SOLICITUD_ENVIADA", id: nuevoId };
             }
 
-            // Si el usuario SÍ existe
             if (usuarioExistente.estado === 'Activo') {
                 AuthService.sesion.guardar(rol, usuarioExistente, recordar);
                 window.location.reload();
                 return { exito: true, mensaje: "ACCESO_CONCEDIDO" };
             }
 
-            return { exito: true, mensaje: "PENDIENTE_APROBACION" };
+            return { exito: true, mensaje: "PENDIENTE_APROBACION", id: usuarioExistente.id };
         } catch (error) {
             return { exito: false, mensaje: "Error de conexión con la base de datos." };
         } finally {
