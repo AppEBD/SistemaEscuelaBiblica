@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config';
 import { AuthService } from '../../auth/infrastructure/auth.service';
+// Importamos tu nuevo y flamante componente Modal
+import Modal from '../../../shared/components/Modal'; 
 import './AdminDashboard.css';
 
 export const AdminDashboard = () => {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // Estado para el modal de edición
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
 
-    // Escucha en tiempo real a todas las colecciones de roles
     useEffect(() => {
         const roles = ['MAESTRO', 'AUXILIAR', 'LOGISTICA', 'SECRETARIA', 'TESORERO'];
         const unsubscribes: any[] = [];
@@ -24,11 +24,9 @@ export const AdminDashboard = () => {
                 const nuevosDeEsteRol = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
                 setUsuarios(prev => {
-                    // Quitamos los viejos de este rol y metemos los actualizados
                     const filtrados = prev.filter(u => u.rol !== rol);
                     const todos = [...filtrados, ...nuevosDeEsteRol];
                     
-                    // Ordenamos: Pendientes primero, luego activos
                     return todos.sort((a, b) => {
                         if (a.estado === 'Pendiente' && b.estado !== 'Pendiente') return -1;
                         if (a.estado !== 'Pendiente' && b.estado === 'Pendiente') return 1;
@@ -125,30 +123,51 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* MODAL DE EDICIÓN */}
-            {editandoUser && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h3>Editar Usuario</h3>
-                        <form onSubmit={guardarEdicion}>
-                            <div className="ebd-form-group">
-                                <label>Nombre Completo</label>
-                                <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required />
-                            </div>
-                            <div className="ebd-form-group">
-                                <label>Campo / Iglesia</label>
-                                <select className="ebd-input" value={editandoUser.campo} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required>
-                                    <option value="La Isla">La Isla</option><option value="Las Delicias">Las Delicias</option><option value="El Amatal">El Amatal</option><option value="El Manguito">El Manguito</option><option value="Buenos Aires">Buenos Aires</option><option value="Corozal #1">Corozal #1</option><option value="El Porvenir">El Porvenir</option><option value="El Caulote">El Caulote</option><option value="Corozal #2">Corozal #2</option><option value="Valle Encantado">Valle Encantado</option><option value="La Playa">La Playa</option>
-                                </select>
-                            </div>
-                            <div className="admin-actions" style={{ marginTop: '20px' }}>
-                                <button type="button" className="btn-denegar" onClick={() => setEditandoUser(null)}>Cancelar</button>
-                                <button type="submit" className="btn-aprobar">Guardar Cambios</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* AQUÍ LLAMAMOS A TU NUEVO COMPONENTE MODAL */}
+            <Modal 
+                isOpen={editandoUser !== null} 
+                onClose={() => setEditandoUser(null)} 
+                title="Editar Usuario"
+            >
+                {/* Lo que va aquí adentro es el "children" */}
+                {editandoUser && (
+                    <form onSubmit={guardarEdicion}>
+                        <label>Nombre Completo</label>
+                        <input 
+                            className="modal-input" 
+                            type="text" 
+                            value={editandoUser.nombre} 
+                            onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} 
+                            required 
+                        />
+                        
+                        <label>Campo / Iglesia</label>
+                        <select 
+                            className="modal-input" 
+                            value={editandoUser.campo} 
+                            onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} 
+                            required
+                        >
+                            <option value="La Isla">La Isla</option>
+                            <option value="Las Delicias">Las Delicias</option>
+                            <option value="El Amatal">El Amatal</option>
+                            <option value="El Manguito">El Manguito</option>
+                            <option value="Buenos Aires">Buenos Aires</option>
+                            <option value="Corozal #1">Corozal #1</option>
+                            <option value="El Porvenir">El Porvenir</option>
+                            <option value="El Caulote">El Caulote</option>
+                            <option value="Corozal #2">Corozal #2</option>
+                            <option value="Valle Encantado">Valle Encantado</option>
+                            <option value="La Playa">La Playa</option>
+                        </select>
+                        
+                        <div className="admin-actions">
+                            <button type="button" className="btn-denegar" onClick={() => setEditandoUser(null)}>Cancelar</button>
+                            <button type="submit" className="btn-aprobar">Guardar Cambios</button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
         </div>
     );
 };
