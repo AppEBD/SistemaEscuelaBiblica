@@ -76,9 +76,15 @@
     color: #94a3b8;
 }
 
-.btn-aprobar {
+/* Nuevos botones de Aprobar y Denegar */
+.admin-actions {
+    display: flex;
+    gap: 10px;
     margin-top: auto;
-    width: 100%;
+}
+
+.btn-aprobar {
+    flex: 1;
     padding: 12px;
     background: #10b981;
     color: white;
@@ -90,3 +96,17 @@
 }
 
 .btn-aprobar:hover { background: #059669; }
+
+.btn-denegar {
+    flex: 1;
+    padding: 12px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-denegar:hover { background: #dc2626; }
