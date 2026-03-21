@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config';
 import { AuthService } from '../../auth/infrastructure/auth.service';
-// Importamos tu nuevo y flamante componente Modal
 import Modal from '../../../shared/components/Modal'; 
 import './AdminDashboard.css';
 
@@ -61,6 +60,7 @@ export const AdminDashboard = () => {
         const coleccion = AuthService.obtenerColeccion(editandoUser.rol);
         await updateDoc(doc(db, coleccion, editandoUser.id), {
             nombre: editandoUser.nombre,
+            nombreNormalizado: editandoUser.nombre.trim().toLowerCase(), // Mantiene el anti-duplicados actualizado
             campo: editandoUser.campo
         });
         setEditandoUser(null);
@@ -123,45 +123,20 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* AQUÍ LLAMAMOS A TU NUEVO COMPONENTE MODAL */}
-            <Modal 
-                isOpen={editandoUser !== null} 
-                onClose={() => setEditandoUser(null)} 
-                title="Editar Usuario"
-            >
-                {/* Lo que va aquí adentro es el "children" */}
+            <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title="Editar Usuario">
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
-                        <label>Nombre Completo</label>
-                        <input 
-                            className="modal-input" 
-                            type="text" 
-                            value={editandoUser.nombre} 
-                            onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} 
-                            required 
-                        />
-                        
-                        <label>Campo / Iglesia</label>
-                        <select 
-                            className="modal-input" 
-                            value={editandoUser.campo} 
-                            onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} 
-                            required
-                        >
-                            <option value="La Isla">La Isla</option>
-                            <option value="Las Delicias">Las Delicias</option>
-                            <option value="El Amatal">El Amatal</option>
-                            <option value="El Manguito">El Manguito</option>
-                            <option value="Buenos Aires">Buenos Aires</option>
-                            <option value="Corozal #1">Corozal #1</option>
-                            <option value="El Porvenir">El Porvenir</option>
-                            <option value="El Caulote">El Caulote</option>
-                            <option value="Corozal #2">Corozal #2</option>
-                            <option value="Valle Encantado">Valle Encantado</option>
-                            <option value="La Playa">La Playa</option>
-                        </select>
-                        
-                        <div className="admin-actions">
+                        <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label>
+                            <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
+                        </div>
+                        <div className="ebd-form-group" style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo / Iglesia</label>
+                            <select className="ebd-input" value={editandoUser.campo} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
+                                <option value="La Isla">La Isla</option><option value="Las Delicias">Las Delicias</option><option value="El Amatal">El Amatal</option><option value="El Manguito">El Manguito</option><option value="Buenos Aires">Buenos Aires</option><option value="Corozal #1">Corozal #1</option><option value="El Porvenir">El Porvenir</option><option value="El Caulote">El Caulote</option><option value="Corozal #2">Corozal #2</option><option value="Valle Encantado">Valle Encantado</option><option value="La Playa">La Playa</option>
+                            </select>
+                        </div>
+                        <div className="admin-actions" style={{ display: 'flex', gap: '10px' }}>
                             <button type="button" className="btn-denegar" onClick={() => setEditandoUser(null)}>Cancelar</button>
                             <button type="submit" className="btn-aprobar">Guardar Cambios</button>
                         </div>
