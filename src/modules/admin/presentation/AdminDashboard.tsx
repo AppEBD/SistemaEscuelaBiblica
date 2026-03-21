@@ -15,6 +15,14 @@ export const AdminDashboard = () => {
                 id: doc.id,
                 ...doc.data()
             }));
+            
+            // Ordenar para que los pendientes aparezcan primero
+            lista.sort((a, b) => {
+                if (a.estado === 'Pendiente' && b.estado !== 'Pendiente') return -1;
+                if (a.estado !== 'Pendiente' && b.estado === 'Pendiente') return 1;
+                return 0;
+            });
+
             setUsuarios(lista);
         } catch (error) {
             console.error("Error al obtener usuarios:", error);
@@ -28,9 +36,9 @@ export const AdminDashboard = () => {
         if(window.confirm("¿Seguro que deseas aprobar a este usuario para que pueda ingresar?")) {
             try {
                 await updateDoc(doc(db, "maestros", id), { estado: 'Activo' });
-                obtenerUsuarios(); // Recargar la lista
+                obtenerUsuarios(); // Recargar la lista automáticamente
             } catch (error) {
-                alert("Hubo un error al aprobar.");
+                alert("Hubo un error al aprobar. Intenta de nuevo.");
             }
         }
     };
@@ -67,8 +75,15 @@ export const AdminDashboard = () => {
                                 </div>
                                 
                                 <div className="user-details">
-                                    <div><i className="fa-solid fa-church"></i> {user.campo}</div>
-                                    <div><i className="fa-solid fa-cake-candles"></i> {user.edad} años</div>
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}
+                                    </div>
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento} ({user.edad} años)
+                                    </div>
+                                    <div>
+                                        <i className="fa-solid fa-calendar-check"></i> <strong>Registrado el:</strong> {user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-SV') : 'Desconocido'}
+                                    </div>
                                 </div>
 
                                 {user.estado === 'Pendiente' && (
