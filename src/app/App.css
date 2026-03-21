@@ -1,0 +1,54 @@
+body {
+    margin: 0;
+    background-color: #f1f5f9;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.app-header-info h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    color: #4f46e5;
+}
+
+.app-header-info p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-logout {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: #fecaca;
+}
+
+.app-main {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
