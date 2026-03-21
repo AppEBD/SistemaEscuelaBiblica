@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+// IMPORTANTE: Agregamos onSnapshot y deleteDoc
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config';
 import './AdminDashboard.css';
 
@@ -7,16 +8,16 @@ export const AdminDashboard = () => {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
 
-    // Función para buscar a los usuarios en Firebase
-    const obtenerUsuarios = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, "maestros"));
+    // Efecto en tiempo real (Escucha los cambios sin recargar la página)
+    useEffect(() => {
+        const q = query(collection(db, "maestros"));
+        const desuscribir = onSnapshot(q, (querySnapshot) => {
             const lista = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
             
-            // Ordenar para que los pendientes aparezcan primero
+            // Ordenamos: Pendientes primero
             lista.sort((a, b) => {
                 if (a.estado === 'Pendiente' && b.estado !== 'Pendiente') return -1;
                 if (a.estado !== 'Pendiente' && b.estado === 'Pendiente') return 1;
@@ -24,35 +25,40 @@ export const AdminDashboard = () => {
             });
 
             setUsuarios(lista);
-        } catch (error) {
-            console.error("Error al obtener usuarios:", error);
-        } finally {
             setCargando(false);
-        }
-    };
+        });
 
-    // Función para aprobar a un usuario
+        // Limpieza cuando el admin sale de la pantalla
+        return () => desuscribir();
+    }, []);
+
     const aprobarUsuario = async (id: string) => {
-        if(window.confirm("¿Seguro que deseas aprobar a este usuario para que pueda ingresar?")) {
+        if(window.confirm("¿Seguro que deseas APROBAR a este usuario para que pueda ingresar?")) {
             try {
                 await updateDoc(doc(db, "maestros", id), { estado: 'Activo' });
-                obtenerUsuarios(); // Recargar la lista automáticamente
+                // Ya no hace falta recargar, onSnapshot actualiza la pantalla solo
             } catch (error) {
                 alert("Hubo un error al aprobar. Intenta de nuevo.");
             }
         }
     };
 
-    // Ejecutar al abrir la pantalla
-    useEffect(() => {
-        obtenerUsuarios();
-    }, []);
+    const denegarUsuario = async (id: string) => {
+        if(window.confirm("¿Seguro que deseas DENEGAR a este usuario? Sus datos serán eliminados permanentemente.")) {
+            try {
+                // Borra por completo el documento de Firebase
+                await deleteDoc(doc(db, "maestros", id));
+            } catch (error) {
+                alert("Hubo un error al denegar.");
+            }
+        }
+    };
 
     return (
         <div className="admin-dashboard">
             <div className="admin-header">
                 <h2>Directorio de Usuarios</h2>
-                <p>Gestiona los accesos de tu equipo a la plataforma.</p>
+                <p>Gestiona los accesos de tu equipo a la plataforma en tiempo real.</p>
             </div>
 
             {cargando ? (
@@ -87,12 +93,14 @@ export const AdminDashboard = () => {
                                 </div>
 
                                 {user.estado === 'Pendiente' && (
-                                    <button 
-                                        className="btn-aprobar"
-                                        onClick={() => aprobarUsuario(user.id)}
-                                    >
-                                        <i className="fa-solid fa-check"></i> Aprobar Acceso
-                                    </button>
+                                    <div className="admin-actions">
+                                        <button className="btn-aprobar" onClick={() => aprobarUsuario(user.id)}>
+                                            <i className="fa-solid fa-check"></i> Aprobar
+                                        </button>
+                                        <button className="btn-denegar" onClick={() => denegarUsuario(user.id)}>
+                                            <i className="fa-solid fa-xmark"></i> Denegar
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         ))
