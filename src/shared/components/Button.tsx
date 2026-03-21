@@ -1,17 +1,22 @@
 import React from 'react';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    isLoading?: boolean;
+interface ButtonProps {
+    type?: "button" | "submit" | "reset";
+    className?: string;
+    disabled?: boolean;
+    onClick?: () => void;
+    children: React.ReactNode;
 }
 
-export const Button: React.FC<ButtonProps> = ({ children, isLoading, className, ...props }) => {
+export const Button: React.FC<ButtonProps> = ({ 
+    type = "button", 
+    className = "", 
+    disabled = false, 
+    onClick, 
+    children 
+}) => {
     return (
-        <button 
-            className={`px-4 py-3 rounded-2xl font-black transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center bg-indigo-600 text-white shadow-lg shadow-indigo-200 ${className || ''}`} 
-            disabled={isLoading || props.disabled}
-            {...props}
-        >
-            {isLoading ? <i className="fas fa-spinner animate-spin mr-2"></i> : null}
+        <button type={type} className={className} disabled={disabled} onClick={onClick}>
             {children}
         </button>
     );
