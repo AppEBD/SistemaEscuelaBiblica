@@ -1,15 +1,43 @@
 import { useState, useEffect } from 'react';
 import { AuthService } from '../infrastructure/auth.service';
 import { UserRole, AuthUser } from '../domain/auth.model';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../core/firebase/firebase.config';
 
 export const useAuth = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [userData, setUserData] = useState<AuthUser | null>(null);
 
+    // ESCUCHADOR PARA EL USUARIO QUE YA ESTÁ ADENTRO
     useEffect(() => {
         const { rol, user } = AuthService.sesion.recuperar();
-        if (rol) { setUserRole(rol as UserRole); setUserData(user); }
+        
+        if (rol && user && user.id && rol !== 'ADMIN') {
+            setUserRole(rol as UserRole);
+            setUserData(user);
+
+            const coleccion = AuthService.obtenerColeccion(rol);
+            // Escuchamos en tiempo real si el Admin lo edita o lo elimina
+            const unsubscribe = onSnapshot(doc(db, coleccion, user.id), (docSnap) => {
+                if (!docSnap.exists()) {
+                    // ¡EL ADMIN LO ELIMINÓ! -> Lo expulsamos
+                    AuthService.sesion.borrar();
+                    localStorage.setItem('cuenta_eliminada', 'true'); // Bandera para mostrar el mensaje
+                    window.location.reload();
+                } else {
+                    // ¡EL ADMIN LO EDITÓ! -> Actualizamos sus datos en vivo
+                    const updatedUser = { id: docSnap.id, ...docSnap.data() } as AuthUser;
+                    setUserData(updatedUser);
+                    const recordar = localStorage.getItem('rol_dominical') !== null;
+                    AuthService.sesion.guardar(rol, updatedUser, recordar);
+                }
+            });
+
+            return () => unsubscribe();
+        } else if (rol === 'ADMIN') {
+            setUserRole(rol as UserRole);
+        }
     }, []);
 
     const calcularEdad = (fecha: string): number | null => {
