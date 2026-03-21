@@ -15,6 +15,9 @@ export const LoginView: React.FC = () => {
     const [recordar, setRecordar] = useState(true);
     const [isPending, setIsPending] = useState(false);
     const [isReturning, setIsReturning] = useState(false);
+    
+    // El "oído" para el tiempo real del registro
+    const [pendingAuth, setPendingAuth] = useState<{id: string, rol: string} | null>(null);
 
     const rolesConfig = [
         { id: 'MAESTRO', name: 'Maestro', icon: 'fa-chalkboard-user' },
@@ -30,38 +33,55 @@ export const LoginView: React.FC = () => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
 
+    // 1. Efecto inicial al cargar la página
     useEffect(() => {
-        // 1. Revisamos si estaba pendiente (prioridad 1)
+        // ¿Viene expulsado por el admin?
+        if (localStorage.getItem('cuenta_eliminada')) {
+            localStorage.removeItem('cuenta_eliminada');
+            setStatus({ info: '', error: 'Tu cuenta ha sido eliminada permanentemente por el administrador.' });
+            return;
+        }
+
         const pendingData = localStorage.getItem('usuario_en_espera');
         if (pendingData) {
             const datos = JSON.parse(pendingData);
             setForm(datos.form);
             setIsPending(true);
-            setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación por el Director." });
-
-            const coleccion = AuthService.obtenerColeccion(datos.form.rol);
-            const unsubscribe = onSnapshot(doc(db, coleccion, datos.id), (docSnap) => {
-                if (!docSnap.exists()) {
-                    localStorage.removeItem('usuario_en_espera');
-                    setIsPending(false);
-                    setForm(estadoInicial);
-                    setStatus({ info: '', error: "Tu solicitud fue DENEGADA. Los datos han sido borrados de la base de datos." });
-                } else if (docSnap.data().estado === 'Activo') {
-                    localStorage.removeItem('usuario_en_espera');
-                    AuthService.sesion.guardar(datos.form.rol, { id: docSnap.id, ...docSnap.data() }, recordar);
-                    window.location.reload();
-                }
-            });
-            return () => unsubscribe();
+            setPendingAuth({ id: datos.id, rol: datos.form.rol }); // Activa el escuchador
+            setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación." });
+        } else {
+            const recentData = localStorage.getItem('usuario_reciente');
+            if (recentData) {
+                setForm(JSON.parse(recentData));
+                setIsReturning(true);
+            }
         }
+    }, []);
 
-        // 2. Si no estaba pendiente, vemos si es alguien que cerró sesión (prioridad 2)
-        const recentData = localStorage.getItem('usuario_reciente');
-        if (recentData) {
-            setForm(JSON.parse(recentData));
-            setIsReturning(true);
-        }
-    }, [recordar]);
+    // 2. Escuchador Mágico en Tiempo Real (Solo funciona si hay una solicitud pendiente)
+    useEffect(() => {
+        if (!pendingAuth) return;
+
+        const coleccion = AuthService.obtenerColeccion(pendingAuth.rol);
+        const unsubscribe = onSnapshot(doc(db, coleccion, pendingAuth.id), (docSnap) => {
+            if (!docSnap.exists()) {
+                // EL ADMIN LE DIO DENEGAR
+                localStorage.removeItem('usuario_en_espera');
+                setPendingAuth(null);
+                setIsPending(false);
+                setForm(estadoInicial); // SE LIMPIA EL FORMULARIO
+                setStatus({ info: '', error: "Tu solicitud fue DENEGADA. Los datos han sido borrados." });
+            } else if (docSnap.data().estado === 'Activo') {
+                // EL ADMIN LE DIO APROBAR
+                localStorage.removeItem('usuario_en_espera');
+                setPendingAuth(null);
+                AuthService.sesion.guardar(pendingAuth.rol, { id: docSnap.id, ...docSnap.data() }, recordar);
+                window.location.reload();
+            }
+        });
+
+        return () => unsubscribe();
+    }, [pendingAuth, recordar]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,9 +110,9 @@ export const LoginView: React.FC = () => {
         } else if (res.mensaje === "SOLICITUD_ENVIADA" || res.mensaje === "PENDIENTE_APROBACION") {
             localStorage.setItem('usuario_en_espera', JSON.stringify({ id: res.id, form }));
             setIsPending(true); setIsReturning(false);
+            setPendingAuth({ id: res.id, rol: form.rol }); // ACTIVAMOS EL ESCUCHADOR EN VIVO
             setStatus({ ...status, info: "Tu cuenta está pendiente. Espera a que el Director te apruebe." });
         } else if (res.mensaje === "ACCESO_CONCEDIDO" || res.mensaje === "Bienvenido Director") {
-            // ¡MAGIA! Guardamos sus datos para que al cerrar sesión el formulario esté en gris
             localStorage.setItem('usuario_reciente', JSON.stringify(form));
             window.location.reload();
         }
@@ -101,6 +121,7 @@ export const LoginView: React.FC = () => {
     const limpiarCuenta = () => {
         localStorage.removeItem('usuario_en_espera');
         localStorage.removeItem('usuario_reciente');
+        setPendingAuth(null);
         setIsPending(false); setIsReturning(false);
         setForm(estadoInicial);
         setStatus({ info: '', error: '' });
