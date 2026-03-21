@@ -1,60 +1,75 @@
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { db } from '../../../core/firebase/firebase.config';
-import { AuthUser, UserRole } from '../domain/auth.model';
+import { useState, useEffect } from 'react';
+import { AuthService } from '../infrastructure/auth.service';
+import { UserRole, AuthUser } from '../domain/auth.model';
 
-// Aquí están las contraseñas oficiales para que cada rol pueda ingresar
-const CLAVES: Record<string, string> = {
-    ADMIN: "1111",
-    MAESTRO: "2222",
-    AUXILIAR: "3333",
-    LOGISTICA: "4444",
-    SECRETARIA: "5555",
-    TESORERO: "8888"
-};
+export const useAuth = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [userRole, setUserRole] = useState<UserRole | null>(null);
+    const [userData, setUserData] = useState<AuthUser | null>(null);
 
-export const AuthService = {
-    // 1. Verifica si la contraseña escrita coincide con la que definimos arriba
-    validarCredenciales: (rol: UserRole, clave: string): boolean => CLAVES[rol] === clave,
-
-    // 2. Busca si el usuario ya está registrado y aprobado en Firebase
-    buscarUsuario: async (rol: UserRole, nombre: string): Promise<AuthUser | null> => {
-        const q = query(
-            collection(db, "maestros"), 
-            where("nombre", "==", nombre.trim()), 
-            where("clase", "==", rol)
-        );
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) return null;
-        
-        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
-    },
-
-    // 3. Guarda una nueva solicitud de registro en Firebase
-    registrarSolicitud: async (datos: Partial<AuthUser>) => {
-        await addDoc(collection(db, "maestros"), { 
-            ...datos, 
-            estado: 'Pendiente', 
-            createdAt: Date.now() 
-        });
-    },
-
-    // 4. Maneja la "memoria" del navegador para no pedir clave a cada rato
-    sesion: {
-        guardar: (rol: string, datos: AuthUser | null) => {
-            localStorage.setItem('rol_dominical', rol);
-            if (datos) {
-                localStorage.setItem('datos_usuario_dominical', JSON.stringify(datos));
-            }
-        },
-        recuperar: () => ({
-            rol: localStorage.getItem('rol_dominical'),
-            user: localStorage.getItem('datos_usuario_dominical') 
-                ? JSON.parse(localStorage.getItem('datos_usuario_dominical')!) 
-                : null
-        }),
-        borrar: () => {
-            localStorage.removeItem('rol_dominical');
-            localStorage.removeItem('datos_usuario_dominical');
+    useEffect(() => {
+        const { rol, user } = AuthService.sesion.recuperar();
+        if (rol) {
+            setUserRole(rol as UserRole);
+            setUserData(user);
         }
-    }
+    }, []);
+
+    const calcularEdad = (fecha: string): number | null => {
+        if (!fecha) return null;
+        const hoy = new Date(); const cumple = new Date(fecha);
+        let edad = hoy.getFullYear() - cumple.getFullYear();
+        if (hoy.getMonth() < cumple.getMonth() || (hoy.getMonth() === cumple.getMonth() && hoy.getDate() < cumple.getDate())) edad--;
+        return edad;
+    };
+
+    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string) => {
+        setIsLoading(true);
+        try {
+            // 1. Validar la contraseña primero
+            if (!AuthService.validarCredenciales(rol, clave)) {
+                return { exito: false, mensaje: "Clave incorrecta." };
+            }
+            
+            // 2. Si es Admin, entra directo y RECARGA la página
+            if (rol === 'ADMIN') {
+                AuthService.sesion.guardar('ADMIN', null);
+                window.location.reload(); // <--- ESTA ES LA MAGIA QUE FALTABA
+                return { exito: true, mensaje: "Bienvenido Director" };
+            }
+
+            // 3. Si es otro rol, revisa Firebase
+            const usuarioExistente = await AuthService.buscarUsuario(rol, nombre);
+            
+            // Si no existe, envía solicitud de registro
+            if (!usuarioExistente) {
+                const edad = calcularEdad(fechaNac);
+                await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
+                return { exito: true, mensaje: "SOLICITUD_ENVIADA" };
+            }
+
+            // Si ya está aprobado (Activo), entra y RECARGA la página
+            if (usuarioExistente.estado === 'Activo') {
+                AuthService.sesion.guardar(rol, usuarioExistente);
+                window.location.reload(); // <--- ESTA ES LA MAGIA QUE FALTABA
+                return { exito: true, mensaje: "ACCESO_CONCEDIDO" };
+            }
+
+            // Si existe pero aún no lo aprueba el Admin
+            return { exito: true, mensaje: "PENDIENTE_APROBACION" };
+            
+        } catch (error) {
+            console.error("Error en Firebase:", error);
+            return { exito: false, mensaje: "Error de conexión con la base de datos." };
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const logout = () => {
+        AuthService.sesion.borrar();
+        window.location.reload(); // También recargamos al salir
+    };
+
+    return { login, logout, isLoading, userRole, userData };
 };
