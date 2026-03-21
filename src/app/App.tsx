@@ -1,38 +1,41 @@
 import React from 'react';
 import { useAuth } from '../modules/auth/application/useAuth';
 import { LoginView } from '../modules/auth/presentation/LoginView';
+import { AdminDashboard } from '../modules/admin/presentation/AdminDashboard';
+import './App.css'; // Conectamos los estilos de la barra superior
 
 const App: React.FC = () => {
   const { userRole, userData, logout } = useAuth();
 
+  // Si no hay sesión, mostramos el Login
   if (!userRole) {
     return <LoginView />;
   }
 
+  // Si hay sesión, mostramos la App principal
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-black text-indigo-600">EBD v2.0</h1>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              {userRole} • {userData?.campo || 'Sede Central'}
-            </p>
-          </div>
-          <button 
-            onClick={logout}
-            className="w-10 h-10 flex items-center justify-center bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
-          >
-            <i className="fas fa-sign-out-alt"></i>
-          </button>
+    <div>
+      <header className="app-header">
+        <div className="app-header-info">
+          <h1>EBD v2.0</h1>
+          <p>{userRole} • {userData?.campo || 'Sede Central'}</p>
         </div>
+        <button onClick={logout} className="btn-logout">
+          <i className="fas fa-sign-out-alt"></i> Salir
+        </button>
       </header>
 
-      <main className="p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-slate-100">
-          <h2 className="font-black text-2xl text-slate-800">¡Bienvenido, {userData?.nombre || 'Director'}!</h2>
-          <p className="text-sm text-slate-500 mt-2">Pronto conectaremos aquí tu panel de {userRole.toLowerCase()}.</p>
-        </div>
+      <main className="app-main">
+        {/* Aquí decidimos qué pantalla mostrar según el rol */}
+        {userRole === 'ADMIN' && <AdminDashboard />}
+        
+        {/* En el futuro aquí agregaremos la vista del Maestro, Tesorero, etc. */}
+        {userRole !== 'ADMIN' && (
+            <div style={{ background: 'white', padding: '30px', borderRadius: '20px', textAlign: 'center' }}>
+                <h2>¡Bienvenido, {userData?.nombre}!</h2>
+                <p>Tu cuenta ha sido aprobada. Pronto conectaremos tu panel de trabajo.</p>
+            </div>
+        )}
       </main>
     </div>
   );
