@@ -1,0 +1,92 @@
+.admin-dashboard {
+    animation: fadeIn 0.4s ease;
+}
+
+.admin-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.admin-header p {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.user-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.user-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 5px 0;
+}
+
+.user-role {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #e0e7ff;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.user-status {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.status-pendiente { background: #fef3c7; color: #d97706; }
+.status-activo { background: #dcfce3; color: #16a34a; }
+
+.user-details {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.user-details i {
+    width: 20px;
+    color: #94a3b8;
+}
+
+.btn-aprobar {
+    margin-top: auto;
+    width: 100%;
+    padding: 12px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-aprobar:hover { background: #059669; }
