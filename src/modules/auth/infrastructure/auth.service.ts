@@ -10,21 +10,26 @@ const CLAVES: Record<string, string> = {
 export const AuthService = {
     validarCredenciales: (rol: UserRole, clave: string): boolean => CLAVES[rol] === clave,
 
+    // Función auxiliar para saber en qué colección buscar (ej. "usuarios_maestro")
+    obtenerColeccion: (rol: string) => `usuarios_${rol.toLowerCase()}`,
+
     buscarUsuario: async (rol: UserRole, nombre: string): Promise<AuthUser | null> => {
-        const q = query(collection(db, "maestros"), where("nombre", "==", nombre.trim()), where("clase", "==", rol));
+        const coleccionNombre = AuthService.obtenerColeccion(rol);
+        const q = query(collection(db, coleccionNombre), where("nombre", "==", nombre.trim()));
         const snapshot = await getDocs(q);
         if (snapshot.empty) return null;
         return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
     },
 
     registrarSolicitud: async (datos: Partial<AuthUser>) => {
-        await addDoc(collection(db, "maestros"), { 
+        const coleccionNombre = AuthService.obtenerColeccion(datos.rol || 'MAESTRO');
+        const docRef = await addDoc(collection(db, coleccionNombre), { 
             ...datos, estado: 'Pendiente', createdAt: Date.now() 
         });
+        return docRef.id; // Retornamos el ID para escucharlo en tiempo real
     },
 
     sesion: {
-        // Agregamos el parámetro "recordar"
         guardar: (rol: string, datos: AuthUser | null, recordar: boolean) => {
             const storage = recordar ? localStorage : sessionStorage;
             storage.setItem('rol_dominical', rol);
