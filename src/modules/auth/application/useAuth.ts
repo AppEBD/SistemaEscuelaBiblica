@@ -20,20 +20,20 @@ export const useAuth = () => {
         return edad;
     };
 
-    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean) => {
+    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean, isVerifying: boolean = false) => {
         setIsLoading(true);
         try {
             if (!AuthService.validarCredenciales(rol, clave)) return { exito: false, mensaje: "Clave incorrecta." };
             
             if (rol === 'ADMIN') {
                 AuthService.sesion.guardar('ADMIN', null, recordar);
-                window.location.reload();
                 return { exito: true, mensaje: "Bienvenido Director" };
             }
 
             const usuarioExistente = await AuthService.buscarUsuario(rol, nombre);
             
             if (!usuarioExistente) {
+                if (isVerifying) return { exito: false, mensaje: "DENEGADO" };
                 const edad = calcularEdad(fechaNac);
                 const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
                 return { exito: true, mensaje: "SOLICITUD_ENVIADA", id: nuevoId };
@@ -41,7 +41,6 @@ export const useAuth = () => {
 
             if (usuarioExistente.estado === 'Activo') {
                 AuthService.sesion.guardar(rol, usuarioExistente, recordar);
-                window.location.reload();
                 return { exito: true, mensaje: "ACCESO_CONCEDIDO" };
             }
 
