@@ -5,10 +5,10 @@ import './LoginView.css';
 export const LoginView: React.FC = () => {
     const { login, isLoading } = useAuth();
     
-    const [form, setForm] = useState({ rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '' });
+    const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '' };
+    const [form, setForm] = useState(estadoInicial);
     const [status, setStatus] = useState({ error: '', info: '' });
     
-    // NUEVOS ESTADOS
     const [recordar, setRecordar] = useState(true);
     const [isPending, setIsPending] = useState(false);
 
@@ -40,14 +40,21 @@ export const LoginView: React.FC = () => {
             fechaCompleta = `${form.birthYear}-${form.birthMonth}-${form.birthDay}`;
         }
 
-        // Enviamos el parámetro 'recordar'
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar);
+        // Pasamos isPending como parámetro para evitar duplicados
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar, isPending);
         
         if (!res.exito) {
-            setStatus({ ...status, error: res.mensaje });
+            // SI FUE DENEGADO POR EL ADMIN
+            if (res.mensaje === "DENEGADO") {
+                setIsPending(false); // Desbloqueamos
+                setForm(estadoInicial); // Limpiamos todo
+                setStatus({ info: '', error: "Tu solicitud fue denegada por el Director. Los datos han sido borrados de la base de datos." });
+            } else {
+                setStatus({ ...status, error: res.mensaje });
+            }
         } else if (res.mensaje === "SOLICITUD_ENVIADA" || res.mensaje === "PENDIENTE_APROBACION") {
             setStatus({ ...status, info: "Tu cuenta está pendiente. Espera a que el Director te apruebe y presiona 'Verificar Aprobación'." });
-            setIsPending(true); // Bloqueamos el formulario
+            setIsPending(true);
         }
     };
 
@@ -61,7 +68,6 @@ export const LoginView: React.FC = () => {
                 {status.info && <div className="ebd-info animate-fade-in">{status.info}</div>}
 
                 <form onSubmit={handleLogin}>
-                    {/* Contenedor que se vuelve gris cuando está bloqueado */}
                     <div className={isPending ? "ebd-form-locked" : ""}>
                         <p className="ebd-role-selector-title">Tipo de Usuario</p>
                         <div className="ebd-roles-grid">
@@ -113,7 +119,6 @@ export const LoginView: React.FC = () => {
                             <input type="password" placeholder="••••••" className="ebd-input" value={form.clave} onChange={(e) => setForm({...form, clave: e.target.value})} required />
                         </div>
 
-                        {/* Checkbox de Recordar */}
                         <label className="ebd-checkbox-group">
                             <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
                             Recordar mi contraseña
@@ -122,7 +127,6 @@ export const LoginView: React.FC = () => {
 
                     {status.error && <p className="ebd-error animate-fade-in">{status.error}</p>}
 
-                    {/* El botón se adapta si está en espera */}
                     <button type="submit" className="ebd-submit-btn" disabled={isLoading}>
                         {isLoading ? (
                             <><i className="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...</>
@@ -133,7 +137,6 @@ export const LoginView: React.FC = () => {
                         )}
                     </button>
                     
-                    {/* Botón para deshacer el bloqueo y corregir datos */}
                     {isPending && (
                         <button type="button" className="ebd-cancel-btn" onClick={() => setIsPending(false)}>
                             Quiero modificar mis datos / Cambiar usuario
