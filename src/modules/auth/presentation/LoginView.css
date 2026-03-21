@@ -1,6 +1,6 @@
 /* --- Variables de Diseño --- */
 :root {
-    --primary: #4f46e5; /* Índigo moderno */
+    --primary: #4f46e5;
     --primary-hover: #4338ca;
     --bg-page: #f1f5f9;
     --bg-card: #ffffff;
@@ -8,13 +8,12 @@
     --text-muted: #64748b;
     --border: #e2e8f0;
     --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    /* Tipografía moderna del sistema */
     --font-stack: system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
-/* --- Contenedor Principal (Centrado Responsive) --- */
+/* --- Contenedor Principal --- */
 .ebd-login-root {
     display: flex;
     justify-content: center;
@@ -57,7 +56,7 @@
     margin: 0 0 35px 0;
 }
 
-/* --- NUEVO DISEÑO: Botones de Selección de Rol --- */
+/* --- Botones de Selección de Rol --- */
 .ebd-role-selector-title {
     text-align: left;
     font-size: 13px;
@@ -70,12 +69,11 @@
 
 .ebd-roles-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 columnas en móvil */
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-bottom: 25px;
 }
 
-/* Botón individual de rol */
 .ebd-role-btn {
     display: flex;
     flex-direction: column;
@@ -91,11 +89,10 @@
 }
 
 .ebd-role-btn:hover {
-    border-color: #a5b4fc; /* Color índigo suave al pasar el mouse */
+    border-color: #a5b4fc;
     background-color: #f8fafc;
 }
 
-/* Estado seleccionado */
 .ebd-role-btn.selected {
     border-color: var(--primary);
     background-color: #eef2ff;
@@ -103,7 +100,6 @@
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
 }
 
-/* Iconos y textos dentro del botón */
 .ebd-role-icon {
     font-size: 24px;
     margin-bottom: 8px;
@@ -134,11 +130,37 @@
     background-color: white;
 }
 
-/* --- NUEVO DISEÑO: Fecha Separada (Día, Mes, Año) --- */
 .ebd-date-grid {
     display: grid;
-    grid-template-columns: 2fr 3fr 3fr; /* Proporciones para D/M/A */
+    grid-template-columns: 2fr 3fr 3fr;
     gap: 10px;
+}
+
+/* --- Checkbox de recordar contraseña --- */
+.ebd-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ebd-checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* --- Efecto de bloqueo cuando está pendiente --- */
+.ebd-form-locked {
+    opacity: 0.5;
+    pointer-events: none; /* Esto evita que el usuario modifique cosas */
+    filter: grayscale(100%);
+    transition: all 0.3s;
 }
 
 /* --- Botón de Acción Principal --- */
@@ -159,6 +181,20 @@
 .ebd-submit-btn:hover { background-color: var(--primary-hover); }
 .ebd-submit-btn:active { transform: scale(0.98); }
 .ebd-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+.ebd-cancel-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.ebd-cancel-btn:hover { color: var(--text-main); }
 
 /* --- Mensajes --- */
 .ebd-error { color: #ef4444; font-size: 13px; font-weight: 700; margin-top: 10px; }
