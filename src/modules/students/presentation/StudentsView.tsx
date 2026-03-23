@@ -49,7 +49,7 @@ export const StudentsView = () => {
                 </p>
             ) : (
                 <>
-                    {/* VISTA 1: EL DIRECTORIO IDÉNTICO A TU IMAGEN */}
+                    {/* VISTA 1: EL DIRECTORIO */}
                     {activeTab === 'directorio' && (
                         <div className="students-grid animate-fade-in">
                             {alumnos.length === 0 ? (
@@ -58,7 +58,6 @@ export const StudentsView = () => {
 
                             {alumnos.map(alumno => {
                                 const esNina = alumno.genero === 'Femenino';
-                                // Sacamos la primera letra del nombre para el Avatar
                                 const inicial = alumno.nombre ? alumno.nombre.charAt(0).toUpperCase() : '?';
                                 const edadExacta = calcularEdadExacta(alumno.fechaNacimiento, alumno.edad);
 
@@ -95,7 +94,7 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* VISTA 2: CUMPLEAÑOS (Limpio y acorde al nuevo diseño) */}
+                    {/* VISTA 2: CUMPLEAÑOS (AHORA CON EL NOMBRE ARRIBA Y LA EDAD ABAJO) */}
                     {activeTab === 'cumpleanos' && (
                         <div className="birthdays-container animate-fade-in">
                             {months.map((nombreMes, index) => {
@@ -115,9 +114,13 @@ export const StudentsView = () => {
                                                         <div className="bday-date">
                                                             {nino.fechaNacimiento.split('-')[2]}
                                                         </div>
-                                                        <div className="bday-name">{nino.nombre}</div>
-                                                        <div className="bday-age">
-                                                            <i className="fa-solid fa-gift mr-1"></i> Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años
+                                                        {/* AQUÍ ESTÁ EL CAMBIO: El contenedor bday-info agrupa ambos */}
+                                                        <div className="bday-info">
+                                                            <div className="bday-name">{nino.nombre}</div>
+                                                            <div className="bday-age">
+                                                                <i className="fa-solid fa-gift mr-1" style={{ marginRight: '5px' }}></i> 
+                                                                Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -131,7 +134,7 @@ export const StudentsView = () => {
                 </>
             )}
 
-            {/* MODAL (Se mantiene la funcionalidad impecable que ya teníamos) */}
+            {/* MODAL */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
