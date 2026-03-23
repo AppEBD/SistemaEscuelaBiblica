@@ -2,7 +2,6 @@ import React from 'react';
 import { useAdminLogic } from './AdminDashboard.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
-// Importamos la configuración de roles y el Acordeón
 import { IGLESIAS_CAMPOS, ROLES_CONFIG } from '../../../core/constants/roles';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, formatearFechaLocal } from '../../../core/utils/date.utils'; 
@@ -14,7 +13,6 @@ export const AdminDashboard = () => {
         aprobarUsuario, eliminarUsuario, guardarEdicion 
     } = useAdminLogic();
 
-    // Filtramos para no mostrar al "ADMIN" en la lista de acordeones
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
 
     return (
@@ -28,9 +26,7 @@ export const AdminDashboard = () => {
                 <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando base de datos...</p>
             ) : (
                 <div className="directory-container">
-                    {/* Iteramos sobre cada tipo de rol para crear su propio acordeón */}
                     {rolesParaDirectorio.map(rolDef => {
-                        // Filtramos a los usuarios que pertenecen a este rol específico
                         const usuariosDeEsteRol = usuarios.filter(u => u.rol === rolDef.id);
                         
                         return (
@@ -57,7 +53,10 @@ export const AdminDashboard = () => {
                                                 </div>
                                                 
                                                 <div className="user-details">
-                                                    <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
+                                                    {/* Solo mostramos la Iglesia si el usuario tiene una asignada */}
+                                                    {user.campo && (
+                                                        <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
+                                                    )}
                                                     <div>
                                                         <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
                                                         <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
@@ -96,19 +95,32 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title="Editar Usuario">
+            <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
+                        {/* 1. EDITAR NOMBRE */}
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label>
                             <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
                         </div>
-                        <div className="ebd-form-group" style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo / Iglesia</label>
-                            <select className="ebd-input" value={editandoUser.campo} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
-                                {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
-                            </select>
+
+                        {/* 2. EDITAR FECHA DE NACIMIENTO (Usa un calendario nativo) */}
+                        <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha de Nacimiento</label>
+                            <input className="ebd-input" type="date" value={editandoUser.fechaNacimiento || ''} onChange={e => setEditandoUser({...editandoUser, fechaNacimiento: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
                         </div>
+
+                        {/* 3. EDITAR CAMPO (Solo si es Maestro o Auxiliar) */}
+                        {(editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') && (
+                            <div className="ebd-form-group" style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo / Iglesia</label>
+                                <select className="ebd-input" value={editandoUser.campo || ''} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
+                                    <option value="" disabled>Seleccione un campo...</option>
+                                    {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
+                                </select>
+                            </div>
+                        )}
+
                         <div className="admin-actions" style={{ display: 'flex', gap: '10px' }}>
                             <Button type="button" className="btn-denegar" onClick={() => setEditandoUser(null)}>Cancelar</Button>
                             <Button type="submit" className="btn-aprobar">Guardar Cambios</Button>
