@@ -15,6 +15,7 @@ export const LoginView: React.FC = () => {
     return (
         <div className="ebd-login-root">
             <div className="ebd-card">
+                {/* Cambié también el ícono principal a algo más educativo/infantil o general si gustas, pero dejé el original por ahora */}
                 <i className="fa-solid fa-church ebd-header-icon"></i>
                 <h1 className="ebd-title">Gestión EBD</h1>
                 <p className="ebd-subtitle">Plataforma de Escuela Bíblica</p>
@@ -80,7 +81,6 @@ export const LoginView: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* NUEVO: Campo de Género */}
                                     <div className="ebd-form-group animate-fade-in">
                                         <label className="ebd-label">Género</label>
                                         <select className="ebd-input" value={form.genero} onChange={(e) => setForm({...form, genero: e.target.value})} required>
@@ -92,7 +92,8 @@ export const LoginView: React.FC = () => {
 
                                     {(form.rol === 'MAESTRO' || form.rol === 'AUXILIAR') && (
                                         <div className="ebd-form-group animate-fade-in">
-                                            <label className="ebd-label">Campo / Iglesia</label>
+                                            {/* CORRECCIÓN: Ahora dice solo "Campo" */}
+                                            <label className="ebd-label">Campo</label>
                                             <select className="ebd-input" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
                                                 <option value="" disabled>Selecciona tu campo...</option>
                                                 {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
