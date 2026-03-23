@@ -2,90 +2,96 @@
     max-width: 1200px; margin: 0 auto; padding: 20px 0; animation: fadeIn 0.4s ease;
 }
 
-.students-header {
-    display: flex; justify-content: space-between; align-items: center;
-    background: white; padding: 25px 30px; border-radius: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 25px;
-}
-
-.students-header h2 { font-size: 24px; font-weight: 800; color: #1e293b; margin: 0 0 5px 0; }
-.students-header p { margin: 0; color: #64748b; font-size: 15px; }
-
-.btn-inscribir {
-    background-color: #4f46e5; color: white; padding: 12px 20px;
-    border-radius: 12px; font-weight: bold; font-size: 15px; border: none;
-    cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-}
-.btn-inscribir:hover { background-color: #4338ca; transform: translateY(-2px); }
-
-/* =========================================================
-   NUEVOS ESTILOS DE PESTAÑAS (TABS) - MUCHO MÁS MODERNOS
-   ========================================================= */
 .students-tabs {
-    display: flex; gap: 15px; margin-bottom: 30px;
-    background: #f1f5f9; padding: 8px; border-radius: 16px;
+    display: flex; gap: 15px; margin-bottom: 25px;
+    background: #f1f5f9; padding: 8px; border-radius: 20px;
 }
 .tab-btn {
     flex: 1; text-align: center; padding: 15px 20px;
-    border-radius: 12px; border: none; font-size: 16px; font-weight: 800;
+    border-radius: 14px; border: none; font-size: 16px; font-weight: 800;
     cursor: pointer; transition: all 0.3s ease; color: #64748b;
     background: transparent; display: flex; align-items: center; justify-content: center;
 }
-.tab-btn.active {
-    background: #4f46e5; color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-}
+.tab-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
 .tab-btn:hover:not(.active) { background: #e2e8f0; color: #1e293b; }
 
+.students-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; padding: 25px 30px; border-radius: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 30px;
+}
+.students-header h2 { font-size: 26px; font-weight: 900; color: #1e293b; margin: 0 0 5px 0; letter-spacing: -0.5px; }
+.students-header p { margin: 0; color: #64748b; font-size: 15px; }
+
+.btn-inscribir {
+    background-color: #4f46e5; color: white; padding: 14px 24px;
+    border-radius: 16px; font-weight: 800; font-size: 15px; border: none;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+.btn-inscribir:hover { background-color: #4338ca; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3); }
+
 .students-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;
 }
-
-.student-card {
-    background: white; border-radius: 16px; padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; transition: 0.2s;
-}
-.student-card:hover { border-color: #a5b4fc; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-
-.student-card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
-.student-avatar {
-    width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center;
-    align-items: center; font-size: 24px; color: white;
-}
-.avatar-nino { background-color: #3b82f6; } 
-.avatar-nina { background-color: #ec4899; } 
-
-.student-name { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 4px 0; }
-.student-tag { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
-.tag-nino { background-color: #dbeafe; color: #1e40af; }
-.tag-nina { background-color: #fce7f3; color: #be185d; }
-
-.student-details div { font-size: 14px; color: #475569; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-.student-actions { display: flex; gap: 10px; margin-top: 15px; }
 
 /* =========================================================
-   NUEVOS ESTILOS DE CUMPLEAÑOS (COLORES Y LIMPIEZA)
+   DISEÑO DE LAS NUEVAS TARJETAS (MÁS COLORIDAS Y MODERNAS)
    ========================================================= */
-.birthdays-container {
-    display: flex; flex-direction: column; gap: 10px;
+.student-card {
+    border-radius: 24px; padding: 25px;
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent; transition: all 0.3s ease;
+    position: relative; overflow: hidden;
 }
-.birthday-list-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 20px; margin-bottom: 10px; border-radius: 12px;
-    border: 1px solid transparent; transition: transform 0.2s;
+
+/* Tema Niño (Azul) */
+.card-nino { background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%); border-color: #dbeafe; }
+.card-nino:hover { border-color: #93c5fd; box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.15); transform: translateY(-5px); }
+.card-nino .student-avatar { background: linear-gradient(135deg, #60a5fa, #3b82f6); border: 4px solid #eff6ff; }
+.card-nino .student-tag { background-color: #dbeafe; color: #1d4ed8; }
+
+/* Tema Niña (Rosa) */
+.card-nina { background: linear-gradient(145deg, #ffffff 0%, #fdf2f8 100%); border-color: #fce7f3; }
+.card-nina:hover { border-color: #f9a8d4; box-shadow: 0 15px 25px -5px rgba(236, 72, 153, 0.15); transform: translateY(-5px); }
+.card-nina .student-avatar { background: linear-gradient(135deg, #f472b6, #ec4899); border: 4px solid #fdf2f8; }
+.card-nina .student-tag { background-color: #fce7f3; color: #be185d; }
+
+.student-card-header { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+.student-avatar {
+    width: 65px; height: 65px; border-radius: 50%; display: flex; justify-content: center;
+    align-items: center; font-size: 30px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+
+.student-name { font-size: 20px; font-weight: 900; color: #1e293b; margin: 0 0 6px 0; line-height: 1.1; }
+.student-tag { font-size: 13px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+
+.student-details div { font-size: 15px; color: #475569; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.student-details i { font-size: 16px; width: 20px; text-align: center; }
+
+/* Botones dentro de la tarjeta estilo píldora */
+.student-actions { display: flex; gap: 12px; margin-top: 25px; }
+.btn-pill-editar {
+    flex: 1; background-color: #6366f1; color: white; border: none; padding: 10px;
+    border-radius: 30px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;
+}
+.btn-pill-editar:hover { background-color: #4f46e5; }
+.btn-pill-eliminar {
+    flex: 1; background-color: #ef4444; color: white; border: none; padding: 10px;
+    border-radius: 30px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;
+}
+.btn-pill-eliminar:hover { background-color: #dc2626; }
+
+/* Lista de Cumpleaños */
+.birthdays-container { display: flex; flex-direction: column; gap: 10px; }
+.birthday-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; margin-bottom: 10px; border-radius: 16px; transition: transform 0.2s; }
 .birthday-list-item:hover { transform: translateX(5px); }
-.birthday-list-item:last-child { margin-bottom: 0; }
-
-/* Colores para Niños */
-.bday-nino { background-color: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.bday-nino { background-color: #eff6ff; border: 2px solid #bfdbfe; color: #1e40af; }
 .bday-nino .bday-age { background: #dbeafe; color: #1e40af; }
-
-/* Colores para Niñas */
-.bday-nina { background-color: #fdf2f8; border-color: #fbcfe8; color: #be185d; }
+.bday-nina { background-color: #fdf2f8; border: 2px solid #fbcfe8; color: #be185d; }
 .bday-nina .bday-age { background: #fce7f3; color: #be185d; }
-
-.bday-name { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-.bday-age { font-size: 14px; font-weight: 800; padding: 6px 14px; border-radius: 20px; }
+.bday-name { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 12px; }
+.bday-age { font-size: 14px; font-weight: 800; padding: 6px 16px; border-radius: 20px; }
 
 @media (max-width: 768px) {
     .students-header { flex-direction: column; align-items: flex-start; gap: 15px; }
