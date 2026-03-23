@@ -21,14 +21,11 @@ export const AdminDashboard = () => {
                 <h2>Directorio de Usuarios</h2>
                 <p>Gestiona y edita los accesos de tu equipo en tiempo real.</p>
                 
-                {/* NUEVO: Etiqueta elegante con el TOTAL de usuarios */}
                 {!cargando && (
                     <div style={{ 
-                        marginTop: '10px', display: 'inline-block', 
-                        backgroundColor: '#eef2ff', color: '#4f46e5', 
-                        padding: '8px 15px', borderRadius: '10px', 
-                        fontWeight: 'bold', fontSize: '14px',
-                        border: '1px solid #c7d2fe'
+                        marginTop: '10px', display: 'inline-block', backgroundColor: '#eef2ff', 
+                        color: '#4f46e5', padding: '8px 15px', borderRadius: '10px', 
+                        fontWeight: 'bold', fontSize: '14px', border: '1px solid #c7d2fe'
                     }}>
                         <i className="fa-solid fa-users" style={{ marginRight: '8px' }}></i> 
                         Total en la plataforma: {usuarios.length}
@@ -44,10 +41,7 @@ export const AdminDashboard = () => {
                         const usuariosDeEsteRol = usuarios.filter(u => u.rol === rolDef.id);
                         
                         return (
-                            <Accordion 
-                                key={rolDef.id} 
-                                title={`${rolDef.name}s (${usuariosDeEsteRol.length})`}
-                            >
+                            <Accordion key={rolDef.id} title={`${rolDef.name}s (${usuariosDeEsteRol.length})`}>
                                 {usuariosDeEsteRol.length === 0 ? (
                                     <p style={{ padding: '15px', color: '#64748b', fontStyle: 'italic' }}>
                                         No hay {rolDef.name.toLowerCase()}s registrados aún.
@@ -67,9 +61,9 @@ export const AdminDashboard = () => {
                                                 </div>
                                                 
                                                 <div className="user-details">
-                                                    {user.campo && (
-                                                        <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
-                                                    )}
+                                                    {user.campo && <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>}
+                                                    {/* NUEVO: Mostramos el género */}
+                                                    <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
                                                     <div>
                                                         <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
                                                         <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
@@ -80,21 +74,13 @@ export const AdminDashboard = () => {
                                                 <div className="admin-actions">
                                                     {user.estado === 'Pendiente' ? (
                                                         <>
-                                                            <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}>
-                                                                <i className="fa-solid fa-check"></i> Aprobar
-                                                            </Button>
-                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}>
-                                                                <i className="fa-solid fa-xmark"></i> Denegar
-                                                            </Button>
+                                                            <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}><i className="fa-solid fa-check"></i> Aprobar</Button>
+                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}><i className="fa-solid fa-xmark"></i> Denegar</Button>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <Button className="btn-editar" onClick={() => setEditandoUser(user)}>
-                                                                <i className="fa-solid fa-pen"></i> Editar
-                                                            </Button>
-                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}>
-                                                                <i className="fa-solid fa-trash"></i> Eliminar
-                                                            </Button>
+                                                            <Button className="btn-editar" onClick={() => setEditandoUser(user)}><i className="fa-solid fa-pen"></i> Editar</Button>
+                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}><i className="fa-solid fa-trash"></i> Eliminar</Button>
                                                         </>
                                                     )}
                                                 </div>
@@ -114,6 +100,16 @@ export const AdminDashboard = () => {
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label>
                             <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
+                        </div>
+
+                        {/* NUEVO: Campo de género para editar */}
+                        <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Género</label>
+                            <select className="ebd-input" value={editandoUser.genero || ''} onChange={e => setEditandoUser({...editandoUser, genero: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
+                                <option value="" disabled>Seleccione...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
                         </div>
 
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
