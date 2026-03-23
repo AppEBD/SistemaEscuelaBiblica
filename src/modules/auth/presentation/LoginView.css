@@ -1,4 +1,3 @@
-/* --- Variables de Diseño --- */
 :root {
     --primary: #4f46e5;
     --primary-hover: #4338ca;
@@ -13,193 +12,94 @@
 
 * { box-sizing: border-box; }
 
-/* --- Contenedor Principal --- */
 .ebd-login-root {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background-color: var(--bg-page);
-    padding: 20px;
-    font-family: var(--font-stack);
-    color: var(--text-main);
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; background-color: var(--bg-page);
+    padding: 20px; font-family: var(--font-stack); color: var(--text-main);
 }
 
-/* --- Tarjeta Principal --- */
 .ebd-card {
-    background: var(--bg-card);
-    width: 100%;
-    max-width: 420px;
-    padding: 50px 30px;
-    border-radius: 30px;
-    box-shadow: var(--shadow);
-    text-align: center;
+    background: var(--bg-card); width: 100%; max-width: 420px;
+    padding: 50px 30px; border-radius: 30px; box-shadow: var(--shadow);
+    text-align: center; position: relative; overflow: hidden;
 }
 
-/* --- Encabezado --- */
-.ebd-header-icon {
-    font-size: 50px;
-    color: var(--primary);
-    margin-bottom: 20px;
-}
+.ebd-header-icon { font-size: 50px; color: var(--primary); margin-bottom: 20px; }
+.ebd-title { font-size: 28px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: -1px; }
+.ebd-subtitle { font-size: 15px; color: var(--text-muted); margin: 0 0 35px 0; }
 
-.ebd-title {
-    font-size: 28px;
-    font-weight: 900;
-    margin: 0 0 8px 0;
-    letter-spacing: -1px;
-}
-
-.ebd-subtitle {
-    font-size: 15px;
-    color: var(--text-muted);
-    margin: 0 0 35px 0;
-}
-
-/* --- Botones de Selección de Rol --- */
 .ebd-role-selector-title {
-    text-align: left;
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 15px;
+    text-align: center; font-size: 15px; font-weight: 800;
+    color: var(--text-main); margin-bottom: 20px;
 }
 
 .ebd-roles-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 25px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
 }
 
 .ebd-role-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    padding: 20px 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: var(--text-main);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: white; border: 2px solid var(--border); border-radius: 16px;
+    padding: 20px 10px; cursor: pointer; transition: all 0.2s ease; color: var(--text-main);
+}
+.ebd-role-btn:hover { border-color: #a5b4fc; background-color: #f8fafc; transform: translateY(-2px); }
+.ebd-role-icon { font-size: 24px; margin-bottom: 8px; color: var(--primary); }
+.ebd-role-name { font-size: 13px; font-weight: 700; }
+
+/* NUEVO: Botón para volver atrás */
+.ebd-back-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 14px; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 25px;
+    transition: color 0.2s; padding: 0;
+}
+.ebd-back-btn:hover { color: var(--primary); }
+
+/* NUEVO: Título del rol seleccionado */
+.selected-role-title {
+    font-size: 18px; font-weight: 800; color: var(--primary);
+    margin-bottom: 25px; text-align: left; padding-bottom: 15px;
+    border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px;
 }
 
-.ebd-role-btn:hover {
-    border-color: #a5b4fc;
-    background-color: #f8fafc;
-}
-
-.ebd-role-btn.selected {
-    border-color: var(--primary);
-    background-color: #eef2ff;
-    color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-}
-
-.ebd-role-icon {
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.ebd-role-name {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-/* --- Inputs y Formularios --- */
 .ebd-form-group { margin-bottom: 15px; text-align: left; }
 .ebd-label { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: block; }
-
 .ebd-input {
-    width: 100%;
-    padding: 15px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    font-size: 16px;
-    background-color: #f8fafc;
-    transition: all 0.2s;
+    width: 100%; padding: 15px; border: 2px solid var(--border);
+    border-radius: 12px; font-size: 16px; background-color: #f8fafc; transition: all 0.2s;
 }
+.ebd-input:focus { outline: none; border-color: var(--primary); background-color: white; }
 
-.ebd-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background-color: white;
-}
+.ebd-date-grid { display: grid; grid-template-columns: 2fr 3fr 3fr; gap: 10px; }
 
-.ebd-date-grid {
-    display: grid;
-    grid-template-columns: 2fr 3fr 3fr;
-    gap: 10px;
-}
-
-/* --- Checkbox de recordar contraseña --- */
 .ebd-checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    color: var(--text-main);
-    font-weight: 700;
-    cursor: pointer;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+    font-size: 14px; color: var(--text-main); font-weight: 700; cursor: pointer;
 }
+.ebd-checkbox-group input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 
-.ebd-checkbox-group input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary);
-    cursor: pointer;
-}
+.ebd-form-locked { opacity: 0.5; pointer-events: none; filter: grayscale(100%); transition: all 0.3s; }
 
-/* --- Efecto de bloqueo cuando está pendiente --- */
-.ebd-form-locked {
-    opacity: 0.5;
-    pointer-events: none; /* Esto evita que el usuario modifique cosas */
-    filter: grayscale(100%);
-    transition: all 0.3s;
-}
-
-/* --- Botón de Acción Principal --- */
 .ebd-submit-btn {
-    width: 100%;
-    padding: 16px;
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 17px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    margin-top: 15px;
+    width: 100%; padding: 16px; background-color: var(--primary); color: white;
+    border: none; border-radius: 12px; font-size: 17px; font-weight: 800;
+    cursor: pointer; transition: background-color 0.2s, transform 0.1s; margin-top: 15px;
 }
-
 .ebd-submit-btn:hover { background-color: var(--primary-hover); }
 .ebd-submit-btn:active { transform: scale(0.98); }
 .ebd-submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
 
 .ebd-cancel-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: bold;
-    text-decoration: underline;
-    cursor: pointer;
-    margin-top: 15px;
-    width: 100%;
+    background: none; border: none; color: var(--text-muted); font-size: 13px;
+    font-weight: bold; text-decoration: underline; cursor: pointer; margin-top: 15px; width: 100%;
 }
-
 .ebd-cancel-btn:hover { color: var(--text-main); }
 
-/* --- Mensajes --- */
 .ebd-error { color: #ef4444; font-size: 13px; font-weight: 700; margin-top: 10px; }
-.ebd-info { background-color: #fef3c7; color: #92400e; padding: 15px; border-radius: 12px; font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: left; border-left: 4px solid #f59e0b; }
+.ebd-info {
+    background-color: #fef3c7; color: #92400e; padding: 15px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: left; border-left: 4px solid #f59e0b;
+}
 
-/* --- Animaciones suaves --- */
-.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
