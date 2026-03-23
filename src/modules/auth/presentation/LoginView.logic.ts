@@ -7,7 +7,8 @@ import { AuthService } from '../infrastructure/auth.service';
 export const useLoginLogic = () => {
     const { login, isLoading } = useAuth();
     
-    const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '' };
+    // NUEVO: Agregamos "genero: ''" al estado inicial
+    const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
     const [form, setForm] = useState(estadoInicial);
     const [status, setStatus] = useState({ error: '', info: '' });
     
@@ -78,7 +79,8 @@ export const useLoginLogic = () => {
             fechaCompleta = `${form.birthYear}-${form.birthMonth}-${form.birthDay}`;
         }
 
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, recordar, isPending);
+        // NUEVO: Le pasamos form.genero a la función
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, form.genero, recordar, isPending);
         
         if (!res.exito) {
             if (res.mensaje === "DENEGADO") {
