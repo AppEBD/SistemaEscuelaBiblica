@@ -2,7 +2,7 @@ export const calcularEdadExacta = (fechaNacimiento: string | undefined, edadGuar
     // Si no hay fecha de nacimiento, usamos la edad que ya estaba en la base de datos
     if (!fechaNacimiento) return edadGuardada ?? 'N/A';
     
-    // Separamos la fecha manualmente (YYYY-MM-DD) para evitar errores de zona horaria
+    // Separamos la fecha manualmente (YYYY-MM-DD) para evitar errores
     const partes = fechaNacimiento.split('-');
     if (partes.length !== 3) return edadGuardada ?? 'N/A';
     
@@ -16,12 +16,12 @@ export const calcularEdadExacta = (fechaNacimiento: string | undefined, edadGuar
     let edad = hoy.getFullYear() - fechaCumple.getFullYear();
     const diferenciaMeses = hoy.getMonth() - fechaCumple.getMonth();
     
-    // Si aún no ha llegado su mes de cumpleaños, le restamos 1 año
+    // Si aún no ha llegado su mes o día de cumpleaños, le restamos 1 año
     if (diferenciaMeses < 0 || (diferenciaMeses === 0 && hoy.getDate() < fechaCumple.getDate())) {
         edad--;
     }
     
-    // Si el cálculo da "NaN" (Not a Number), devolvemos la edad guardada por seguridad
+    // Si por alguna razón el cálculo falla, devolvemos la edad que ya estaba guardada
     return isNaN(edad) ? (edadGuardada ?? 'N/A') : edad;
 };
 
