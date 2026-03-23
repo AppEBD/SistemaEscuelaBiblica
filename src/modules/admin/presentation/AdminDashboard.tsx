@@ -62,7 +62,6 @@ export const AdminDashboard = () => {
                                                 
                                                 <div className="user-details">
                                                     {user.campo && <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>}
-                                                    {/* NUEVO: Mostramos el género */}
                                                     <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
                                                     <div>
                                                         <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
@@ -102,7 +101,6 @@ export const AdminDashboard = () => {
                             <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
                         </div>
 
-                        {/* NUEVO: Campo de género para editar */}
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Género</label>
                             <select className="ebd-input" value={editandoUser.genero || ''} onChange={e => setEditandoUser({...editandoUser, genero: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
