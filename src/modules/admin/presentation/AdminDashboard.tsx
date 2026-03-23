@@ -20,6 +20,20 @@ export const AdminDashboard = () => {
             <div className="admin-header">
                 <h2>Directorio de Usuarios</h2>
                 <p>Gestiona y edita los accesos de tu equipo en tiempo real.</p>
+                
+                {/* NUEVO: Etiqueta elegante con el TOTAL de usuarios */}
+                {!cargando && (
+                    <div style={{ 
+                        marginTop: '10px', display: 'inline-block', 
+                        backgroundColor: '#eef2ff', color: '#4f46e5', 
+                        padding: '8px 15px', borderRadius: '10px', 
+                        fontWeight: 'bold', fontSize: '14px',
+                        border: '1px solid #c7d2fe'
+                    }}>
+                        <i className="fa-solid fa-users" style={{ marginRight: '8px' }}></i> 
+                        Total en la plataforma: {usuarios.length}
+                    </div>
+                )}
             </div>
 
             {cargando ? (
@@ -53,7 +67,6 @@ export const AdminDashboard = () => {
                                                 </div>
                                                 
                                                 <div className="user-details">
-                                                    {/* Solo mostramos la Iglesia si el usuario tiene una asignada */}
                                                     {user.campo && (
                                                         <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
                                                     )}
@@ -98,19 +111,16 @@ export const AdminDashboard = () => {
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
-                        {/* 1. EDITAR NOMBRE */}
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label>
                             <input className="ebd-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
                         </div>
 
-                        {/* 2. EDITAR FECHA DE NACIMIENTO (Usa un calendario nativo) */}
                         <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha de Nacimiento</label>
                             <input className="ebd-input" type="date" value={editandoUser.fechaNacimiento || ''} onChange={e => setEditandoUser({...editandoUser, fechaNacimiento: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
                         </div>
 
-                        {/* 3. EDITAR CAMPO (Solo si es Maestro o Auxiliar) */}
                         {(editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') && (
                             <div className="ebd-form-group" style={{ marginBottom: '20px' }}>
                                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo / Iglesia</label>
