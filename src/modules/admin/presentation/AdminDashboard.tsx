@@ -3,6 +3,8 @@ import { useAdminLogic } from './AdminDashboard.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
 import { IGLESIAS_CAMPOS } from '../../../core/constants/roles';
+// Importamos la función que calcula la edad
+import { calcularEdadExacta, formatearFechaLocal } from '../../../core/utils/date.utils'; 
 import './AdminDashboard.css';
 
 export const AdminDashboard = () => {
@@ -37,8 +39,14 @@ export const AdminDashboard = () => {
                             
                             <div className="user-details">
                                 <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
-                                <div><i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento}</div>
-                                <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-SV') : 'N/A'}</div>
+                                
+                                {/* AQUÍ AGREGAMOS LA EDAD EXACTAMENTE COMO LA PEDISTE */}
+                                <div>
+                                    <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
+                                    <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
+                                </div>
+                                
+                                <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
                             </div>
 
                             <div className="admin-actions">
