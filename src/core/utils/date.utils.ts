@@ -1,16 +1,12 @@
-// ============================================================================
-// 1. FÓRMULA PRINCIPAL (Usada por el Admin, Usuarios y la lista de Alumnos)
-// ============================================================================
-// Calcula la edad exacta que tiene la persona el día de HOY.
+// 1. Calcula la edad exacta que tiene la persona el día de HOY.
 export const calcularEdadExacta = (fechaNacimiento: string | undefined, edadGuardada?: number): number | string => {
-    // Si no hay fecha, rescata la edad vieja de la base de datos
     if (!fechaNacimiento) return edadGuardada ?? 'N/A';
     
     const partes = fechaNacimiento.split('-');
     if (partes.length !== 3) return edadGuardada ?? 'N/A';
     
     const anio = parseInt(partes[0], 10);
-    const mes = parseInt(partes[1], 10) - 1; // Enero es 0 en programación
+    const mes = parseInt(partes[1], 10) - 1; 
     const dia = parseInt(partes[2], 10);
 
     const hoy = new Date();
@@ -19,7 +15,6 @@ export const calcularEdadExacta = (fechaNacimiento: string | undefined, edadGuar
     let edad = hoy.getFullYear() - fechaCumple.getFullYear();
     const diferenciaMeses = hoy.getMonth() - fechaCumple.getMonth();
     
-    // Si aún no llega la fecha de su cumpleaños este año, restamos 1
     if (diferenciaMeses < 0 || (diferenciaMeses === 0 && hoy.getDate() < fechaCumple.getDate())) {
         edad--;
     }
@@ -27,24 +22,21 @@ export const calcularEdadExacta = (fechaNacimiento: string | undefined, edadGuar
     return isNaN(edad) ? (edadGuardada ?? 'N/A') : edad;
 };
 
-// ============================================================================
-// 2. FÓRMULA DE FORMATO (Usada por el Admin para ver cuándo se registró)
-// ============================================================================
-// Convierte el timestamp de Firebase a una fecha bonita de El Salvador
+// 2. Convierte el timestamp a una fecha de El Salvador
 export const formatearFechaLocal = (timestamp: number): string => {
     if (!timestamp) return 'Desconocida';
     return new Date(timestamp).toLocaleDateString('es-SV');
 };
 
-// ============================================================================
-// 3. FÓRMULA NUEVA PARA CUMPLEAÑOS (Usada en la pestaña de Cumpleaños)
-// ============================================================================
-// Solo calcula qué edad cumplirá en este año, no importa si ya pasó o no.
+// 3. FÓRMULA CORREGIDA: Calcula la edad que cumplirá en su próximo cumpleaños
 export const calcularEdadEsteAnio = (fechaNacimiento: string | undefined): number | string => {
-    if (!fechaNacimiento) return 'N/A';
-    const anioNacimiento = parseInt(fechaNacimiento.split('-')[0], 10);
-    const anioActual = new Date().getFullYear(); // Tomará el año actual (ej. 2026)
-    const edad = anioActual - anioNacimiento;
+    // Reutilizamos la fórmula exacta para saber cuántos años tiene hoy
+    const edadActual = calcularEdadExacta(fechaNacimiento);
     
-    return isNaN(edad) ? 'N/A' : edad;
+    // Si la edad actual es un número, simplemente le sumamos 1 para su próximo cumpleaños
+    if (typeof edadActual === 'number') {
+        return edadActual + 1;
+    }
+    
+    return 'N/A';
 };
