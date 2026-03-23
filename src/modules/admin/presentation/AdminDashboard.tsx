@@ -2,8 +2,9 @@ import React from 'react';
 import { useAdminLogic } from './AdminDashboard.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
-import { IGLESIAS_CAMPOS } from '../../../core/constants/roles';
-// Importamos la función que calcula la edad
+// Importamos la configuración de roles y el Acordeón
+import { IGLESIAS_CAMPOS, ROLES_CONFIG } from '../../../core/constants/roles';
+import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, formatearFechaLocal } from '../../../core/utils/date.utils'; 
 import './AdminDashboard.css';
 
@@ -12,6 +13,9 @@ export const AdminDashboard = () => {
         usuarios, cargando, editandoUser, setEditandoUser, 
         aprobarUsuario, eliminarUsuario, guardarEdicion 
     } = useAdminLogic();
+
+    // Filtramos para no mostrar al "ADMIN" en la lista de acordeones
+    const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
 
     return (
         <div className="admin-dashboard">
@@ -23,55 +27,72 @@ export const AdminDashboard = () => {
             {cargando ? (
                 <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando base de datos...</p>
             ) : (
-                <div className="users-grid">
-                    {usuarios.length === 0 ? <p>No hay usuarios registrados aún.</p> : null}
-                    {usuarios.map(user => (
-                        <div className="user-card" key={user.id}>
-                            <div className="user-card-header">
-                                <div>
-                                    <h3 className="user-name">{user.nombre}</h3>
-                                    <span className="user-role">{user.rol}</span>
-                                </div>
-                                <span className={`user-status ${user.estado === 'Activo' ? 'status-activo' : 'status-pendiente'}`}>
-                                    {user.estado === 'Activo' ? 'Activo' : 'Pendiente'}
-                                </span>
-                            </div>
-                            
-                            <div className="user-details">
-                                <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
-                                
-                                {/* AQUÍ AGREGAMOS LA EDAD EXACTAMENTE COMO LA PEDISTE */}
-                                <div>
-                                    <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
-                                    <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
-                                </div>
-                                
-                                <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
-                            </div>
-
-                            <div className="admin-actions">
-                                {user.estado === 'Pendiente' ? (
-                                    <>
-                                        <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}>
-                                            <i className="fa-solid fa-check"></i> Aprobar
-                                        </Button>
-                                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}>
-                                            <i className="fa-solid fa-xmark"></i> Denegar
-                                        </Button>
-                                    </>
+                <div className="directory-container">
+                    {/* Iteramos sobre cada tipo de rol para crear su propio acordeón */}
+                    {rolesParaDirectorio.map(rolDef => {
+                        // Filtramos a los usuarios que pertenecen a este rol específico
+                        const usuariosDeEsteRol = usuarios.filter(u => u.rol === rolDef.id);
+                        
+                        return (
+                            <Accordion 
+                                key={rolDef.id} 
+                                title={`${rolDef.name}s (${usuariosDeEsteRol.length})`}
+                            >
+                                {usuariosDeEsteRol.length === 0 ? (
+                                    <p style={{ padding: '15px', color: '#64748b', fontStyle: 'italic' }}>
+                                        No hay {rolDef.name.toLowerCase()}s registrados aún.
+                                    </p>
                                 ) : (
-                                    <>
-                                        <Button className="btn-editar" onClick={() => setEditandoUser(user)}>
-                                            <i className="fa-solid fa-pen"></i> Editar
-                                        </Button>
-                                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}>
-                                            <i className="fa-solid fa-trash"></i> Eliminar
-                                        </Button>
-                                    </>
+                                    <div className="users-grid" style={{ padding: '15px 0' }}>
+                                        {usuariosDeEsteRol.map(user => (
+                                            <div className="user-card" key={user.id}>
+                                                <div className="user-card-header">
+                                                    <div>
+                                                        <h3 className="user-name">{user.nombre}</h3>
+                                                        <span className="user-role">{user.rol}</span>
+                                                    </div>
+                                                    <span className={`user-status ${user.estado === 'Activo' ? 'status-activo' : 'status-pendiente'}`}>
+                                                        {user.estado === 'Activo' ? 'Activo' : 'Pendiente'}
+                                                    </span>
+                                                </div>
+                                                
+                                                <div className="user-details">
+                                                    <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>
+                                                    <div>
+                                                        <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
+                                                        <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
+                                                    </div>
+                                                    <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
+                                                </div>
+
+                                                <div className="admin-actions">
+                                                    {user.estado === 'Pendiente' ? (
+                                                        <>
+                                                            <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}>
+                                                                <i className="fa-solid fa-check"></i> Aprobar
+                                                            </Button>
+                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}>
+                                                                <i className="fa-solid fa-xmark"></i> Denegar
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Button className="btn-editar" onClick={() => setEditandoUser(user)}>
+                                                                <i className="fa-solid fa-pen"></i> Editar
+                                                            </Button>
+                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}>
+                                                                <i className="fa-solid fa-trash"></i> Eliminar
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
-                            </div>
-                        </div>
-                    ))}
+                            </Accordion>
+                        );
+                    })}
                 </div>
             )}
 
