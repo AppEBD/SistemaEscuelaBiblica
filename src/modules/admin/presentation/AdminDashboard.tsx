@@ -61,7 +61,8 @@ export const AdminDashboard = () => {
                                                 </div>
                                                 
                                                 <div className="user-details">
-                                                    {user.campo && <div><i className="fa-solid fa-church"></i> <strong>Iglesia:</strong> {user.campo}</div>}
+                                                    {/* CORRECCIÓN: Dice Campo y usa un ícono de ubicación */}
+                                                    {user.campo && <div><i className="fa-solid fa-map-location-dot"></i> <strong>Campo:</strong> {user.campo}</div>}
                                                     <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
                                                     <div>
                                                         <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
@@ -117,7 +118,8 @@ export const AdminDashboard = () => {
 
                         {(editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') && (
                             <div className="ebd-form-group" style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo / Iglesia</label>
+                                {/* CORRECCIÓN: Etiqueta actualizada en el Modal de edición */}
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Campo</label>
                                 <select className="ebd-input" value={editandoUser.campo || ''} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
                                     <option value="" disabled>Seleccione un campo...</option>
                                     {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
