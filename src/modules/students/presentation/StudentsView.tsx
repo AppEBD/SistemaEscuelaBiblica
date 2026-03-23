@@ -3,7 +3,6 @@ import { useStudentsLogic } from './StudentsView.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
-// AHORA IMPORTAMOS AMBAS HERRAMIENTAS MATEMÁTICAS DESDE NUESTRO ARCHIVO DE FECHAS
 import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
 import './StudentsView.css';
 
@@ -35,18 +34,19 @@ export const StudentsView = () => {
                 </button>
             </div>
 
+            {/* LAS PESTAÑAS AHORA SON GRANDES Y MODERNAS */}
             <div className="students-tabs">
                 <button 
                     className={`tab-btn ${activeTab === 'directorio' ? 'active' : ''}`}
                     onClick={() => setActiveTab('directorio')}
                 >
-                    <i className="fa-solid fa-address-book mr-2"></i> Directorio
+                    <i className="fa-solid fa-address-book mr-2"></i> Directorio de Alumnos
                 </button>
                 <button 
                     className={`tab-btn ${activeTab === 'cumpleanos' ? 'active' : ''}`}
                     onClick={() => setActiveTab('cumpleanos')}
                 >
-                    <i className="fa-solid fa-cake-candles mr-2"></i> Cumpleaños
+                    <i className="fa-solid fa-cake-candles mr-2"></i> Cumpleaños del Mes
                 </button>
             </div>
 
@@ -54,6 +54,7 @@ export const StudentsView = () => {
                 <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p>
             ) : (
                 <>
+                    {/* VISTA 1: EL DIRECTORIO */}
                     {activeTab === 'directorio' && (
                         <div className="students-grid">
                             {alumnos.length === 0 ? (
@@ -91,6 +92,7 @@ export const StudentsView = () => {
                         </div>
                     )}
 
+                    {/* VISTA 2: CUMPLEAÑOS (Rediseñada con colores y sin fecha) */}
                     {activeTab === 'cumpleanos' && (
                         <div className="birthdays-container animate-fade-in">
                             {months.map((nombreMes, index) => {
@@ -104,20 +106,21 @@ export const StudentsView = () => {
                                                 No hay cumpleañeros este mes.
                                             </p>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                {ninosDelMes.map(nino => (
-                                                    <div className="birthday-list-item" key={nino.id}>
-                                                        <div className="bday-date">
-                                                            {nino.fechaNacimiento.split('-')[2]}
-                                                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>{nombreMes.substring(0, 3)}</div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '10px' }}>
+                                                {ninosDelMes.map(nino => {
+                                                    const esNina = nino.genero === 'Femenino';
+                                                    return (
+                                                        <div className={`birthday-list-item ${esNina ? 'bday-nina' : 'bday-nino'}`} key={nino.id}>
+                                                            <div className="bday-name">
+                                                                <i className={`fa-solid ${esNina ? 'fa-child-dress' : 'fa-child-reaching'}`}></i>
+                                                                {nino.nombre}
+                                                            </div>
+                                                            <div className="bday-age">
+                                                                <i className="fa-solid fa-gift mr-1"></i> Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años
+                                                            </div>
                                                         </div>
-                                                        <div className="bday-name">{nino.nombre}</div>
-                                                        <div className="bday-age">
-                                                            {/* LLAMAMOS A LA FUNCIÓN DIRECTO DESDE DATE.UTILS.TS */}
-                                                            <i className="fa-solid fa-gift mr-1"></i> Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </Accordion>
