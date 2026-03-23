@@ -1,7 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
-// ¡AQUÍ ESTÁ LA CORRECCIÓN! (3 saltos en lugar de 4)
-import { db } from '../../../core/firebase/firebase.config'; 
+import { db } from '../../../../core/firebase/firebase.config';
 import { AuthService } from '../../auth/infrastructure/auth.service';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 
@@ -59,7 +58,6 @@ export const useAdminLogic = () => {
 
         const coleccion = AuthService.obtenerColeccion(editandoUser.rol);
 
-        // 1. Recalculamos la edad
         let nuevaEdad = editandoUser.edad;
         if (editandoUser.fechaNacimiento) {
             const edadCalculada = calcularEdadExacta(editandoUser.fechaNacimiento);
@@ -68,15 +66,15 @@ export const useAdminLogic = () => {
             }
         }
 
-        // 2. Preparamos los datos base
         const datosActualizados: any = {
             nombre: editandoUser.nombre,
             nombreNormalizado: editandoUser.nombre.trim().toLowerCase(),
             fechaNacimiento: editandoUser.fechaNacimiento,
-            edad: nuevaEdad
+            edad: nuevaEdad,
+            // NUEVO: Agregamos el género al actualizar
+            genero: editandoUser.genero 
         };
 
-        // 3. Ocultamos el campo si no es Maestro o Auxiliar
         if (editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') {
             datosActualizados.campo = editandoUser.campo;
         }
