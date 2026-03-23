@@ -18,23 +18,8 @@ export const StudentsView = () => {
 
     return (
         <div className="students-dashboard">
-            <div className="students-header">
-                <div>
-                    <h2>Mis Alumnos</h2>
-                    <p>Gestiona la asistencia y registros del campo <strong>{userData?.campo}</strong></p>
-                    {!cargando && (
-                        <div style={{ marginTop: '10px', fontSize: '14px', fontWeight: 'bold', color: '#4f46e5' }}>
-                            <i className="fa-solid fa-children"></i> Total inscritos: {alumnos.length}
-                        </div>
-                    )}
-                </div>
-                
-                <button className="btn-inscribir" onClick={abrirModalNuevo}>
-                    <i className="fa-solid fa-user-plus"></i> Inscribir un nuevo niño
-                </button>
-            </div>
-
-            {/* LAS PESTAÑAS AHORA SON GRANDES Y MODERNAS */}
+            
+            {/* ¡MAGIA! LAS PESTAÑAS AHORA ESTÁN EN LA PARTE SUPERIOR */}
             <div className="students-tabs">
                 <button 
                     className={`tab-btn ${activeTab === 'directorio' ? 'active' : ''}`}
@@ -50,13 +35,33 @@ export const StudentsView = () => {
                 </button>
             </div>
 
+            {/* EL ENCABEZADO AHORA QUEDA ABAJO DE LAS PESTAÑAS */}
+            <div className="students-header">
+                <div>
+                    <h2>{activeTab === 'directorio' ? 'Mis Alumnos' : 'Calendario de Cumpleaños'}</h2>
+                    <p>Gestiona la asistencia y registros del campo <strong>{userData?.campo}</strong></p>
+                    {!cargando && activeTab === 'directorio' && (
+                        <div style={{ marginTop: '10px', fontSize: '14px', fontWeight: 'bold', color: '#4f46e5' }}>
+                            <i className="fa-solid fa-children"></i> Total inscritos: {alumnos.length}
+                        </div>
+                    )}
+                </div>
+                
+                {/* El botón de Inscribir solo lo mostramos en el Directorio para no estorbar en Cumpleaños */}
+                {activeTab === 'directorio' && (
+                    <button className="btn-inscribir" onClick={abrirModalNuevo}>
+                        <i className="fa-solid fa-user-plus"></i> Inscribir un nuevo niño
+                    </button>
+                )}
+            </div>
+
             {cargando ? (
                 <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p>
             ) : (
                 <>
                     {/* VISTA 1: EL DIRECTORIO */}
                     {activeTab === 'directorio' && (
-                        <div className="students-grid">
+                        <div className="students-grid animate-fade-in">
                             {alumnos.length === 0 ? (
                                 <p style={{ color: '#64748b' }}>No tienes alumnos inscritos aún en tu campo.</p>
                             ) : null}
@@ -92,7 +97,7 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* VISTA 2: CUMPLEAÑOS (Rediseñada con colores y sin fecha) */}
+                    {/* VISTA 2: CUMPLEAÑOS */}
                     {activeTab === 'cumpleanos' && (
                         <div className="birthdays-container animate-fade-in">
                             {months.map((nombreMes, index) => {
