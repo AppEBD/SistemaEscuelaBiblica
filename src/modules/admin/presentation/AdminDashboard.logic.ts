@@ -1,8 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
-import { db } from '../../../../core/firebase/firebase.config';
+// ¡AQUÍ ESTÁ LA CORRECCIÓN! (3 saltos en lugar de 4)
+import { db } from '../../../core/firebase/firebase.config'; 
 import { AuthService } from '../../auth/infrastructure/auth.service';
-// Importamos la herramienta para recalcular la edad al editar
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 
 export const useAdminLogic = () => {
@@ -59,7 +59,7 @@ export const useAdminLogic = () => {
 
         const coleccion = AuthService.obtenerColeccion(editandoUser.rol);
 
-        // 1. Recalculamos la edad por si el admin modificó la fecha de nacimiento
+        // 1. Recalculamos la edad
         let nuevaEdad = editandoUser.edad;
         if (editandoUser.fechaNacimiento) {
             const edadCalculada = calcularEdadExacta(editandoUser.fechaNacimiento);
@@ -68,7 +68,7 @@ export const useAdminLogic = () => {
             }
         }
 
-        // 2. Preparamos los datos base (Nombre y Fecha)
+        // 2. Preparamos los datos base
         const datosActualizados: any = {
             nombre: editandoUser.nombre,
             nombreNormalizado: editandoUser.nombre.trim().toLowerCase(),
@@ -76,12 +76,11 @@ export const useAdminLogic = () => {
             edad: nuevaEdad
         };
 
-        // 3. ¡REGLA DE ORO! Solo guardamos el "campo" si es Maestro o Auxiliar
+        // 3. Ocultamos el campo si no es Maestro o Auxiliar
         if (editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') {
             datosActualizados.campo = editandoUser.campo;
         }
 
-        // 4. Actualizamos Firebase
         await updateDoc(doc(db, coleccion, editandoUser.id), datosActualizados);
         setEditandoUser(null);
         alert("Usuario actualizado correctamente");
