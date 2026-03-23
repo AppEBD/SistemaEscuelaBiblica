@@ -9,26 +9,25 @@ export const useStudentsLogic = () => {
     const [alumnos, setAlumnos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
 
+    const [activeTab, setActiveTab] = useState<'directorio' | 'cumpleanos'>('directorio');
+
     const estadoInicial = { nombre: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
     const [form, setForm] = useState(estadoInicial);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editandoId, setEditandoId] = useState<string | null>(null);
 
-    // Listas para las fechas
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 20 }, (_, i) => currentYear - i); // Últimos 20 años para niños
+    const years = Array.from({ length: 20 }, (_, i) => currentYear - i);
 
     useEffect(() => {
         if (!userData?.campo) return;
 
-        // Magia: Solo traemos los niños que pertenecen al "Campo" del maestro actual
         const q = query(collection(db, 'alumnos'), where('campo', '==', userData.campo));
         
         const unsub = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Los ordenamos alfabéticamente
             data.sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
             setAlumnos(data);
             setCargando(false);
@@ -36,6 +35,28 @@ export const useStudentsLogic = () => {
 
         return () => unsub();
     }, [userData]);
+
+    const obtenerCumpleanerosPorMes = () => {
+        const agrupados: Record<number, any[]> = {};
+        for (let i = 1; i <= 12; i++) agrupados[i] = []; 
+
+        alumnos.forEach(alumno => {
+            if (alumno.fechaNacimiento) {
+                const mes = parseInt(alumno.fechaNacimiento.split('-')[1], 10);
+                if (!isNaN(mes)) agrupados[mes].push(alumno);
+            }
+        });
+
+        Object.keys(agrupados).forEach(mes => {
+            agrupados[mes as any].sort((a, b) => {
+                const diaA = parseInt(a.fechaNacimiento.split('-')[2], 10);
+                const diaB = parseInt(b.fechaNacimiento.split('-')[2], 10);
+                return diaA - diaB;
+            });
+        });
+
+        return agrupados;
+    };
 
     const abrirModalNuevo = () => {
         setForm(estadoInicial);
@@ -61,7 +82,6 @@ export const useStudentsLogic = () => {
         e.preventDefault();
         if (!userData?.campo) return;
 
-        // Unimos el día, mes y año en un formato YYYY-MM-DD
         const d = form.birthDay.padStart(2, '0');
         const m = form.birthMonth.padStart(2, '0');
         const fechaNacimiento = `${form.birthYear}-${m}-${d}`;
@@ -72,7 +92,7 @@ export const useStudentsLogic = () => {
             fechaNacimiento,
             edad,
             genero: form.genero,
-            campo: userData.campo, // El niño se asigna automáticamente al campo del maestro
+            campo: userData.campo,
             actualizadoPor: userData.nombre,
             updatedAt: Date.now()
         };
@@ -96,7 +116,7 @@ export const useStudentsLogic = () => {
     };
 
     const eliminarAlumno = async (id: string, nombre: string) => {
-        if (window.confirm(`¿Estás seguro de que deseas eliminar a ${nombre}? Los datos se perderán para siempre.`)) {
+        if (window.confirm(`¿Estás seguro de que deseas eliminar a ${nombre}?`)) {
             await deleteDoc(doc(db, 'alumnos', id));
         }
     };
@@ -104,6 +124,7 @@ export const useStudentsLogic = () => {
     return {
         alumnos, cargando, form, setForm, isModalOpen, setIsModalOpen,
         abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
-        days, months, years, editandoId, userData
+        days, months, years, editandoId, userData,
+        activeTab, setActiveTab, obtenerCumpleanerosPorMes
     };
 };
