@@ -3,13 +3,14 @@ import { AuthService } from '../infrastructure/auth.service';
 import { UserRole, AuthUser } from '../domain/auth.model';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config';
+// ¡Importamos nuestra nueva herramienta de fechas!
+import { calcularEdadExacta } from '../../../core/utils/date.utils'; 
 
 export const useAuth = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [userData, setUserData] = useState<AuthUser | null>(null);
 
-    // ESCUCHADOR PARA EL USUARIO QUE YA ESTÁ ADENTRO
     useEffect(() => {
         const { rol, user } = AuthService.sesion.recuperar();
         
@@ -18,15 +19,12 @@ export const useAuth = () => {
             setUserData(user);
 
             const coleccion = AuthService.obtenerColeccion(rol);
-            // Escuchamos en tiempo real si el Admin lo edita o lo elimina
             const unsubscribe = onSnapshot(doc(db, coleccion, user.id), (docSnap) => {
                 if (!docSnap.exists()) {
-                    // ¡EL ADMIN LO ELIMINÓ! -> Lo expulsamos
                     AuthService.sesion.borrar();
-                    localStorage.setItem('cuenta_eliminada', 'true'); // Bandera para mostrar el mensaje
+                    localStorage.setItem('cuenta_eliminada', 'true');
                     window.location.reload();
                 } else {
-                    // ¡EL ADMIN LO EDITÓ! -> Actualizamos sus datos en vivo
                     const updatedUser = { id: docSnap.id, ...docSnap.data() } as AuthUser;
                     setUserData(updatedUser);
                     const recordar = localStorage.getItem('rol_dominical') !== null;
@@ -39,14 +37,6 @@ export const useAuth = () => {
             setUserRole(rol as UserRole);
         }
     }, []);
-
-    const calcularEdad = (fecha: string): number | null => {
-        if (!fecha) return null;
-        const hoy = new Date(); const cumple = new Date(fecha);
-        let edad = hoy.getFullYear() - cumple.getFullYear();
-        if (hoy.getMonth() < cumple.getMonth() || (hoy.getMonth() === cumple.getMonth() && hoy.getDate() < cumple.getDate())) edad--;
-        return edad;
-    };
 
     const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean, isVerifying: boolean = false) => {
         setIsLoading(true);
@@ -62,7 +52,9 @@ export const useAuth = () => {
             
             if (!usuarioExistente) {
                 if (isVerifying) return { exito: false, mensaje: "DENEGADO" };
-                const edad = calcularEdad(fechaNac);
+                
+                // Usamos la herramienta centralizada para calcular la edad al registrar
+                const edad = calcularEdadExacta(fechaNac);
                 const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
                 return { exito: true, mensaje: "SOLICITUD_ENVIADA", id: nuevoId };
             }
