@@ -10,7 +10,6 @@ export const LoginView: React.FC = () => {
         days, months, years, handleLogin, limpiarCuenta
     } = useLoginLogic();
 
-    // Busca los datos del rol seleccionado para mostrar su nombre e ícono en el paso 2
     const rolSeleccionado = ROLES_CONFIG.find(r => r.id === form.rol);
 
     return (
@@ -25,7 +24,6 @@ export const LoginView: React.FC = () => {
 
                 <form onSubmit={handleLogin}>
                     
-                    {/* PASO 1: SELECCIÓN DE USUARIO (Se oculta si ya eligió uno) */}
                     {!form.rol && !isPending && !isReturning ? (
                         <div className="animate-fade-in">
                             <p className="ebd-role-selector-title">¿Cómo deseas ingresar?</p>
@@ -45,17 +43,14 @@ export const LoginView: React.FC = () => {
                         </div>
                     ) : (
                         
-                        /* PASO 2: FORMULARIO DE DATOS */
                         <div className={`animate-fade-in ${(isPending || isReturning) ? "ebd-form-locked" : ""}`}>
                             
-                            {/* Botón para regresar al Paso 1 */}
                             {!isPending && !isReturning && (
                                 <button type="button" className="ebd-back-btn" onClick={() => setForm({...form, rol: ''})}>
                                     <i className="fa-solid fa-arrow-left"></i> Cambiar tipo de usuario
                                 </button>
                             )}
 
-                            {/* Encabezado del rol seleccionado */}
                             {rolSeleccionado && (
                                 <div className="selected-role-title">
                                     <i className={`fa-solid ${rolSeleccionado.icon}`}></i>
@@ -85,7 +80,16 @@ export const LoginView: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* ¡MAGIA!: Este campo SOLO aparece si es MAESTRO o AUXILIAR */}
+                                    {/* NUEVO: Campo de Género */}
+                                    <div className="ebd-form-group animate-fade-in">
+                                        <label className="ebd-label">Género</label>
+                                        <select className="ebd-input" value={form.genero} onChange={(e) => setForm({...form, genero: e.target.value})} required>
+                                            <option value="" disabled>Selecciona tu género...</option>
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Femenino">Femenino</option>
+                                        </select>
+                                    </div>
+
                                     {(form.rol === 'MAESTRO' || form.rol === 'AUXILIAR') && (
                                         <div className="ebd-form-group animate-fade-in">
                                             <label className="ebd-label">Campo / Iglesia</label>
@@ -109,7 +113,6 @@ export const LoginView: React.FC = () => {
                         </div>
                     )}
 
-                    {/* El botón de Ingresar SOLO aparece si ya se eligió un rol en el Paso 1 */}
                     {(form.rol || isPending || isReturning) && (
                         <Button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || (!form.rol && !isReturning)}>
                             {isLoading ? (
