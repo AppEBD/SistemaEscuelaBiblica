@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStudentsLogic } from './StudentsView.logic';
-import { Modal } from '../../../shared/components/Modal'; 
+import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
 import { calcularEdadExacta } from '../../../core/utils/date.utils'; 
 import './StudentsView.css';
