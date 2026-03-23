@@ -49,7 +49,7 @@ export const StudentsView = () => {
                 </p>
             ) : (
                 <>
-                    {/* VISTA 1: EL DIRECTORIO */}
+                    {/* VISTA 1: EL DIRECTORIO IDÉNTICO A TU IMAGEN */}
                     {activeTab === 'directorio' && (
                         <div className="students-grid animate-fade-in">
                             {alumnos.length === 0 ? (
@@ -58,6 +58,7 @@ export const StudentsView = () => {
 
                             {alumnos.map(alumno => {
                                 const esNina = alumno.genero === 'Femenino';
+                                // Sacamos la primera letra del nombre para el Avatar
                                 const inicial = alumno.nombre ? alumno.nombre.charAt(0).toUpperCase() : '?';
                                 const edadExacta = calcularEdadExacta(alumno.fechaNacimiento, alumno.edad);
 
@@ -94,7 +95,7 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* VISTA 2: CUMPLEAÑOS (AHORA CON EL NOMBRE ARRIBA Y LA EDAD ABAJO) */}
+                    {/* VISTA 2: CUMPLEAÑOS */}
                     {activeTab === 'cumpleanos' && (
                         <div className="birthdays-container animate-fade-in">
                             {months.map((nombreMes, index) => {
@@ -111,10 +112,13 @@ export const StudentsView = () => {
                                             <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '10px' }}>
                                                 {ninosDelMes.map(nino => (
                                                     <div className="bday-item" key={nino.id}>
-                                                        <div className="bday-date">
-                                                            {nino.fechaNacimiento.split('-')[2]}
+                                                        
+                                                        {/* AQUÍ ESTÁ EL NUEVO DISEÑO DEL DÍA */}
+                                                        <div className="bday-date-badge">
+                                                            <span className="bday-date-label">Día</span>
+                                                            <span className="bday-date-number">{nino.fechaNacimiento.split('-')[2]}</span>
                                                         </div>
-                                                        {/* AQUÍ ESTÁ EL CAMBIO: El contenedor bday-info agrupa ambos */}
+
                                                         <div className="bday-info">
                                                             <div className="bday-name">{nino.nombre}</div>
                                                             <div className="bday-age">
