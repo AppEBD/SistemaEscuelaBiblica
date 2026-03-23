@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
-import { db } from '../../../../core/firebase/firebase.config';
+// ¡AQUÍ ESTÁ LA CORRECCIÓN DEFINITIVA! (3 saltos)
+import { db } from '../../../core/firebase/firebase.config'; 
 import { AuthService } from '../../auth/infrastructure/auth.service';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 
@@ -71,7 +72,6 @@ export const useAdminLogic = () => {
             nombreNormalizado: editandoUser.nombre.trim().toLowerCase(),
             fechaNacimiento: editandoUser.fechaNacimiento,
             edad: nuevaEdad,
-            // NUEVO: Agregamos el género al actualizar
             genero: editandoUser.genero 
         };
 
