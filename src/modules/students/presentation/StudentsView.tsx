@@ -2,15 +2,20 @@ import React from 'react';
 import { useStudentsLogic } from './StudentsView.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
-import { calcularEdadExacta } from '../../../core/utils/date.utils'; 
+import Accordion from '../../../shared/components/Accordion'; 
+// AHORA IMPORTAMOS AMBAS HERRAMIENTAS MATEMÁTICAS DESDE NUESTRO ARCHIVO DE FECHAS
+import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
 import './StudentsView.css';
 
 export const StudentsView = () => {
     const { 
         alumnos, cargando, form, setForm, isModalOpen, setIsModalOpen,
         abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
-        days, months, years, editandoId, userData
+        days, months, years, editandoId, userData,
+        activeTab, setActiveTab, obtenerCumpleanerosPorMes
     } = useStudentsLogic();
+
+    const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
 
     return (
         <div className="students-dashboard">
@@ -30,53 +35,97 @@ export const StudentsView = () => {
                 </button>
             </div>
 
+            <div className="students-tabs">
+                <button 
+                    className={`tab-btn ${activeTab === 'directorio' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('directorio')}
+                >
+                    <i className="fa-solid fa-address-book mr-2"></i> Directorio
+                </button>
+                <button 
+                    className={`tab-btn ${activeTab === 'cumpleanos' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('cumpleanos')}
+                >
+                    <i className="fa-solid fa-cake-candles mr-2"></i> Cumpleaños
+                </button>
+            </div>
+
             {cargando ? (
-                <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando lista de alumnos...</p>
+                <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p>
             ) : (
-                <div className="students-grid">
-                    {alumnos.length === 0 ? (
-                        <p style={{ color: '#64748b' }}>No tienes alumnos inscritos aún en tu campo. ¡Agrega el primero!</p>
-                    ) : null}
+                <>
+                    {activeTab === 'directorio' && (
+                        <div className="students-grid">
+                            {alumnos.length === 0 ? (
+                                <p style={{ color: '#64748b' }}>No tienes alumnos inscritos aún en tu campo.</p>
+                            ) : null}
 
-                    {alumnos.map(alumno => {
-                        const esNina = alumno.genero === 'Femenino';
-                        return (
-                            <div className="student-card" key={alumno.id}>
-                                <div className="student-card-header">
-                                    <div className={`student-avatar ${esNina ? 'avatar-nina' : 'avatar-nino'}`}>
-                                        <i className={`fa-solid ${esNina ? 'fa-child-dress' : 'fa-child-reaching'}`}></i>
-                                    </div>
-                                    <div>
-                                        <h3 className="student-name">{alumno.nombre}</h3>
-                                        <span className={`student-tag ${esNina ? 'tag-nina' : 'tag-nino'}`}>
-                                            {esNina ? 'Niña' : 'Niño'}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <div className="student-details">
-                                    <div>
-                                        <i className="fa-solid fa-cake-candles" style={{ color: '#fbbf24' }}></i> 
-                                        <strong>Edad:</strong> {calcularEdadExacta(alumno.fechaNacimiento, alumno.edad)} años
-                                    </div>
-                                    <div>
-                                        <i className="fa-solid fa-calendar-day" style={{ color: '#94a3b8' }}></i> 
-                                        <strong>Nació el:</strong> {alumno.fechaNacimiento.split('-').reverse().join('/')}
-                                    </div>
-                                </div>
+                            {alumnos.map(alumno => {
+                                const esNina = alumno.genero === 'Femenino';
+                                return (
+                                    <div className="student-card" key={alumno.id}>
+                                        <div className="student-card-header">
+                                            <div className={`student-avatar ${esNina ? 'avatar-nina' : 'avatar-nino'}`}>
+                                                <i className={`fa-solid ${esNina ? 'fa-child-dress' : 'fa-child-reaching'}`}></i>
+                                            </div>
+                                            <div>
+                                                <h3 className="student-name">{alumno.nombre}</h3>
+                                                <span className={`student-tag ${esNina ? 'tag-nina' : 'tag-nino'}`}>
+                                                    {esNina ? 'Niña' : 'Niño'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="student-details">
+                                            <div><i className="fa-solid fa-cake-candles" style={{ color: '#fbbf24' }}></i> <strong>Edad:</strong> {calcularEdadExacta(alumno.fechaNacimiento, alumno.edad)} años</div>
+                                            <div><i className="fa-solid fa-calendar-day" style={{ color: '#94a3b8' }}></i> <strong>Nació el:</strong> {alumno.fechaNacimiento.split('-').reverse().join('/')}</div>
+                                        </div>
 
-                                <div className="student-actions">
-                                    <Button className="btn-editar" onClick={() => abrirModalEditar(alumno)}>
-                                        <i className="fa-solid fa-pen"></i> Editar
-                                    </Button>
-                                    <Button className="btn-denegar" onClick={() => eliminarAlumno(alumno.id, alumno.nombre)}>
-                                        <i className="fa-solid fa-trash"></i>
-                                    </Button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                                        <div className="student-actions">
+                                            <Button className="btn-editar" onClick={() => abrirModalEditar(alumno)}><i className="fa-solid fa-pen"></i> Editar</Button>
+                                            <Button className="btn-denegar" onClick={() => eliminarAlumno(alumno.id, alumno.nombre)}><i className="fa-solid fa-trash"></i></Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {activeTab === 'cumpleanos' && (
+                        <div className="birthdays-container animate-fade-in">
+                            {months.map((nombreMes, index) => {
+                                const numeroMes = index + 1;
+                                const ninosDelMes = cumpleanerosPorMes[numeroMes];
+
+                                return (
+                                    <Accordion key={numeroMes} title={`${nombreMes} (${ninosDelMes.length})`}>
+                                        {ninosDelMes.length === 0 ? (
+                                            <p style={{ padding: '15px', color: '#64748b', fontStyle: 'italic', margin: 0 }}>
+                                                No hay cumpleañeros este mes.
+                                            </p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                {ninosDelMes.map(nino => (
+                                                    <div className="birthday-list-item" key={nino.id}>
+                                                        <div className="bday-date">
+                                                            {nino.fechaNacimiento.split('-')[2]}
+                                                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>{nombreMes.substring(0, 3)}</div>
+                                                        </div>
+                                                        <div className="bday-name">{nino.nombre}</div>
+                                                        <div className="bday-age">
+                                                            {/* LLAMAMOS A LA FUNCIÓN DIRECTO DESDE DATE.UTILS.TS */}
+                                                            <i className="fa-solid fa-gift mr-1"></i> Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Accordion>
+                                );
+                            })}
+                        </div>
+                    )}
+                </>
             )}
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
