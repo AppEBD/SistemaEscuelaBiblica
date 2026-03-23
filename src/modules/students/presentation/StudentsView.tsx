@@ -18,8 +18,6 @@ export const StudentsView = () => {
 
     return (
         <div className="students-dashboard">
-            
-            {/* ¡MAGIA! LAS PESTAÑAS AHORA ESTÁN EN LA PARTE SUPERIOR */}
             <div className="students-tabs">
                 <button 
                     className={`tab-btn ${activeTab === 'directorio' ? 'active' : ''}`}
@@ -35,7 +33,6 @@ export const StudentsView = () => {
                 </button>
             </div>
 
-            {/* EL ENCABEZADO AHORA QUEDA ABAJO DE LAS PESTAÑAS */}
             <div className="students-header">
                 <div>
                     <h2>{activeTab === 'directorio' ? 'Mis Alumnos' : 'Calendario de Cumpleaños'}</h2>
@@ -47,7 +44,6 @@ export const StudentsView = () => {
                     )}
                 </div>
                 
-                {/* El botón de Inscribir solo lo mostramos en el Directorio para no estorbar en Cumpleaños */}
                 {activeTab === 'directorio' && (
                     <button className="btn-inscribir" onClick={abrirModalNuevo}>
                         <i className="fa-solid fa-user-plus"></i> Inscribir un nuevo niño
@@ -59,7 +55,7 @@ export const StudentsView = () => {
                 <p><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p>
             ) : (
                 <>
-                    {/* VISTA 1: EL DIRECTORIO */}
+                    {/* DIRECTORIO CON NUEVAS TARJETAS */}
                     {activeTab === 'directorio' && (
                         <div className="students-grid animate-fade-in">
                             {alumnos.length === 0 ? (
@@ -69,14 +65,14 @@ export const StudentsView = () => {
                             {alumnos.map(alumno => {
                                 const esNina = alumno.genero === 'Femenino';
                                 return (
-                                    <div className="student-card" key={alumno.id}>
+                                    <div className={`student-card ${esNina ? 'card-nina' : 'card-nino'}`} key={alumno.id}>
                                         <div className="student-card-header">
-                                            <div className={`student-avatar ${esNina ? 'avatar-nina' : 'avatar-nino'}`}>
+                                            <div className="student-avatar">
                                                 <i className={`fa-solid ${esNina ? 'fa-child-dress' : 'fa-child-reaching'}`}></i>
                                             </div>
                                             <div>
                                                 <h3 className="student-name">{alumno.nombre}</h3>
-                                                <span className={`student-tag ${esNina ? 'tag-nina' : 'tag-nino'}`}>
+                                                <span className="student-tag">
                                                     {esNina ? 'Niña' : 'Niño'}
                                                 </span>
                                             </div>
@@ -84,12 +80,16 @@ export const StudentsView = () => {
                                         
                                         <div className="student-details">
                                             <div><i className="fa-solid fa-cake-candles" style={{ color: '#fbbf24' }}></i> <strong>Edad:</strong> {calcularEdadExacta(alumno.fechaNacimiento, alumno.edad)} años</div>
-                                            <div><i className="fa-solid fa-calendar-day" style={{ color: '#94a3b8' }}></i> <strong>Nació el:</strong> {alumno.fechaNacimiento.split('-').reverse().join('/')}</div>
+                                            <div><i className="fa-solid fa-calendar-days" style={{ color: '#64748b' }}></i> <strong>Nació el:</strong> {alumno.fechaNacimiento.split('-').reverse().join('/')}</div>
                                         </div>
 
                                         <div className="student-actions">
-                                            <Button className="btn-editar" onClick={() => abrirModalEditar(alumno)}><i className="fa-solid fa-pen"></i> Editar</Button>
-                                            <Button className="btn-denegar" onClick={() => eliminarAlumno(alumno.id, alumno.nombre)}><i className="fa-solid fa-trash"></i></Button>
+                                            <button className="btn-pill-editar" onClick={() => abrirModalEditar(alumno)}>
+                                                <i className="fa-solid fa-pen"></i> Editar
+                                            </button>
+                                            <button className="btn-pill-eliminar" onClick={() => eliminarAlumno(alumno.id, alumno.nombre)}>
+                                                <i className="fa-solid fa-trash"></i> Eliminar
+                                            </button>
                                         </div>
                                     </div>
                                 );
@@ -97,7 +97,7 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* VISTA 2: CUMPLEAÑOS */}
+                    {/* CUMPLEAÑOS */}
                     {activeTab === 'cumpleanos' && (
                         <div className="birthdays-container animate-fade-in">
                             {months.map((nombreMes, index) => {
