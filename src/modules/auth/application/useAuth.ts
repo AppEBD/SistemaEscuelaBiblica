@@ -3,7 +3,6 @@ import { AuthService } from '../infrastructure/auth.service';
 import { UserRole, AuthUser } from '../domain/auth.model';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config';
-// ¡Importamos nuestra nueva herramienta de fechas!
 import { calcularEdadExacta } from '../../../core/utils/date.utils'; 
 
 export const useAuth = () => {
@@ -38,7 +37,8 @@ export const useAuth = () => {
         }
     }, []);
 
-    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, recordar: boolean, isVerifying: boolean = false) => {
+    // NUEVO: Agregamos el parámetro "genero"
+    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, genero: string, recordar: boolean, isVerifying: boolean = false) => {
         setIsLoading(true);
         try {
             if (!AuthService.validarCredenciales(rol, clave)) return { exito: false, mensaje: "Clave incorrecta." };
@@ -53,9 +53,9 @@ export const useAuth = () => {
             if (!usuarioExistente) {
                 if (isVerifying) return { exito: false, mensaje: "DENEGADO" };
                 
-                // Usamos la herramienta centralizada para calcular la edad al registrar
                 const edad = calcularEdadExacta(fechaNac);
-                const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, edad, clase: rol } as any);
+                // NUEVO: Guardamos el género en Firebase
+                const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, genero, edad, clase: rol } as any);
                 return { exito: true, mensaje: "SOLICITUD_ENVIADA", id: nuevoId };
             }
 
