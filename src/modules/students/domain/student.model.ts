@@ -12,8 +12,8 @@ export interface Alumno {
 }
 
 export interface AsistenciaRegistro {
-    estado: string; // 'Presente' | 'Ausente' | 'Permiso'
-    ofrenda: string;
+    estado: string; 
+    ofrenda?: string; 
 }
 
 export interface ResumenAsistencia {
@@ -25,10 +25,13 @@ export interface ResumenAsistencia {
 }
 
 export interface AsistenciaDia {
+    id?: string; // Necesario para poder actualizarla si le damos "Editar"
     campo: string;
     fecha: string;
     registros: Record<string, AsistenciaRegistro>;
     resumen: ResumenAsistencia;
     registradoPor: string;
+    numeroLeccion: number;  // NUEVO: Número de lección
+    leccionDada: boolean;   // NUEVO: ¿Se dio la clase?
     createdAt?: number;
 }
