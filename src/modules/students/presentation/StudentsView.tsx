@@ -12,7 +12,8 @@ export const StudentsView = () => {
         abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
         days, months, years, editandoId, userData,
         activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
-        asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia
+        asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
+        ofrendaDia, setOfrendaDia
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -21,22 +22,52 @@ export const StudentsView = () => {
         <div className="students-dashboard">
             
             {/* =========================================
-                MENÚ PRINCIPAL (Navegación Global)
+                PANTALLA DE INICIO (HOME DASHBOARD)
                 ========================================= */}
-            <div className="main-nav-menu">
-                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
-                    <i className="fa-solid fa-users"></i> Alumnos
+            {mainTab === 'home' && (
+                <div className="animate-fade-in">
+                    <div className="home-welcome">
+                        <h1>¡Hola, {userData?.nombre?.split(' ')[0]}!</h1>
+                        <p>¿Qué deseas hacer en <strong>{userData?.campo}</strong>?</p>
+                    </div>
+
+                    <div className="home-menu-grid">
+                        <div className="home-module-btn" onClick={() => setMainTab('alumnos')}>
+                            <div className="home-module-icon icon-alumnos"><i className="fa-solid fa-children"></i></div>
+                            <div className="home-module-text">
+                                <h3>Directorio de Alumnos</h3>
+                                <p>Agrega niños, edita perfiles y revisa los cumpleaños del mes.</p>
+                            </div>
+                        </div>
+
+                        <div className="home-module-btn" onClick={() => setMainTab('asistencia')}>
+                            <div className="home-module-icon icon-asistencia"><i className="fa-solid fa-clipboard-check"></i></div>
+                            <div className="home-module-text">
+                                <h3>Pasar Asistencia</h3>
+                                <p>Toma asistencia rápida y registra la ofrenda general del día.</p>
+                            </div>
+                        </div>
+
+                        <div className="home-module-btn" onClick={() => setMainTab('reportes')}>
+                            <div className="home-module-icon icon-reportes"><i className="fa-solid fa-chart-pie"></i></div>
+                            <div className="home-module-text">
+                                <h3>Reportes y Estadísticas</h3>
+                                <p>Revisa el historial de asistencia y crecimiento de tu campo.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* BOTÓN PARA REGRESAR AL MENÚ (Solo aparece si no estás en Home) */}
+            {mainTab !== 'home' && (
+                <button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}>
+                    <i className="fa-solid fa-arrow-left"></i> Volver al Menú
                 </button>
-                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
-                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => setMainTab('reportes')}>
-                    <i className="fa-solid fa-chart-pie"></i> Reportes
-                </button>
-            </div>
+            )}
 
             {/* =========================================
-                VISTA 1: ALUMNOS (Directorio y Cumpleaños)
+                MÓDULO 1: ALUMNOS
                 ========================================= */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
@@ -123,41 +154,42 @@ export const StudentsView = () => {
             )}
 
             {/* =========================================
-                VISTA 2: ASISTENCIA (Pasar lista y Ofrenda)
+                MÓDULO 2: ASISTENCIA Y OFRENDA GLOBAL
                 ========================================= */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
-                    <h1 className="st-header-title">Asistencia de Hoy</h1>
-                    <p className="st-header-subtitle">Pasa lista y registra las ofrendas en <strong>{userData?.campo}</strong>.</p>
-
-                    {/* CUADRO DE RESUMEN INTELIGENTE */}
-                    <div className="att-summary-box">
-                        <div className="att-summary-item" style={{ color: '#0f172a' }}>
-                            <span className="att-summary-val">{resumenAsistencia.total}</span>
-                            <span className="att-summary-lbl">Inscritos</span>
-                        </div>
-                        <div className="att-summary-item" style={{ color: '#059669', background: '#dcfce7' }}>
-                            <span className="att-summary-val">{resumenAsistencia.presentes}</span>
-                            <span className="att-summary-lbl">Presentes</span>
-                        </div>
-                        <div className="att-summary-item" style={{ color: '#dc2626', background: '#fee2e2' }}>
-                            <span className="att-summary-val">{resumenAsistencia.ausentes}</span>
-                            <span className="att-summary-lbl">Ausentes</span>
-                        </div>
-                        <div className="att-summary-item" style={{ color: '#d97706', background: '#fef3c7' }}>
-                            <span className="att-summary-val">{resumenAsistencia.permisos}</span>
-                            <span className="att-summary-lbl">Permisos</span>
+                    
+                    {/* OFRENDA GLOBAL (Diseño Central Gigante) */}
+                    <div className="global-ofrenda-card">
+                        <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
+                        <div className="global-ofrenda-input-wrapper">
+                            <span>$</span>
+                            <input 
+                                type="number" className="global-ofrenda-input" placeholder="0.00" step="0.05" min="0"
+                                value={ofrendaDia} onChange={(e) => setOfrendaDia(e.target.value)}
+                            />
                         </div>
                     </div>
 
-                    {/* LISTA DE NIÑOS PARA MARCAR ASISTENCIA */}
-                    {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando lista...</p> : (
+                    {/* RESUMEN PREMIUM (Diseño Oscuro Estético) */}
+                    <div className="premium-summary">
+                        <div className="ps-header">Resumen de Asistencia</div>
+                        <div className="ps-stats">
+                            <div className="ps-item"><span className="ps-val" style={{ color: '#10b981' }}>{resumenAsistencia.presentes}</span><span className="ps-lbl">Presentes</span></div>
+                            <div className="ps-divider"></div>
+                            <div className="ps-item"><span className="ps-val" style={{ color: '#ef4444' }}>{resumenAsistencia.ausentes}</span><span className="ps-lbl">Ausentes</span></div>
+                            <div className="ps-divider"></div>
+                            <div className="ps-item"><span className="ps-val" style={{ color: '#f59e0b' }}>{resumenAsistencia.permisos}</span><span className="ps-lbl">Permisos</span></div>
+                        </div>
+                    </div>
+
+                    <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#1e293b', marginBottom: '15px' }}>Pasar Lista ({resumenAsistencia.total} Inscritos)</h2>
+
+                    {/* LISTA DE NIÑOS SIMPLE */}
+                    {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando...</p> : (
                         <div style={{ paddingBottom: '20px' }}>
-                            {alumnos.length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No tienes alumnos inscritos para pasar lista.</p> : null}
-                            
                             {alumnos.map(alumno => {
-                                // Buscamos el estado actual de este niño en el state de Asistencia
-                                const miAsistencia = asistencia[alumno.id!] || { estado: 'Presente', ofrenda: '' };
+                                const estadoActual = asistencia[alumno.id!] || 'Presente';
                                 const esNina = alumno.genero === 'Femenino';
                                 
                                 return (
@@ -167,42 +199,18 @@ export const StudentsView = () => {
                                             <span className={`att-gender ${esNina ? 'nina' : 'nino'}`}>{esNina ? 'Niña' : 'Niño'}</span>
                                         </div>
                                         
-                                        {/* BOTONES DE PRESENTE / AUSENTE / PERMISO */}
                                         <div className="att-controls">
-                                            <button 
-                                                className={`att-radio presente ${miAsistencia.estado === 'Presente' ? 'active' : ''}`} 
-                                                onClick={() => actualizarAsistencia(alumno.id!, 'estado', 'Presente')}
-                                            >Presente</button>
-                                            
-                                            <button 
-                                                className={`att-radio ausente ${miAsistencia.estado === 'Ausente' ? 'active' : ''}`} 
-                                                onClick={() => actualizarAsistencia(alumno.id!, 'estado', 'Ausente')}
-                                            >Ausente</button>
-                                            
-                                            <button 
-                                                className={`att-radio permiso ${miAsistencia.estado === 'Permiso' ? 'active' : ''}`} 
-                                                onClick={() => actualizarAsistencia(alumno.id!, 'estado', 'Permiso')}
-                                            >Permiso</button>
-                                        </div>
-
-                                        {/* CAJITA DE OFRENDA */}
-                                        <div className="att-ofrenda-group">
-                                            <span className="att-ofrenda-lbl"><i className="fa-solid fa-coins" style={{ color: '#f59e0b', marginRight: '5px' }}></i> Ofrenda</span>
-                                            <span style={{ fontSize: '18px', fontWeight: '900', color: '#1e293b', marginRight: '5px' }}>$</span>
-                                            <input 
-                                                type="number" className="att-ofrenda-input" placeholder="0.00" step="0.05" min="0"
-                                                value={miAsistencia.ofrenda} 
-                                                onChange={(e) => actualizarAsistencia(alumno.id!, 'ofrenda', e.target.value)}
-                                            />
+                                            <button className={`att-radio presente ${estadoActual === 'Presente' ? 'active' : ''}`} onClick={() => actualizarAsistencia(alumno.id!, 'Presente')}>Presente</button>
+                                            <button className={`att-radio ausente ${estadoActual === 'Ausente' ? 'active' : ''}`} onClick={() => actualizarAsistencia(alumno.id!, 'Ausente')}>Ausente</button>
+                                            <button className={`att-radio permiso ${estadoActual === 'Permiso' ? 'active' : ''}`} onClick={() => actualizarAsistencia(alumno.id!, 'Permiso')}>Permiso</button>
                                         </div>
                                     </div>
                                 )
                             })}
 
-                            {/* BOTÓN FLOTANTE PARA GUARDAR */}
                             {alumnos.length > 0 && (
                                 <button className="btn-enviar-asistencia" onClick={enviarAsistencia}>
-                                    <i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia de Hoy
+                                    <i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia y Ofrenda
                                 </button>
                             )}
                         </div>
@@ -211,29 +219,25 @@ export const StudentsView = () => {
             )}
 
             {/* =========================================
-                VISTA 3: REPORTES (EN CONSTRUCCIÓN)
+                MÓDULO 3: REPORTES
                 ========================================= */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Reportes</h1>
-                    <p className="st-header-subtitle">Estadísticas y datos de tu campo.</p>
-                    
+                    <p className="st-header-subtitle">Estadísticas de tu campo.</p>
                     <div className="placeholder-view">
                         <i className="fa-solid fa-person-digging"></i>
                         <h2 style={{ fontSize: '22px', color: '#334155', margin: '0 0 10px 0', fontWeight: '900' }}>Pronto disponible</h2>
-                        <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.5' }}>
-                            Estamos construyendo esta función para que puedas ver el historial de asistencias, ofrendas y el progreso de tus alumnos.
-                        </p>
+                        <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.5' }}>Estamos construyendo esta función para que puedas ver el historial.</p>
                     </div>
                 </div>
             )}
 
-            {/* MODAL DE REGISTRO DE ALUMNOS (Siempre disponible si se abre) */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
-                    <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo del Niño(a)</label><input className="ebd-input" type="text" placeholder="Ej: Adrian Alfredo..." value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }} /></div>
+                    <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label><input className="ebd-input" type="text" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }} /></div>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Género</label><select className="ebd-input" value={form.genero} onChange={e => setForm({...form, genero: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Seleccione...</option><option value="Masculino">Niño</option><option value="Femenino">Niña</option></select></div>
-                    <div className="ebd-form-group" style={{ marginBottom: '25px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha de Nacimiento</label><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}><select className="ebd-input" value={form.birthDay} onChange={e => setForm({...form, birthDay: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select><select className="ebd-input" value={form.birthMonth} onChange={e => setForm({...form, birthMonth: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select><select className="ebd-input" value={form.birthYear} onChange={e => setForm({...form, birthYear: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div></div>
+                    <div className="ebd-form-group" style={{ marginBottom: '25px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nacimiento</label><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}><select className="ebd-input" value={form.birthDay} onChange={e => setForm({...form, birthDay: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select><select className="ebd-input" value={form.birthMonth} onChange={e => setForm({...form, birthMonth: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select><select className="ebd-input" value={form.birthYear} onChange={e => setForm({...form, birthYear: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div></div>
                     <div className="admin-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}><Button type="button" className="btn-denegar" onClick={() => setIsModalOpen(false)}>Cancelar</Button><Button type="submit" className="btn-aprobar" style={{ background: '#10b981' }}>Guardar</Button></div>
                 </form>
             </Modal>
