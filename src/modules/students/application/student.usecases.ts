@@ -13,7 +13,6 @@ export const StudentUseCases = {
     editarAlumno: async (id: string, alumno: Partial<Alumno>) => await AlumnosService.actualizarAlumno(id, { ...alumno, updatedAt: Date.now() }),
     borrarAlumno: async (id: string) => await AlumnosService.eliminarAlumno(id),
 
-    // NUEVO: Lógica inteligente para saber si crear una nueva o editar la de hoy
     registrarAsistenciaDiaria: async (asistencia: AsistenciaDia) => {
         if (asistencia.id) {
             const { id, ...data } = asistencia;
@@ -25,5 +24,11 @@ export const StudentUseCases = {
         }
     },
 
-    obtenerUltimaAsistencia: async (campo: string) => await AlumnosService.obtenerUltimaAsistencia(campo)
+    obtenerUltimaAsistencia: async (campo: string) => await AlumnosService.obtenerUltimaAsistencia(campo),
+
+    // NUEVO: Trae el historial y lo ordena por fecha
+    obtenerHistorialCompleto: async (campo: string) => {
+        const historial = await AlumnosService.obtenerHistorialAsistencias(campo);
+        return historial.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    }
 };
