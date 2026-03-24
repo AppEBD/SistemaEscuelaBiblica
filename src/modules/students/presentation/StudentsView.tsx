@@ -14,10 +14,14 @@ export const StudentsView = () => {
         activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
         asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
         ofrendaDia, setOfrendaDia,
-        numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia
+        numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia,
+        asistenciaRegistradaPor
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
+
+    // Verificamos si el usuario actual fue el que guardó la asistencia
+    const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
 
     return (
         <div className="students-dashboard">
@@ -60,7 +64,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* BOTÓN PARA REGRESAR AL MENÚ (Solo aparece si no estás en Home) */}
             {mainTab !== 'home' && (
                 <button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}>
                     <i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal
@@ -168,14 +171,14 @@ export const StudentsView = () => {
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     
-                    {/* MENSAJE DE ÉXITO AL GUARDAR */}
+                    {/* MENSAJE DINÁMICO DE QUIÉN TOMÓ LA ASISTENCIA */}
                     {isSubmitted && (
                         <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', marginBottom: '25px', border: '2px solid #10b981' }}>
-                            <i className="fa-solid fa-circle-check mr-2"></i> Asistencia Guardada Exitosamente
+                            <i className="fa-solid fa-circle-check mr-2"></i> 
+                            Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}
                         </div>
                     )}
 
-                    {/* CONTENEDOR BLOQUEABLE (Se pone gris si isSubmitted es true) */}
                     <div className={isSubmitted ? 'locked-section' : ''}>
                         
                         <div className="global-ofrenda-card">
@@ -200,7 +203,6 @@ export const StudentsView = () => {
                             </div>
                         </div>
 
-                        {/* NÚMERO DE LECCIÓN */}
                         <div className="lesson-tracker-box">
                             <div className="lesson-info">
                                 <span className="lesson-title">Número de Lección</span>
@@ -248,12 +250,19 @@ export const StudentsView = () => {
                         )}
                     </div>
 
-                    {/* BOTONES DE ACCIÓN (Fuera del contenedor bloqueado) */}
+                    {/* BOTONES DE ACCIÓN (Lógica de bloqueo cruzado) */}
                     {alumnos.length > 0 && !cargando && (
                         isSubmitted ? (
-                            <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia}>
-                                <i className="fa-solid fa-lock-open"></i> Editar datos guardados
-                            </button>
+                            esElAutorDeAsistencia ? (
+                                <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia}>
+                                    <i className="fa-solid fa-lock-open"></i> Editar datos guardados
+                                </button>
+                            ) : (
+                                <div style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginTop: '20px', fontWeight: 'bold' }}>
+                                    <i className="fa-solid fa-lock" style={{ marginRight: '5px' }}></i> 
+                                    Bloqueado: La asistencia fue enviada por {asistenciaRegistradaPor}.
+                                </div>
+                            )
                         ) : (
                             <button className="btn-enviar-asistencia animate-fade-in" onClick={enviarAsistencia}>
                                 <i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia y Ofrenda
@@ -281,9 +290,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* =========================================
-                MODAL DE REGISTRO / EDICIÓN DE ALUMNOS
-                ========================================= */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}>
