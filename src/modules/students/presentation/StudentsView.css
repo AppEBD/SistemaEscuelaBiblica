@@ -1,16 +1,32 @@
 .students-dashboard {
-    max-width: 800px; margin: 0 auto; padding: 20px 15px; animation: fadeIn 0.4s ease;
+    max-width: 800px; margin: 0 auto; padding: 15px 15px 40px 15px; animation: fadeIn 0.4s ease;
     font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Encabezados */
+/* =========================================
+   NUEVO MENÚ PRINCIPAL (Arriba de todo)
+   ========================================= */
+.main-nav-menu {
+    display: flex; background: white; border-radius: 20px; padding: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); margin-bottom: 30px; border: 1px solid #f1f5f9;
+}
+.main-nav-btn {
+    flex: 1; border: none; background: none; padding: 14px 5px; font-size: 14px;
+    font-weight: 800; border-radius: 16px; cursor: pointer; color: #64748b;
+    transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.main-nav-btn i { font-size: 20px; }
+.main-nav-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
+.main-nav-btn:hover:not(.active) { background: #f8fafc; color: #1e293b; }
+
+/* Encabezados generales */
 .st-header-title { font-size: 28px; font-weight: 900; color: #1e293b; margin: 0 0 5px 0; letter-spacing: -0.5px; }
 .st-header-subtitle { font-size: 15px; color: #94a3b8; margin: 0 0 25px 0; font-weight: 500; }
 
-/* Pestañas estilo píldora de tu imagen */
-.st-tabs-container {
-    display: flex; gap: 15px; margin-bottom: 25px;
-}
+/* =========================================
+   MÓDULO: ALUMNOS (Directorio y Cumpleaños)
+   ========================================= */
+.st-tabs-container { display: flex; gap: 15px; margin-bottom: 25px; }
 .st-tab {
     flex: 1; padding: 12px 0; border-radius: 20px; border: none; font-size: 15px; font-weight: 700;
     cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;
@@ -18,7 +34,6 @@
 .st-tab.active { background-color: #dcfce7; color: #059669; }
 .st-tab:not(.active) { background-color: #f8fafc; color: #94a3b8; }
 
-/* Botón Verde Grande */
 .btn-inscribir-verde {
     width: 100%; background-color: #10b981; color: white; padding: 16px;
     border-radius: 16px; font-size: 17px; font-weight: 800; border: none;
@@ -29,66 +44,94 @@
 
 .students-grid { display: flex; flex-direction: column; gap: 15px; }
 
-/* =========================================
-   TARJETAS EXACTAS A TU IMAGEN
-   ========================================= */
-.st-card {
-    background: white; border-radius: 24px; padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9;
-}
-
-/* Fila Superior: Avatar + Nombre */
+/* Tarjetas Directorio */
+.st-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9; }
 .st-card-top { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-.st-avatar {
-    width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center;
-    justify-content: center; font-size: 20px; font-weight: 800;
-}
+.st-avatar { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; }
 .st-avatar.nino { background-color: #e0f2fe; color: #0284c7; }
 .st-avatar.nina { background-color: #fce7f3; color: #db2777; }
 .st-name { font-size: 17px; font-weight: 800; color: #334155; margin: 0; }
-
-/* Fila Inferior: Detalles y Botones (Dentro del contorno gris claro) */
-.st-card-bottom {
-    display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid #f1f5f9; border-radius: 18px; padding: 10px 15px;
-}
+.st-card-bottom { display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; border-radius: 18px; padding: 10px 15px; }
 .st-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
 .icon-cake { color: #f472b6; }
 .st-age { color: #64748b; }
 .st-separator { color: #cbd5e1; font-weight: 300; }
 .text-nino { color: #3b82f6; }
 .text-nina { color: #ec4899; }
-
-/* Botoncitos pequeños de acción */
 .st-actions { display: flex; gap: 8px; }
-.st-btn-mini {
-    width: 36px; height: 36px; border-radius: 12px; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 15px; transition: 0.2s;
-}
+.st-btn-mini { width: 36px; height: 36px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: 0.2s; }
 .st-btn-edit { background-color: #ede9fe; color: #7c3aed; }
-.st-btn-edit:hover { background-color: #ddd6fe; }
 .st-btn-delete { background-color: #fee2e2; color: #ef4444; }
-.st-btn-delete:hover { background-color: #fecaca; }
+
+/* Tarjetas Cumpleaños */
+.birthdays-container { display: flex; flex-direction: column; gap: 10px; }
+.bday-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 16px; border: 1px solid #f1f5f9; gap: 15px; }
+.bday-date-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ecfdf5; border-radius: 12px; min-width: 55px; padding: 6px 0; border: 1px solid #d1fae5; }
+.bday-date-label { font-size: 10px; font-weight: 800; color: #059669; text-transform: uppercase; }
+.bday-date-number { font-size: 20px; font-weight: 900; color: #10b981; line-height: 1; margin-top: 2px; }
+.bday-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.bday-name { font-weight: 800; color: #334155; font-size: 16px; margin: 0; }
+.bday-age { font-size: 13px; font-weight: 700; color: #f472b6; background: #fdf2f8; padding: 5px 12px; border-radius: 12px; display: inline-block;}
 
 /* =========================================
-   LISTA DE CUMPLEAÑOS
+   MÓDULO: ASISTENCIA (Resumen y Tarjetas)
    ========================================= */
-.birthdays-container { display: flex; flex-direction: column; gap: 10px; }
-.bday-item {
-    display: flex; align-items: center; padding: 15px; background: white;
-    border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-    gap: 15px; /* Espacio entre el icono del día y el nombre */
+.att-summary-box {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    background: white; padding: 20px; border-radius: 20px; margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #e2e8f0;
 }
+.att-summary-item { display: flex; flex-direction: column; align-items: center; background: #f8fafc; padding: 12px; border-radius: 16px; }
+.att-summary-val { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 5px; }
+.att-summary-lbl { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* NUEVO: Diseño de la "Medallita" del Día */
-.bday-date-badge {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: #ecfdf5; border-radius: 12px; min-width: 55px; padding: 6px 0;
-    border: 1px solid #d1fae5;
+.att-card {
+    background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
 }
-.bday-date-label { font-size: 10px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.5px; }
-.bday-date-number { font-size: 20px; font-weight: 900; color: #10b981; line-height: 1; margin-top: 2px; }
+.att-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.att-name { font-size: 18px; font-weight: 900; color: #1e293b; margin: 0; line-height: 1.2; }
+.att-gender { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 12px; }
+.att-gender.nino { background: #e0f2fe; color: #0284c7; }
+.att-gender.nina { background: #fce7f3; color: #db2777; }
 
-.bday-info { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.bday-name { font-weight: 800; color: #334155; font-size: 16px; margin: 0; line-height: 1.2; }
-.bday-age { font-size: 13px; font-weight: 700; color: #f472b6; background: #fdf2f8; padding: 5px 12px; border-radius: 12px; }
+/* Botones Presente/Ausente/Permiso */
+.att-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+.att-radio {
+    flex: 1; padding: 12px 0; border-radius: 14px; border: 2px solid #e2e8f0;
+    background: white; font-size: 14px; font-weight: 800; color: #64748b;
+    cursor: pointer; transition: 0.2s;
+}
+.att-radio.presente.active { background: #dcfce7; border-color: #10b981; color: #059669; }
+.att-radio.ausente.active { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
+.att-radio.permiso.active { background: #fef3c7; border-color: #f59e0b; color: #d97706; }
+
+/* Input de Ofrenda */
+.att-ofrenda-group { 
+    display: flex; align-items: center; background: #f8fafc; border-radius: 14px; 
+    padding: 8px 15px; border: 1px solid #e2e8f0; 
+}
+.att-ofrenda-lbl { font-weight: 800; color: #475569; font-size: 15px; margin-right: 15px; }
+.att-ofrenda-input {
+    flex: 1; background: transparent; border: none; font-size: 20px; font-weight: 900;
+    color: #1e293b; padding: 5px 0; outline: none; width: 100%;
+}
+.att-ofrenda-input::placeholder { color: #cbd5e1; font-weight: 600; }
+
+/* Botón flotante para Guardar Asistencia */
+.btn-enviar-asistencia {
+    width: 100%; background: #4f46e5; color: white; border: none; border-radius: 16px;
+    padding: 18px; font-size: 18px; font-weight: 900; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
+    cursor: pointer; position: sticky; bottom: 20px; z-index: 10; margin-top: 30px;
+    display: flex; justify-content: center; gap: 10px; transition: 0.2s;
+}
+.btn-enviar-asistencia:active { transform: scale(0.98); }
+
+/* =========================================
+   MÓDULO: REPORTES
+   ========================================= */
+.placeholder-view { 
+    text-align: center; padding: 60px 20px; background: white; 
+    border-radius: 24px; border: 2px dashed #cbd5e1; margin-top: 20px;
+}
+.placeholder-view i { font-size: 55px; color: #94a3b8; margin-bottom: 20px; }
