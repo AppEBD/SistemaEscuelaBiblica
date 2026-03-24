@@ -4,25 +4,26 @@ import { Alumno, AsistenciaDia } from '../domain/student.model';
 export const StudentUseCases = {
     obtenerAlumnosActivos: (campo: string, callback: (alumnos: Alumno[]) => void) => {
         return AlumnosService.suscribirAlumnosPorCampo(campo, (alumnos) => {
-            // Regla de negocio: Siempre entregarlos ordenados de la A a la Z
             const ordenados = alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
             callback(ordenados);
         });
     },
     
-    registrarAlumno: async (alumno: Omit<Alumno, 'id'>) => {
-        await AlumnosService.crearAlumno({ ...alumno, createdAt: Date.now() });
-    },
-    
-    editarAlumno: async (id: string, alumno: Partial<Alumno>) => {
-        await AlumnosService.actualizarAlumno(id, { ...alumno, updatedAt: Date.now() });
-    },
-    
-    borrarAlumno: async (id: string) => {
-        await AlumnosService.eliminarAlumno(id);
+    registrarAlumno: async (alumno: Omit<Alumno, 'id'>) => await AlumnosService.crearAlumno({ ...alumno, createdAt: Date.now() }),
+    editarAlumno: async (id: string, alumno: Partial<Alumno>) => await AlumnosService.actualizarAlumno(id, { ...alumno, updatedAt: Date.now() }),
+    borrarAlumno: async (id: string) => await AlumnosService.eliminarAlumno(id),
+
+    // NUEVO: Lógica inteligente para saber si crear una nueva o editar la de hoy
+    registrarAsistenciaDiaria: async (asistencia: AsistenciaDia) => {
+        if (asistencia.id) {
+            const { id, ...data } = asistencia;
+            await AlumnosService.actualizarAsistenciaDoc(id, data);
+            return id;
+        } else {
+            const docRef = await AlumnosService.guardarAsistencia({ ...asistencia, createdAt: Date.now() });
+            return docRef.id;
+        }
     },
 
-    registrarAsistenciaDiaria: async (asistencia: AsistenciaDia) => {
-        await AlumnosService.guardarAsistencia({ ...asistencia, createdAt: Date.now() });
-    }
+    obtenerUltimaAsistencia: async (campo: string) => await AlumnosService.obtenerUltimaAsistencia(campo)
 };
