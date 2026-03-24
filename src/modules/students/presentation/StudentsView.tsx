@@ -3,7 +3,7 @@ import { useStudentsLogic } from './StudentsView.logic';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
-import { calcularEdadExacta, calcularEdadEsteAnio, formatearFechaLocal } from '../../../core/utils/date.utils'; 
+import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
 import './StudentsView.css';
 
 export const StudentsView = () => {
@@ -14,8 +14,9 @@ export const StudentsView = () => {
         activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
         asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
-        reportTab, setReportTab, historialAsistencias, rankingDesde, setRankingDesde, rankingHasta, setRankingHasta, obtenerRanking, obtenerHistorialPorMes,
-        edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad
+        reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes,
+        edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
+        desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -30,12 +31,14 @@ export const StudentsView = () => {
                     <div className="home-menu-grid">
                         <div className="home-module-btn" onClick={() => setMainTab('alumnos')}><div className="home-module-icon icon-alumnos"><i className="fa-solid fa-children"></i></div><div className="home-module-text"><h3>Directorio de Alumnos</h3><p>Agrega niños, edita perfiles y revisa los cumpleaños del mes.</p></div></div>
                         <div className="home-module-btn" onClick={() => setMainTab('asistencia')}><div className="home-module-icon icon-asistencia"><i className="fa-solid fa-clipboard-check"></i></div><div className="home-module-text"><h3>Pasar Asistencia</h3><p>Toma asistencia rápida y registra la ofrenda general del día.</p></div></div>
-                        <div className="home-module-btn" onClick={() => setMainTab('reportes')}><div className="home-module-icon icon-reportes"><i className="fa-solid fa-chart-pie"></i></div><div className="home-module-text"><h3>Reportes y Estadísticas</h3><p>Revisa el historial de asistencia y crecimiento de tu campo.</p></div></div>
+                        <div className="home-module-btn" onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}><div className="home-module-icon icon-reportes"><i className="fa-solid fa-chart-pie"></i></div><div className="home-module-text"><h3>Reportes y Estadísticas</h3><p>Revisa el historial de asistencia y crecimiento de tu campo.</p></div></div>
                     </div>
                 </div>
             )}
 
-            {mainTab !== 'home' && (<button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}><i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal</button>)}
+            {mainTab !== 'home' && mainTab !== 'reportes' && (<button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}><i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal</button>)}
+            {mainTab === 'reportes' && reportTab === 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}><i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal</button>)}
+            {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
             {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
@@ -139,24 +142,52 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES (NUEVO) */}
+            {/* MÓDULO 3: REPORTES MEJORADOS */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
-                    <h1 className="st-header-title">Reportes</h1>
-                    <p className="st-header-subtitle">Estadísticas y datos de <strong>{userData?.campo}</strong>.</p>
                     
-                    <div className="report-tabs">
-                        <button className={`report-tab-btn ${reportTab === 'ranking' ? 'active' : ''}`} onClick={() => setReportTab('ranking')}><i className="fa-solid fa-trophy"></i> Ranking</button>
-                        <button className={`report-tab-btn ${reportTab === 'clases' ? 'active' : ''}`} onClick={() => setReportTab('clases')}><i className="fa-solid fa-book-bible"></i> Clases Ant.</button>
-                        <button className={`report-tab-btn ${reportTab === 'edades' ? 'active' : ''}`} onClick={() => setReportTab('edades')}><i className="fa-solid fa-filter"></i> Por Edades</button>
-                    </div>
+                    {reportTab === 'menu' && (
+                        <div className="home-menu-grid animate-fade-in">
+                            <h1 className="st-header-title">Reportes</h1>
+                            <p className="st-header-subtitle">Selecciona el reporte que deseas visualizar.</p>
 
-                    {/* SUB-PESTAÑA: RANKING */}
+                            <div className="home-module-btn" onClick={() => setReportTab('ranking')}>
+                                <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}><i className="fa-solid fa-trophy"></i></div>
+                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas exactas.</p></div>
+                            </div>
+                            <div className="home-module-btn" onClick={() => setReportTab('clases')}>
+                                <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }}><i className="fa-solid fa-book-bible"></i></div>
+                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias agrupadas por mes y año.</p></div>
+                            </div>
+                            <div className="home-module-btn" onClick={() => setReportTab('edades')}>
+                                <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}><i className="fa-solid fa-filter"></i></div>
+                                <div className="home-module-text"><h3>Filtrado por Edades</h3><p>Encuentra niños y niñas según su rango de edad en el campo.</p></div>
+                            </div>
+                        </div>
+                    )}
+
                     {reportTab === 'ranking' && (
                         <div className="animate-fade-in">
+                            <h1 className="st-header-title" style={{ fontSize: '24px' }}>Ranking de Asistencia</h1>
+                            
                             <div className="filter-box">
-                                <div className="filter-group"><label>Desde</label><input type="date" className="filter-input" value={rankingDesde} onChange={e => setRankingDesde(e.target.value)} /></div>
-                                <div className="filter-group"><label>Hasta</label><input type="date" className="filter-input" value={rankingHasta} onChange={e => setRankingHasta(e.target.value)} /></div>
+                                <div className="filter-group">
+                                    <div className="filter-group-label">Filtrar Desde:</div>
+                                    <div className="filter-grid-3">
+                                        <select className="custom-select-report" value={desdeD} onChange={e => setDesdeD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                        <select className="custom-select-report" value={desdeM} onChange={e => setDesdeM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
+                                        <select className="custom-select-report" value={desdeY} onChange={e => setDesdeY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                    </div>
+                                </div>
+                                <div className="filter-group">
+                                    <div className="filter-group-label">Filtrar Hasta:</div>
+                                    <div className="filter-grid-3">
+                                        <select className="custom-select-report" value={hastaD} onChange={e => setHastaD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                        <select className="custom-select-report" value={hastaM} onChange={e => setHastaM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
+                                        <select className="custom-select-report" value={hastaY} onChange={e => setHastaY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                    </div>
+                                </div>
+                                <button className="btn-limpiar-filtros" onClick={limpiarFiltrosRanking}><i className="fa-solid fa-eraser"></i> Limpiar Filtros</button>
                             </div>
                             
                             {obtenerRanking().map((alumno, index) => {
@@ -172,9 +203,9 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* SUB-PESTAÑA: CLASES ANTERIORES */}
                     {reportTab === 'clases' && (
                         <div className="animate-fade-in">
+                            <h1 className="st-header-title" style={{ fontSize: '24px', marginBottom: '20px' }}>Clases Anteriores</h1>
                             {Object.entries(obtenerHistorialPorMes()).length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay clases registradas aún.</p> : null}
                             
                             {Object.entries(obtenerHistorialPorMes()).map(([mes, asistencias]) => (
@@ -185,11 +216,11 @@ export const StudentsView = () => {
                                                 <div className="history-header">
                                                     <div>
                                                         <div className="history-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</div>
-                                                        <div className="history-user"><i className="fa-solid fa-user-pen"></i> {asis.registradoPor}</div>
+                                                        <div className="history-user"><i className="fa-solid fa-user-pen"></i> Registrado por {asis.registradoPor}</div>
                                                     </div>
                                                     <div style={{ textAlign: 'right' }}>
                                                         <div style={{ fontWeight: '900', color: '#1e293b' }}>Lección {asis.numeroLeccion}</div>
-                                                        <div style={{ fontSize: '12px', color: asis.leccionDada ? '#10b981' : '#94a3b8' }}>{asis.leccionDada ? 'Clase Impartida' : 'No Impartida'}</div>
+                                                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: asis.leccionDada ? '#10b981' : '#94a3b8' }}>{asis.leccionDada ? 'Clase Impartida' : 'No Impartida'}</div>
                                                     </div>
                                                 </div>
                                                 <div className="history-stats">
@@ -206,12 +237,13 @@ export const StudentsView = () => {
                         </div>
                     )}
 
-                    {/* SUB-PESTAÑA: EDADES */}
                     {reportTab === 'edades' && (
                         <div className="animate-fade-in">
-                            <div className="filter-box">
-                                <div className="filter-group"><label>Edad Mínima</label><input type="number" min="0" placeholder="Ej: 0" className="filter-input" value={edadMin} onChange={e => setEdadMin(e.target.value === '' ? '' : parseInt(e.target.value))} /></div>
-                                <div className="filter-group"><label>Edad Máxima</label><input type="number" min="0" placeholder="Ej: 4" className="filter-input" value={edadMax} onChange={e => setEdadMax(e.target.value === '' ? '' : parseInt(e.target.value))} /></div>
+                            <h1 className="st-header-title" style={{ fontSize: '24px' }}>Filtrado por Edades</h1>
+                            
+                            <div className="filter-box" style={{ flexDirection: 'row' }}>
+                                <div className="filter-group"><div className="filter-group-label">Edad Mínima</div><input type="number" min="0" placeholder="Ej: 0" className="custom-select-report" value={edadMin} onChange={e => setEdadMin(e.target.value === '' ? '' : parseInt(e.target.value))} /></div>
+                                <div className="filter-group"><div className="filter-group-label">Edad Máxima</div><input type="number" min="0" placeholder="Ej: 12" className="custom-select-report" value={edadMax} onChange={e => setEdadMax(e.target.value === '' ? '' : parseInt(e.target.value))} /></div>
                             </div>
                             
                             {(() => {
@@ -251,7 +283,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MODAL DE REGISTRO */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label><input className="ebd-input" type="text" placeholder="Ej: Adrian Alfredo..." value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }} /></div>
