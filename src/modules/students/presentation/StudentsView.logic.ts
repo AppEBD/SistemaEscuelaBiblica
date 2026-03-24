@@ -24,8 +24,6 @@ export const useStudentsLogic = () => {
     const [seDioLeccion, setSeDioLeccion] = useState<boolean>(true);
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
-    
-    // NUEVO: Guardamos quién tomó la asistencia para bloquear al otro usuario
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -58,7 +56,7 @@ export const useStudentsLogic = () => {
                     setOfrendaDia(ultima.resumen?.ofrendaTotal?.toString() || '');
                     setNumeroLeccion(ultima.numeroLeccion || 1);
                     setSeDioLeccion(ultima.leccionDada);
-                    setAsistenciaRegistradaPor(ultima.registradoPor || null); // Guardamos quién la tomó
+                    setAsistenciaRegistradaPor(ultima.registradoPor || null); 
                     setIsSubmitted(true);
                 } else {
                     const proxLeccion = ultima.leccionDada ? (ultima.numeroLeccion || 0) + 1 : (ultima.numeroLeccion || 1);
@@ -78,11 +76,24 @@ export const useStudentsLogic = () => {
         setAsistencia(prev => ({ ...prev, [id]: estado }));
     };
 
+    // =========================================================================
+    // NUEVA LÓGICA INTELIGENTE: Filtramos los alumnos para la vista de asistencia
+    // Si ya hay un pase de lista guardado, ocultamos a los niños nuevos.
+    // =========================================================================
+    const alumnosParaAsistencia = alumnos.filter(alumno => {
+        if (asistenciaDocId) {
+            // Si ya existe registro de hoy, solo mostramos a los que formaron parte de él
+            return asistencia.hasOwnProperty(alumno.id!);
+        }
+        // Si no hay registro de hoy aún, mostramos a todos
+        return true;
+    });
+
     const resumenAsistencia = {
-        total: alumnos.length,
-        presentes: Object.values(asistencia).filter(est => est === 'Presente').length,
-        ausentes: Object.values(asistencia).filter(est => est === 'Ausente').length,
-        permisos: Object.values(asistencia).filter(est => est === 'Permiso').length,
+        total: alumnosParaAsistencia.length,
+        presentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Presente').length,
+        ausentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Ausente').length,
+        permisos: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Permiso').length,
     };
 
     const enviarAsistencia = async () => {
@@ -90,11 +101,18 @@ export const useStudentsLogic = () => {
         
         try {
             const fechaHoy = new Date().toISOString().split('T')[0]; 
+            
+            // Nos aseguramos de enviar solo los datos de los niños que estaban visibles hoy
+            const registrosFinales: Record<string, string> = {};
+            alumnosParaAsistencia.forEach(a => {
+                registrosFinales[a.id!] = asistencia[a.id!] || 'Presente';
+            });
+
             const payload = {
                 id: asistenciaDocId || undefined,
                 campo: userData.campo,
                 fecha: fechaHoy,
-                registros: asistencia as any,
+                registros: registrosFinales as any,
                 resumen: { ...resumenAsistencia, ofrendaTotal: parseFloat(ofrendaDia) || 0 },
                 registradoPor: userData.nombre,
                 numeroLeccion: numeroLeccion,
@@ -103,7 +121,7 @@ export const useStudentsLogic = () => {
             
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload);
             setAsistenciaDocId(docId);
-            setAsistenciaRegistradaPor(userData.nombre); // Fija al usuario actual como el dueño
+            setAsistenciaRegistradaPor(userData.nombre);
             setIsSubmitted(true); 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) {
@@ -118,22 +136,19 @@ export const useStudentsLogic = () => {
     const obtenerCumpleanerosPorMes = () => { const agrupados: Record<number, Alumno[]> = {}; for (let i = 1; i <= 12; i++) agrupados[i] = []; alumnos.forEach(alumno => { if (alumno.fechaNacimiento) { const mes = parseInt(alumno.fechaNacimiento.split('-')[1], 10); if (!isNaN(mes)) agrupados[mes].push(alumno); } }); Object.keys(agrupados).forEach(mes => { agrupados[mes as any].sort((a, b) => { const diaA = parseInt(a.fechaNacimiento.split('-')[2], 10); const diaB = parseInt(b.fechaNacimiento.split('-')[2], 10); return diaA - diaB; }); }); return agrupados; };
     const abrirModalNuevo = () => { setForm(estadoInicial); setEditandoId(null); setIsModalOpen(true); };
     const abrirModalEditar = (alumno: Alumno) => { if (!alumno.fechaNacimiento) return; const [year, month, day] = alumno.fechaNacimiento.split('-'); setForm({ nombre: alumno.nombre, birthDay: parseInt(day, 10).toString(), birthMonth: parseInt(month, 10).toString(), birthYear: year, genero: alumno.genero || '' }); setEditandoId(alumno.id || null); setIsModalOpen(true); };
-    
     const guardarAlumno = async (e: FormEvent) => { e.preventDefault(); if (!userData?.campo || !userData?.nombre) return; const d = form.birthDay.padStart(2, '0'); const m = form.birthMonth.padStart(2, '0'); const fechaNacimiento = `${form.birthYear}-${m}-${d}`; const edad = calcularEdadExacta(fechaNacimiento); const datosAlumno = { nombre: form.nombre, fechaNacimiento, edad, genero: form.genero, campo: userData.campo }; try { if (editandoId) await StudentUseCases.editarAlumno(editandoId, { ...datosAlumno, actualizadoPor: userData.nombre }); else await StudentUseCases.registrarAlumno({ ...datosAlumno, registradoPor: userData.nombre }); setIsModalOpen(false); setForm(estadoInicial); setEditandoId(null); } catch (error) { alert("Hubo un error."); } };
     
-    // NUEVO: Eliminar niño y auto-actualizar la asistencia del día en tiempo real
     const eliminarAlumno = async (id: string | undefined, nombre: string) => { 
         if (!id) return; 
         if (window.confirm(`¿Seguro que deseas eliminar a ${nombre}?`)) {
             await StudentUseCases.borrarAlumno(id); 
 
-            // Si ya se había pasado lista, eliminamos su registro de la asistencia de hoy
             if (isSubmitted && asistenciaDocId && userData?.campo) {
                 const nuevasAsistencias = { ...asistencia };
                 delete nuevasAsistencias[id];
                 
                 const nuevoResumen = {
-                    total: alumnos.length - 1, // Restamos 1 al total
+                    total: alumnosParaAsistencia.length - 1, 
                     presentes: Object.values(nuevasAsistencias).filter(est => est === 'Presente').length,
                     ausentes: Object.values(nuevasAsistencias).filter(est => est === 'Ausente').length,
                     permisos: Object.values(nuevasAsistencias).filter(est => est === 'Permiso').length,
@@ -157,7 +172,7 @@ export const useStudentsLogic = () => {
     };
 
     return {
-        alumnos, cargando, form, setForm, isModalOpen, setIsModalOpen, abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
+        alumnos, alumnosParaAsistencia, cargando, form, setForm, isModalOpen, setIsModalOpen, abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
         days, months, years, editandoId, userData, activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
         asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia, ofrendaDia, setOfrendaDia,
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor
