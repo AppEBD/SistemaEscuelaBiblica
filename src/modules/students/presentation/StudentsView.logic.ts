@@ -12,13 +12,19 @@ export const useStudentsLogic = () => {
     const [mainTab, setMainTab] = useState<'home' | 'alumnos' | 'asistencia' | 'reportes'>('home');
     const [activeTab, setActiveTab] = useState<'directorio' | 'cumpleanos'>('directorio');
     
-    // NUEVO: Pestañas de Reportes
-    const [reportTab, setReportTab] = useState<'ranking' | 'clases' | 'edades'>('ranking');
+    // REPORTES: Ahora inicia en 'menu' en lugar de 'ranking'
+    const [reportTab, setReportTab] = useState<'menu' | 'ranking' | 'clases' | 'edades'>('menu');
     const [historialAsistencias, setHistorialAsistencias] = useState<AsistenciaDia[]>([]);
     
-    // Filtros de Reportes
-    const [rankingDesde, setRankingDesde] = useState<string>('');
-    const [rankingHasta, setRankingHasta] = useState<string>('');
+    // NUEVO: Filtros de Ranking divididos en Día, Mes y Año
+    const [desdeD, setDesdeD] = useState<string>('');
+    const [desdeM, setDesdeM] = useState<string>('');
+    const [desdeY, setDesdeY] = useState<string>('');
+    
+    const [hastaD, setHastaD] = useState<string>('');
+    const [hastaM, setHastaM] = useState<string>('');
+    const [hastaY, setHastaY] = useState<string>('');
+
     const [edadMin, setEdadMin] = useState<number | ''>('');
     const [edadMax, setEdadMax] = useState<number | ''>('');
 
@@ -78,7 +84,6 @@ export const useStudentsLogic = () => {
             }
         });
 
-        // Cargar historial de reportes
         StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial));
 
         return () => unsub();
@@ -87,12 +92,23 @@ export const useStudentsLogic = () => {
     // ==========================================
     // LÓGICAS DE REPORTES
     // ==========================================
-    
-    // 1. Ranking de Asistencia (Con filtro de fechas)
     const obtenerRanking = () => {
         let validas = historialAsistencias;
-        if (rankingDesde) validas = validas.filter(a => a.fecha >= rankingDesde);
-        if (rankingHasta) validas = validas.filter(a => a.fecha <= rankingHasta);
+
+        // Filtrado INTELIGENTE construyendo la fecha a partir de los selectores
+        if (desdeD && desdeM && desdeY) {
+            const d = desdeD.padStart(2, '0');
+            const m = desdeM.padStart(2, '0');
+            const fechaDesde = `${desdeY}-${m}-${d}`;
+            validas = validas.filter(a => a.fecha >= fechaDesde);
+        }
+
+        if (hastaD && hastaM && hastaY) {
+            const d = hastaD.padStart(2, '0');
+            const m = hastaM.padStart(2, '0');
+            const fechaHasta = `${hastaY}-${m}-${d}`;
+            validas = validas.filter(a => a.fecha <= fechaHasta);
+        }
 
         const conteo: Record<string, number> = {};
         alumnos.forEach(a => conteo[a.id!] = 0);
@@ -110,7 +126,11 @@ export const useStudentsLogic = () => {
         })).sort((a, b) => b.totalAsistencias - a.totalAsistencias);
     };
 
-    // 2. Historial Agrupado por Mes
+    const limpiarFiltrosRanking = () => {
+        setDesdeD(''); setDesdeM(''); setDesdeY('');
+        setHastaD(''); setHastaM(''); setHastaY('');
+    };
+
     const obtenerHistorialPorMes = () => {
         const agrupado: Record<string, AsistenciaDia[]> = {};
         historialAsistencias.forEach(asis => {
@@ -123,7 +143,6 @@ export const useStudentsLogic = () => {
         return agrupado;
     };
 
-    // 3. Filtrado por Edades
     const obtenerAlumnosPorEdad = () => {
         return alumnos.filter(a => {
             const edadStr = calcularEdadExacta(a.fechaNacimiento, a.edad as number);
@@ -135,7 +154,6 @@ export const useStudentsLogic = () => {
             return true;
         });
     };
-
 
     const actualizarAsistencia = (id: string, estado: string) => { setAsistencia(prev => ({ ...prev, [id]: estado })); };
 
@@ -167,7 +185,6 @@ export const useStudentsLogic = () => {
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload);
             setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
             
-            // Actualizar historial localmente para reportes
             StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial));
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) { alert("Error al guardar la asistencia."); }
@@ -185,7 +202,8 @@ export const useStudentsLogic = () => {
         days, months, years, editandoId, userData, activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
         asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia, ofrendaDia, setOfrendaDia,
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
-        reportTab, setReportTab, historialAsistencias, rankingDesde, setRankingDesde, rankingHasta, setRankingHasta, obtenerRanking, obtenerHistorialPorMes,
-        edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad
+        reportTab, setReportTab, historialAsistencias, obtenerRanking, obtenerHistorialPorMes,
+        edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
+        desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking
     };
 };
