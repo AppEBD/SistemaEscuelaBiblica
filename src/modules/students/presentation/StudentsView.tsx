@@ -8,7 +8,7 @@ import './StudentsView.css';
 
 export const StudentsView = () => {
     const { 
-        alumnos, cargando, form, setForm, isModalOpen, setIsModalOpen,
+        alumnos, alumnosParaAsistencia, cargando, form, setForm, isModalOpen, setIsModalOpen,
         abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
         days, months, years, editandoId, userData,
         activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
@@ -19,8 +19,6 @@ export const StudentsView = () => {
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
-
-    // Verificamos si el usuario actual fue el que guardó la asistencia
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
 
     return (
@@ -171,7 +169,6 @@ export const StudentsView = () => {
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     
-                    {/* MENSAJE DINÁMICO DE QUIÉN TOMÓ LA ASISTENCIA */}
                     {isSubmitted && (
                         <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', marginBottom: '25px', border: '2px solid #10b981' }}>
                             <i className="fa-solid fa-circle-check mr-2"></i> 
@@ -225,9 +222,10 @@ export const StudentsView = () => {
 
                         {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando...</p> : (
                             <div style={{ paddingBottom: '20px' }}>
-                                {alumnos.length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay alumnos para pasar lista.</p> : null}
+                                {/* MAGIA: Usamos alumnosParaAsistencia en lugar de alumnos */}
+                                {alumnosParaAsistencia.length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay alumnos para pasar lista hoy.</p> : null}
                                 
-                                {alumnos.map(alumno => {
+                                {alumnosParaAsistencia.map(alumno => {
                                     const estadoActual = asistencia[alumno.id!] || 'Presente';
                                     const esNina = alumno.genero === 'Femenino';
                                     
@@ -250,8 +248,7 @@ export const StudentsView = () => {
                         )}
                     </div>
 
-                    {/* BOTONES DE ACCIÓN (Lógica de bloqueo cruzado) */}
-                    {alumnos.length > 0 && !cargando && (
+                    {alumnosParaAsistencia.length > 0 && !cargando && (
                         isSubmitted ? (
                             esElAutorDeAsistencia ? (
                                 <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia}>
