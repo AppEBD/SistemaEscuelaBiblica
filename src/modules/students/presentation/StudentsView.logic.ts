@@ -14,7 +14,6 @@ export const useStudentsLogic = () => {
     const [reportTab, setReportTab] = useState<'menu' | 'ranking' | 'clases' | 'edades'>('menu');
     const [historialAsistencias, setHistorialAsistencias] = useState<AsistenciaDia[]>([]);
     
-    // Filtros
     const [desdeD, setDesdeD] = useState(''); const [desdeM, setDesdeM] = useState(''); const [desdeY, setDesdeY] = useState('');
     const [hastaD, setHastaD] = useState(''); const [hastaM, setHastaM] = useState(''); const [hastaY, setHastaY] = useState('');
     const [edadMin, setEdadMin] = useState<number | ''>(''); const [edadMax, setEdadMax] = useState<number | ''>('');
@@ -24,7 +23,6 @@ export const useStudentsLogic = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editandoId, setEditandoId] = useState<string | null>(null);
 
-    // Asistencia
     const [asistencia, setAsistencia] = useState<Record<string, string>>({});
     const [ofrendaDia, setOfrendaDia] = useState('');
     const [numeroLeccion, setNumeroLeccion] = useState(1);
@@ -34,31 +32,31 @@ export const useStudentsLogic = () => {
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
     // ==========================================
-    // NUEVO: SISTEMA DE NOTIFICACIONES
+    // NOTIFICACIONES
     // ==========================================
     const [notificaciones, setNotificaciones] = useState([
-        { id: 1, titulo: "Reunión de Maestros", mensaje: "Recordatorio: Este sábado tenemos reunión general a las 4:00 PM. No faltes.", fecha: "25 Mar", leida: false },
-        { id: 2, titulo: "Material Didáctico", mensaje: "Ya pueden pasar a la oficina por los recursos del 2do trimestre.", fecha: "20 Mar", leida: true }
+        { id: 1, titulo: "Reunión de Maestros", mensaje: "Sábado a las 4:00 PM. No faltes.", fecha: "Hoy", leida: false },
+        { id: 2, titulo: "Material Didáctico", mensaje: "Pasar a la oficina por recursos.", fecha: "Ayer", leida: true }
     ]);
+    const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
+    const marcarNotificacion = (id: number) => { setNotificaciones(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
 
-    const reproducirSonido = () => {
-        try {
-            // Sonido corto, amigable y nativo
-            const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg');
-            audio.volume = 0.5;
-            audio.play();
-        } catch (e) {}
+    // ==========================================
+    // NUEVO: ESTADOS DEL PERFIL LATERAL
+    // ==========================================
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
+
+    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
+
+    const guardarNombrePerfil = () => {
+        setIsEditingName(false);
+        // Aquí en el futuro puedes hacer un updateProfile() de Firebase Auth
+        alert("¡Nombre actualizado correctamente!");
     };
 
-    const marcarNotificacion = (id: number) => {
-        setNotificaciones(prev => prev.map(n => {
-            if (n.id === id && !n.leida) {
-                reproducirSonido(); // Solo suena si era nueva
-                return { ...n, leida: true };
-            }
-            return n;
-        }));
-    };
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -120,6 +118,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion // NUEVOS RETORNOS
+        notificaciones, marcarNotificacion,
+        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil
     };
 };
