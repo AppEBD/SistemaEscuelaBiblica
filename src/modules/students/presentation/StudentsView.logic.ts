@@ -6,7 +6,8 @@ import { StudentUseCases } from '../application/student.usecases';
 import { Alumno, AsistenciaDia } from '../domain/student.model';
 
 export const useStudentsLogic = () => {
-    const { userData } = useAuth(); 
+    // AQUÍ EXTRAEMOS TU FUNCIÓN LOGOUT OFICIAL
+    const { userData, logout } = useAuth(); 
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
     const [cargando, setCargando] = useState(true);
 
@@ -54,17 +55,18 @@ export const useStudentsLogic = () => {
     };
 
     // ==========================================
-    // CERRAR SESIÓN (CORREGIDO PARA MANTENER TU DISEÑO)
+    // CERRAR SESIÓN (CORREGIDO)
+    // Llama a tu función logout nativa para borrar todo el caché
     // ==========================================
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-            const auth = getAuth();
-            signOut(auth).then(() => {
-                // Al recargar la página, tu App.tsx original retomará el control.
-                // Detectará que no hay sesión activa y mostrará tu pantalla de Login
-                // exactamente como la diseñaste, respetando el "Recordar contraseña".
-                window.location.reload();
-            }).catch((error) => alert("Error al cerrar sesión: " + error.message));
+            if (logout) {
+                logout(); // Llama a tu AuthContext oficial
+            } else {
+                // Fallback por seguridad
+                const auth = getAuth();
+                signOut(auth).then(() => window.location.reload());
+            }
         }
     };
 
