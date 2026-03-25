@@ -151,3 +151,6 @@ export const useStudentsLogic = () => {
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
+
+
+
