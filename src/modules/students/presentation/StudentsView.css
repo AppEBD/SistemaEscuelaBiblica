@@ -6,7 +6,6 @@
     --primary-grad: linear-gradient(135deg, #4f46e5, #6366f1);
     --primary-light: #e0e7ff;
 }
-/* Al aplicar estas clases, toda la app cambia de color */
 .theme-emerald { --primary-color: #10b981; --primary-grad: linear-gradient(135deg, #10b981, #34d399); --primary-light: #d1fae5; }
 .theme-rose { --primary-color: #e11d48; --primary-grad: linear-gradient(135deg, #e11d48, #fb7185); --primary-light: #ffe4e6; }
 .theme-amber { --primary-color: #d97706; --primary-grad: linear-gradient(135deg, #d97706, #fbbf24); --primary-light: #fef3c7; }
@@ -17,44 +16,38 @@
 }
 
 /* =========================================
-   HEADER DE INICIO (CON BOTÓN DE PERFIL)
+   NUEVO ENCABEZADO GLOBAL VISIBLE
    ========================================= */
-.home-header-top {
+.app-global-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 20px; margin-top: 10px;
+    background: white; padding: 15px 20px; border-radius: 20px;
+    margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
 }
-.home-welcome h1 { font-size: 26px; font-weight: 900; color: #1e293b; margin: 0 0 5px 0; letter-spacing: -0.5px; }
-.home-welcome p { font-size: 14px; color: #64748b; margin: 0; }
+.app-brand { display: flex; flex-direction: column; gap: 2px; }
+.app-brand-title { font-size: 20px; font-weight: 900; color: var(--primary-color); margin: 0; line-height: 1; letter-spacing: -0.5px;}
+.app-brand-subtitle { font-size: 13px; font-weight: 700; color: #64748b; margin: 0; text-transform: capitalize;}
 
-.profile-avatar-btn {
-    width: 45px; height: 45px; border-radius: 50%; background: var(--primary-grad);
-    color: white; border: none; font-size: 18px; font-weight: 900; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s; display: flex; align-items: center; justify-content: center;
+.profile-pill-btn {
+    display: flex; align-items: center; gap: 8px; background: var(--primary-light);
+    color: var(--primary-color); border: 2px solid var(--primary-color);
+    padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: 800;
+    cursor: pointer; transition: 0.2s; white-space: nowrap;
 }
-.profile-avatar-btn:hover { transform: scale(1.05); }
+.profile-pill-btn i { font-size: 16px; }
+.profile-pill-btn:hover { background: var(--primary-color); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15);}
+
 
 /* =========================================
    PANEL LATERAL (PERFIL DRAWER)
    ========================================= */
-.profile-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(15, 23, 42, 0.4); z-index: 2000;
-    opacity: 0; visibility: hidden; transition: 0.3s ease; backdrop-filter: blur(2px);
-}
+.profile-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); z-index: 2000; opacity: 0; visibility: hidden; transition: 0.3s ease; backdrop-filter: blur(2px); }
 .profile-overlay.open { opacity: 1; visibility: visible; }
-
-.profile-drawer {
-    position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh;
-    background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-    overflow-y: auto;
-}
+.profile-drawer { position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; }
 .profile-drawer.open { right: 0; }
-
 .pd-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f1f5f9; }
 .pd-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; }
 .pd-close { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 12px; color: #475569; cursor: pointer; font-size: 16px; }
-
 .pd-content { padding: 20px; display: flex; flex-direction: column; gap: 25px; }
 
 /* Editor de Nombre */
@@ -85,7 +78,7 @@
 .pd-btn-extra i { color: #64748b; font-size: 18px; width: 20px; text-align: center; }
 
 /* =========================================
-   BARRA DE NAVEGACIÓN INFERIOR (USANDO VARIABLE)
+   BARRA DE NAVEGACIÓN INFERIOR
    ========================================= */
 .main-nav-menu { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; display: flex; justify-content: space-around; background: white; border-radius: 24px 24px 0 0; padding: 15px 15px 25px 15px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; border-bottom: none; z-index: 1000; }
 .main-nav-btn { flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 11px; font-weight: 800; border-radius: 16px; cursor: pointer; color: #94a3b8; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -94,7 +87,7 @@
 .main-nav-btn.active i { transform: scale(1.15); }
 
 /* Dashboard Inicio */
-.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 10px;}
+.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; }
 .home-widget { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
 .home-widget-title { font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
