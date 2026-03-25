@@ -15,26 +15,29 @@ export const StudentsView = () => {
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
+    const nombreUsuario = userData?.nombre || 'Maestro';
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
+            {/* ENCABEZADO GLOBAL VISIBLE */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
                     <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
-                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
+                    <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
                 </button>
             </div>
 
+            {/* PERFIL LATERAL (DRAWER) */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -44,20 +47,10 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
-                            {isEditingName ? (
-                                <div className="pd-name-input-group">
-                                    <input autoFocus type="text" className="pd-input" value={userNameDisplay} onChange={(e) => setUserNameDisplay(e.target.value)} />
-                                    <button className="pd-btn-save" onClick={guardarNombrePerfil}><i className="fa-solid fa-check"></i></button>
-                                </div>
-                            ) : (
-                                <h3 className="pd-name-display">
-                                    {userNameDisplay}
-                                    <button className="pd-btn-edit" onClick={() => setIsEditingName(true)}><i className="fa-solid fa-pen"></i></button>
-                                </h3>
-                            )}
-                            <p className="pd-role">Maestro en {userData?.campo}</p>
+                            <h3 className="pd-name-display">{nombreUsuario}</h3>
+                            <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
                         </div>
                     </div>
 
@@ -71,7 +64,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={userNameDisplay} />
+                    <BadgesPanel userName={nombreUsuario} />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
@@ -85,11 +78,11 @@ export const StudentsView = () => {
                 </div>
             </div>
 
+            {/* PANTALLA DE INICIO (HOME) */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
                         
-                        {/* WIDGET ALUMNOS + BARRA DE PROGRESO INTEGRADA */}
                         <div className="home-widget widget-alumnos">
                             <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
                                 <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div>
@@ -130,6 +123,7 @@ export const StudentsView = () => {
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
+            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -189,6 +183,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
@@ -233,6 +228,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
@@ -373,11 +369,20 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* NAV INFERIOR FIJO */}
             <div className="main-nav-menu">
-                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
-                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}><i className="fa-solid fa-address-book"></i> Directorio</button>
-                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}><i className="fa-solid fa-clipboard-user"></i> Asistencia</button>
-                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}><i className="fa-solid fa-chart-pie"></i> Reportes</button>
+                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
+                    <i className="fa-solid fa-house"></i> Inicio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
+                    <i className="fa-solid fa-address-book"></i> Directorio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
+                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
+                    <i className="fa-solid fa-chart-pie"></i> Reportes
+                </button>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
