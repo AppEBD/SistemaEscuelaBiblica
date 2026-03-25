@@ -24,21 +24,89 @@ export const StudentsView = () => {
 
     return (
         <div className="students-dashboard">
+
+            {/* =========================================
+                BARRA DE NAVEGACIÓN SUPERIOR (SIEMPRE VISIBLE)
+                ========================================= */}
+            <div className="main-nav-menu">
+                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
+                    <i className="fa-solid fa-house"></i> Inicio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
+                    <i className="fa-solid fa-address-book"></i> Directorio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
+                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
+                    <i className="fa-solid fa-chart-pie"></i> Reportes
+                </button>
+            </div>
             
+            {/* =========================================
+                PANTALLA DE INICIO (DASHBOARD LIMPIO)
+                ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
-                    <div className="home-welcome"><h1>¡Hola, {userData?.nombre?.split(' ')[0]}!</h1><p>¿Qué deseas hacer en <strong>{userData?.campo}</strong>?</p></div>
-                    <div className="home-menu-grid">
-                        <div className="home-module-btn" onClick={() => setMainTab('alumnos')}><div className="home-module-icon icon-alumnos"><i className="fa-solid fa-children"></i></div><div className="home-module-text"><h3>Directorio de Alumnos</h3><p>Agrega niños, edita perfiles y revisa los cumpleaños del mes.</p></div></div>
-                        <div className="home-module-btn" onClick={() => setMainTab('asistencia')}><div className="home-module-icon icon-asistencia"><i className="fa-solid fa-clipboard-check"></i></div><div className="home-module-text"><h3>Pasar Asistencia</h3><p>Toma asistencia rápida y registra la ofrenda general del día.</p></div></div>
-                        <div className="home-module-btn" onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}><div className="home-module-icon icon-reportes"><i className="fa-solid fa-chart-pie"></i></div><div className="home-module-text"><h3>Reportes y Estadísticas</h3><p>Revisa el historial de asistencia y crecimiento de tu campo.</p></div></div>
+                    <div className="home-welcome">
+                        <h1>¡Hola, {userData?.nombre?.split(' ')[0]}!</h1>
+                        <p>Panel principal de <strong>{userData?.campo}</strong></p>
+                    </div>
+
+                    <div className="home-widgets-grid">
+                        
+                        {/* WIDGET 1: TOTAL DE ALUMNOS */}
+                        <div className="home-widget">
+                            <div className="home-widget-title">
+                                <i className="fa-solid fa-users" style={{color: '#4f46e5', fontSize: '18px'}}></i> 
+                                Alumnos Inscritos
+                            </div>
+                            <div className="home-stat-big">
+                                {alumnos.length} <span style={{fontSize: '16px', color: '#64748b', fontWeight: '700'}}>niños</span>
+                            </div>
+                        </div>
+
+                        {/* WIDGET 2: ASISTENCIA DE HOY (Recicla el diseño premium) */}
+                        <div className="home-widget">
+                            <div className="home-widget-title">
+                                <i className="fa-solid fa-clipboard-check" style={{color: '#10b981', fontSize: '18px'}}></i> 
+                                Asistencia de Hoy
+                            </div>
+                            <div className="ps-stats" style={{ marginTop: '15px' }}>
+                                <div className="ps-item">
+                                    <span className="ps-val" style={{ color: '#10b981' }}>{resumenAsistencia.presentes}</span>
+                                    <span className="ps-lbl" style={{color: '#64748b'}}>Presentes</span>
+                                </div>
+                                <div className="ps-divider" style={{background: '#e2e8f0'}}></div>
+                                <div className="ps-item">
+                                    <span className="ps-val" style={{ color: '#ef4444' }}>{resumenAsistencia.ausentes}</span>
+                                    <span className="ps-lbl" style={{color: '#64748b'}}>Ausentes</span>
+                                </div>
+                                <div className="ps-divider" style={{background: '#e2e8f0'}}></div>
+                                <div className="ps-item">
+                                    <span className="ps-val" style={{ color: '#f59e0b' }}>{resumenAsistencia.permisos}</span>
+                                    <span className="ps-lbl" style={{color: '#64748b'}}>Permisos</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* ESPACIO PARA FUTURAS FUNCIONES */}
+                    <div className="home-placeholder">
+                        <i className="fa-solid fa-puzzle-piece" style={{fontSize: '40px', color: '#cbd5e1', marginBottom: '15px'}}></i>
+                        <h3 style={{fontSize: '18px', color: '#475569', margin: '0 0 5px 0'}}>Nuevas funciones en camino</h3>
+                        <p style={{fontSize: '14px', color: '#94a3b8', margin: 0}}>Este espacio está reservado para los próximos módulos.</p>
                     </div>
                 </div>
             )}
 
-            {mainTab !== 'home' && mainTab !== 'reportes' && (<button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}><i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal</button>)}
-            {mainTab === 'reportes' && reportTab === 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setMainTab('home')}><i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal</button>)}
-            {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
+            {/* BOTÓN VOLVER (Solo para sub-menús de reportes) */}
+            {mainTab === 'reportes' && reportTab !== 'menu' && (
+                <button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}>
+                    <i className="fa-solid fa-arrow-left"></i> Volver a Reportes
+                </button>
+            )}
 
             {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
@@ -53,7 +121,7 @@ export const StudentsView = () => {
 
                     {activeTab === 'directorio' && (<button className="btn-inscribir-verde" onClick={abrirModalNuevo}><i className="fa-solid fa-user-plus"></i> Inscribir Nuevo Niño</button>)}
 
-                    {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p> : (
+                    {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '30px' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando datos...</p> : (
                         <>
                             {activeTab === 'directorio' && (
                                 <div className="students-grid animate-fade-in">
@@ -103,7 +171,7 @@ export const StudentsView = () => {
             {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
-                    {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', marginBottom: '25px', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
+                    {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
                         <div className="global-ofrenda-card"><div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div><div className="global-ofrenda-input-wrapper"><span>$</span><input type="number" className="global-ofrenda-input" placeholder="0.00" step="0.05" min="0" value={ofrendaDia} onChange={(e) => setOfrendaDia(e.target.value)} /></div></div>
@@ -142,7 +210,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES MEJORADOS */}
+            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
