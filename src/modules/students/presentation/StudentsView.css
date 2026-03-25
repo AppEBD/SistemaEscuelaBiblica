@@ -39,16 +39,25 @@
 
 
 /* =========================================
-   PANEL LATERAL (PERFIL DRAWER)
+   PANEL LATERAL (PERFIL DRAWER) CORREGIDO EL SCROLL
    ========================================= */
 .profile-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); z-index: 2000; opacity: 0; visibility: hidden; transition: 0.3s ease; backdrop-filter: blur(2px); }
 .profile-overlay.open { opacity: 1; visibility: visible; }
-.profile-drawer { position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; }
+
+.profile-drawer { 
+    position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; 
+    background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; 
+    /* Habilitamos el scroll táctil suave */
+    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+}
 .profile-drawer.open { right: 0; }
-.pd-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f1f5f9; }
+.pd-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f1f5f9; position: sticky; top: 0; background: white; z-index: 10; }
 .pd-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; }
 .pd-close { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 12px; color: #475569; cursor: pointer; font-size: 16px; }
-.pd-content { padding: 20px; display: flex; flex-direction: column; gap: 25px; }
+
+/* Damos padding bottom inmenso para asegurar el scroll */
+.pd-content { padding: 20px 20px 80px 20px; display: flex; flex-direction: column; gap: 25px; flex: 1; }
 
 /* Editor de Nombre */
 .pd-user-info { display: flex; align-items: center; gap: 15px; }
@@ -78,7 +87,7 @@
 .pd-btn-extra i { color: #64748b; font-size: 18px; width: 20px; text-align: center; }
 
 /* =========================================
-   BARRA DE NAVEGACIÓN INFERIOR
+   BARRA DE NAVEGACIÓN INFERIOR (USANDO VARIABLE)
    ========================================= */
 .main-nav-menu { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; display: flex; justify-content: space-around; background: white; border-radius: 24px 24px 0 0; padding: 15px 15px 25px 15px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; border-bottom: none; z-index: 1000; }
 .main-nav-btn { flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 11px; font-weight: 800; border-radius: 16px; cursor: pointer; color: #94a3b8; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -87,7 +96,7 @@
 .main-nav-btn.active i { transform: scale(1.15); }
 
 /* Dashboard Inicio */
-.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; }
+.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 10px;}
 .home-widget { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
 .home-widget-title { font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
