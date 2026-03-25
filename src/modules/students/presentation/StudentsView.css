@@ -1,37 +1,37 @@
 /* =========================================
    CONTENEDOR PRINCIPAL
    ========================================= */
+/* Aumentamos el padding-bottom para que el contenido no se esconda detrás del menú fijo */
 .students-dashboard {
-    max-width: 800px; margin: 0 auto; padding: 15px 15px 40px 15px; animation: fadeIn 0.4s ease;
+    max-width: 800px; margin: 0 auto; padding: 15px 15px 110px 15px; animation: fadeIn 0.4s ease;
     font-family: system-ui, -apple-system, sans-serif;
 }
 
 /* =========================================
-   MENÚ DE NAVEGACIÓN FIJO (TIPO APP)
+   NUEVA BARRA DE NAVEGACIÓN INFERIOR (ESTILO APP MÓVIL)
    ========================================= */
 .main-nav-menu {
-    display: flex; background: white; border-radius: 20px; padding: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); margin-bottom: 25px; border: 1px solid #f1f5f9;
-    gap: 5px; overflow-x: auto;
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 800px;
+    display: flex; justify-content: space-around; background: white; 
+    border-radius: 24px 24px 0 0; padding: 15px 15px 25px 15px; /* Padding extra abajo para pantallas de iPhone */
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; border-bottom: none;
+    z-index: 1000;
 }
 .main-nav-btn {
-    flex: 1; border: none; background: transparent; padding: 12px 5px; font-size: 12px;
-    font-weight: 800; border-radius: 16px; cursor: pointer; color: #64748b;
+    flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 11px;
+    font-weight: 800; border-radius: 16px; cursor: pointer; color: #94a3b8;
     transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px;
-    min-width: 70px;
 }
-.main-nav-btn i { font-size: 20px; }
-.main-nav-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
-.main-nav-btn:hover:not(.active) { background: #f8fafc; color: #1e293b; }
+.main-nav-btn i { font-size: 22px; transition: 0.2s; }
+.main-nav-btn.active { color: #4f46e5; }
+.main-nav-btn.active i { transform: scale(1.15); }
+.main-nav-btn:hover:not(.active) { color: #1e293b; }
 
 /* =========================================
-   NUEVA PANTALLA DE INICIO (DASHBOARD LIMPIO)
+   PANTALLA DE INICIO (DASHBOARD LIMPIO)
    ========================================= */
-.home-welcome { text-align: center; margin-bottom: 25px; margin-top: 10px; }
-.home-welcome h1 { font-size: 32px; font-weight: 900; color: #1e293b; margin: 0 0 5px 0; letter-spacing: -1px; }
-.home-welcome p { font-size: 15px; color: #64748b; margin: 0; }
-
-.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; }
+.home-widgets-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 10px;}
 
 .home-widget {
     background: white; border-radius: 24px; padding: 25px 20px; 
@@ -43,6 +43,22 @@
 }
 .home-stat-big { font-size: 48px; font-weight: 900; color: #1e293b; line-height: 1; }
 
+/* Nuevo Diseño Premium para la Tarjeta de Alumnos */
+.widget-alumnos {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border: none; position: relative; overflow: hidden;
+}
+/* Círculo decorativo de fondo */
+.widget-alumnos::after {
+    content: ''; position: absolute; right: -20px; top: -30px;
+    width: 130px; height: 130px; background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.widget-alumnos .home-widget-title { color: #e0e7ff; z-index: 2; position: relative; }
+.widget-alumnos .home-widget-title i { color: #a5b4fc !important; }
+.widget-alumnos .home-stat-big { color: white; z-index: 2; position: relative; }
+.widget-alumnos .home-stat-big span { color: #c7d2fe !important; }
+
 .home-placeholder {
     text-align: center; padding: 40px 20px; margin-top: 15px; background: transparent;
     border-radius: 24px; border: 2px dashed #cbd5e1;
@@ -52,31 +68,21 @@
 .st-header-title { font-size: 26px; font-weight: 900; color: #1e293b; margin: 0 0 5px 0; letter-spacing: -0.5px; }
 .st-header-subtitle { font-size: 15px; color: #94a3b8; margin: 0 0 20px 0; font-weight: 500; }
 
-/* Botón de volver para menús internos de Reportes */
+/* Botón de volver */
 .btn-volver {
     background: #f1f5f9; border: none; font-size: 14px; font-weight: 800; color: #475569;
     padding: 10px 15px; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; transition: 0.2s;
 }
 .btn-volver:hover { background: #e2e8f0; color: #1e293b; }
 
-
 /* =========================================
    MÓDULO 1: ALUMNOS (Directorio y Cumpleaños)
    ========================================= */
 .st-tabs-container { display: flex; gap: 15px; margin-bottom: 25px; }
-.st-tab {
-    flex: 1; padding: 12px 0; border-radius: 20px; border: none; font-size: 15px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;
-}
+.st-tab { flex: 1; padding: 12px 0; border-radius: 20px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
 .st-tab.active { background-color: #dcfce7; color: #059669; }
 .st-tab:not(.active) { background-color: #f8fafc; color: #94a3b8; }
-
-.btn-inscribir-verde {
-    width: 100%; background-color: #10b981; color: white; padding: 16px;
-    border-radius: 16px; font-size: 17px; font-weight: 800; border: none;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); margin-bottom: 25px; transition: 0.2s;
-}
+.btn-inscribir-verde { width: 100%; background-color: #10b981; color: white; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 800; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); margin-bottom: 25px; transition: 0.2s; }
 .btn-inscribir-verde:hover { background-color: #059669; transform: translateY(-2px); }
 
 .students-grid { display: flex; flex-direction: column; gap: 15px; }
@@ -112,21 +118,13 @@
    MÓDULO 2: ASISTENCIA, OFRENDA Y LECCIÓN
    ========================================= */
 .locked-section { opacity: 0.6; pointer-events: none; filter: grayscale(0.8); transition: all 0.4s ease; }
-
-.global-ofrenda-card {
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px dashed #34d399;
-    border-radius: 24px; padding: 25px; display: flex; flex-direction: column; align-items: center;
-    margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
-}
+.global-ofrenda-card { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px dashed #34d399; border-radius: 24px; padding: 25px; display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1); }
 .global-ofrenda-title { font-size: 16px; font-weight: 900; color: #065f46; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 .global-ofrenda-input-wrapper { display: flex; align-items: center; background: white; padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 .global-ofrenda-input-wrapper span { font-size: 28px; font-weight: 900; color: #1e293b; margin-right: 10px; }
 .global-ofrenda-input { background: transparent; border: none; font-size: 32px; font-weight: 900; color: #1e293b; outline: none; width: 120px; text-align: center; }
 
-.premium-summary {
-    background: #1e293b; color: white; border-radius: 24px; padding: 25px 20px;
-    margin-bottom: 25px; box-shadow: 0 10px 25px rgba(30, 41, 59, 0.3);
-}
+.premium-summary { background: #1e293b; color: white; border-radius: 24px; padding: 25px 20px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(30, 41, 59, 0.3); }
 .ps-header { text-align: center; font-size: 14px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
 .ps-stats { display: flex; justify-content: space-around; align-items: center; }
 .ps-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
@@ -159,12 +157,11 @@
 
 .btn-enviar-asistencia, .btn-editar-datos {
     width: 100%; border: none; border-radius: 16px; padding: 18px; font-size: 18px; font-weight: 900;
-    cursor: pointer; position: sticky; bottom: 20px; z-index: 10; margin-top: 30px; display: flex; justify-content: center; gap: 10px; transition: 0.2s;
+    cursor: pointer; margin-top: 25px; margin-bottom: 10px; display: flex; justify-content: center; gap: 10px; transition: 0.2s;
 }
 .btn-enviar-asistencia { background: #4f46e5; color: white; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4); }
 .btn-editar-datos { background: white; color: #334155; border: 2px solid #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
 .btn-editar-datos:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
-
 
 /* =========================================
    MÓDULO 3: REPORTES Y ESTADÍSTICAS
@@ -181,7 +178,6 @@
 .filter-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .custom-select-report { padding: 12px 10px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 800; font-size: 14px; outline: none; background: #f8fafc; color: #334155; width: 100%; transition: 0.2s; }
 .custom-select-report:focus { border-color: #4f46e5; background: white; }
-
 .btn-limpiar-filtros { width: 100%; background: #f1f5f9; border: none; padding: 14px; border-radius: 14px; font-weight: 800; color: #64748b; cursor: pointer; transition: 0.2s; font-size: 15px; margin-top: 5px; }
 .btn-limpiar-filtros:hover { background: #e2e8f0; color: #1e293b; }
 
@@ -210,6 +206,5 @@
 .age-stat-num { font-size: 28px; font-weight: 900; }
 .age-stat-lbl { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
 
-/* Animación Global */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
