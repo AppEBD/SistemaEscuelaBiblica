@@ -27,7 +27,7 @@ export const StudentsView = () => {
         <div className={`students-dashboard theme-${appTheme}`}>
 
             {/* =========================================
-                ENCABEZADO GLOBAL VISIBLE (Sustituye al antiguo)
+                ENCABEZADO GLOBAL VISIBLE
                 ========================================= */}
             <div className="app-global-header">
                 <div className="app-brand">
@@ -40,7 +40,7 @@ export const StudentsView = () => {
             </div>
 
             {/* =========================================
-                PERFIL LATERAL (DRAWER)
+                PERFIL LATERAL (DRAWER) CON SCROLL CORREGIDO
                 ========================================= */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
@@ -244,15 +244,15 @@ export const StudentsView = () => {
 
                             <div className="home-module-btn" onClick={() => setReportTab('ranking')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}><i className="fa-solid fa-trophy"></i></div>
-                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas exactas.</p></div>
+                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('clases')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }}><i className="fa-solid fa-book-bible"></i></div>
-                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias agrupadas por mes y año.</p></div>
+                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('edades')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}><i className="fa-solid fa-filter"></i></div>
-                                <div className="home-module-text"><h3>Filtrado por Edades</h3><p>Encuentra niños y niñas según su rango de edad en el campo.</p></div>
+                                <div className="home-module-text"><h3>Filtrado por Edades</h3><p>Encuentra niños según su rango de edad.</p></div>
                             </div>
                         </div>
                     )}
