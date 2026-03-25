@@ -15,45 +15,100 @@ export const StudentsView = () => {
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion
+        notificaciones, marcarNotificacion,
+        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
 
     return (
-        <div className="students-dashboard">
+        <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* PANTALLA DE INICIO */}
+            {/* =========================================
+                PERFIL LATERAL (DRAWER)
+                ========================================= */}
+            <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
+            <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
+                <div className="pd-header">
+                    <h2>Mi Perfil</h2>
+                    <button className="pd-close" onClick={() => setIsProfileOpen(false)}><i className="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div className="pd-content">
+                    {/* 1. Datos de Usuario (Editables) */}
+                    <div className="pd-user-info">
+                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
+                        <div className="pd-name-group">
+                            {isEditingName ? (
+                                <div className="pd-name-input-group">
+                                    <input autoFocus type="text" className="pd-input" value={userNameDisplay} onChange={(e) => setUserNameDisplay(e.target.value)} />
+                                    <button className="pd-btn-save" onClick={guardarNombrePerfil}><i className="fa-solid fa-check"></i></button>
+                                </div>
+                            ) : (
+                                <h3 className="pd-name-display">
+                                    {userNameDisplay}
+                                    <button className="pd-btn-edit" onClick={() => setIsEditingName(true)}><i className="fa-solid fa-pen"></i></button>
+                                </h3>
+                            )}
+                            <p className="pd-role">Maestro en {userData?.campo}</p>
+                        </div>
+                    </div>
+
+                    {/* 2. Temas de Color */}
+                    <div>
+                        <h4 className="pd-section-title">Color de la Aplicación</h4>
+                        <div className="theme-picker">
+                            <div className={`theme-circle bg-indigo ${appTheme === 'indigo' ? 'active' : ''}`} onClick={() => setAppTheme('indigo')}><i className="fa-solid fa-check" style={{opacity: appTheme === 'indigo' ? 1 : 0}}></i></div>
+                            <div className={`theme-circle bg-emerald ${appTheme === 'emerald' ? 'active' : ''}`} onClick={() => setAppTheme('emerald')}><i className="fa-solid fa-check" style={{opacity: appTheme === 'emerald' ? 1 : 0}}></i></div>
+                            <div className={`theme-circle bg-rose ${appTheme === 'rose' ? 'active' : ''}`} onClick={() => setAppTheme('rose')}><i className="fa-solid fa-check" style={{opacity: appTheme === 'rose' ? 1 : 0}}></i></div>
+                            <div className={`theme-circle bg-amber ${appTheme === 'amber' ? 'active' : ''}`} onClick={() => setAppTheme('amber')}><i className="fa-solid fa-check" style={{opacity: appTheme === 'amber' ? 1 : 0}}></i></div>
+                        </div>
+                    </div>
+
+                    {/* 3. Panel de Insignias (Movido de Inicio a aquí) */}
+                    <BadgesPanel userName={userNameDisplay} />
+
+                    {/* 4. Extras de Perfil */}
+                    <div className="pd-extras">
+                        <h4 className="pd-section-title">Opciones Adicionales</h4>
+                        <button className="pd-btn-extra"><i className="fa-solid fa-chart-line"></i> Mi Actividad en el Año</button>
+                        <button className="pd-btn-extra"><i className="fa-solid fa-moon"></i> Modo Oscuro (Próximamente)</button>
+                        <button className="pd-btn-extra"><i className="fa-solid fa-file-export"></i> Exportar Mis Datos</button>
+                        <button className="pd-btn-extra" style={{color: '#ef4444', marginTop: '10px'}}><i className="fa-solid fa-right-from-bracket" style={{color: '#ef4444'}}></i> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* =========================================
+                PANTALLA DE INICIO
+                ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     
+                    {/* Header con botón de Perfil en la esquina */}
+                    <div className="home-header-top">
+                        <div className="home-welcome" style={{textAlign: 'left', margin: 0}}>
+                            <h1>¡Hola, {userNameDisplay.split(' ')[0]}!</h1>
+                            <p>Panel de <strong>{userData?.campo}</strong></p>
+                        </div>
+                        <button className="profile-avatar-btn" onClick={() => setIsProfileOpen(true)}>
+                            {userNameDisplay.charAt(0).toUpperCase()}
+                        </button>
+                    </div>
+
                     <div className="home-widgets-grid">
-                        
-                        {/* 1. WIDGET COMPACTO DE ALUMNOS */}
                         <div className="home-widget widget-alumnos">
-                            <div>
-                                <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total en tu Campo</div>
-                                <div className="home-stat-big">{alumnos.length} <span>niños inscritos</span></div>
-                            </div>
+                            <div><div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div><div className="home-stat-big">{alumnos.length}</div></div>
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
-                        {/* 2. ACORDEÓN DE INSIGNIAS */}
-                        {userData?.nombre && <BadgesPanel userName={userData.nombre} />}
-
-                        {/* 3. WIDGET DE NOTIFICACIONES */}
                         <div className="home-widget">
-                            <div className="home-widget-title">
-                                <i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Notificaciones
-                            </div>
-                            
+                            <div className="home-widget-title"><i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Notificaciones</div>
                             <div className="notif-list">
                                 {notificaciones.map(n => (
                                     <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
-                                        <div className="notif-icon">
-                                            {n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>}
-                                        </div>
+                                        <div className="notif-icon">{n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>}</div>
                                         <div className="notif-content">
                                             <h4 className="notif-title">{n.titulo} {!n.leida && <span className="badge-new">NUEVO</span>}</h4>
                                             <p className="notif-desc">{n.mensaje}</p>
@@ -63,12 +118,10 @@ export const StudentsView = () => {
                                 ))}
                             </div>
                         </div>
-
                     </div>
                 </div>
             )}
 
-            {/* BOTÓN VOLVER */}
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
             {/* MÓDULO 1: ALUMNOS */}
@@ -317,9 +370,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* =========================================
-                BARRA DE NAVEGACIÓN INFERIOR (APP BAR)
-                ========================================= */}
+            {/* NAV INFERIOR FIJO */}
             <div className="main-nav-menu">
                 <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
                     <i className="fa-solid fa-house"></i> Inicio
