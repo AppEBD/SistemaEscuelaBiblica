@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { getAuth, signOut } from 'firebase/auth'; // IMPORTAMOS PARA CERRAR SESIÓN
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -31,9 +32,7 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
-    // ==========================================
     // NOTIFICACIONES
-    // ==========================================
     const [notificaciones, setNotificaciones] = useState([
         { id: 1, titulo: "Reunión de Maestros", mensaje: "Sábado a las 4:00 PM. No faltes.", fecha: "Hoy", leida: false },
         { id: 2, titulo: "Material Didáctico", mensaje: "Pasar a la oficina por recursos.", fecha: "Ayer", leida: true }
@@ -41,9 +40,7 @@ export const useStudentsLogic = () => {
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
     const marcarNotificacion = (id: number) => { setNotificaciones(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
 
-    // ==========================================
-    // NUEVO: ESTADOS DEL PERFIL LATERAL
-    // ==========================================
+    // ESTADOS DEL PERFIL LATERAL
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
     const [isEditingName, setIsEditingName] = useState(false);
@@ -53,10 +50,16 @@ export const useStudentsLogic = () => {
 
     const guardarNombrePerfil = () => {
         setIsEditingName(false);
-        // Aquí en el futuro puedes hacer un updateProfile() de Firebase Auth
         alert("¡Nombre actualizado correctamente!");
     };
 
+    // NUEVO: Función para cerrar sesión
+    const cerrarSesionApp = () => {
+        if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+            const auth = getAuth();
+            signOut(auth).catch((error) => alert("Error al cerrar sesión: " + error.message));
+        }
+    };
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -119,6 +122,7 @@ export const useStudentsLogic = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion,
-        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil
+        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil,
+        cerrarSesionApp // NUEVO RETORNO
     };
 };
