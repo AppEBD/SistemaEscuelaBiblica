@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, updateDoc } from 'firebase/firestore'; // IMPORTAMOS FIRESTORE
-import { db } from '../../../core/firebase/firebase.config'; // IMPORTAMOS TU BASE DE DATOS
+import { doc, updateDoc } from 'firebase/firestore'; 
+import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -49,30 +49,31 @@ export const useStudentsLogic = () => {
     useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
 
     // ==========================================
-    // ACTUALIZAR NOMBRE EN LA BASE DE DATOS
+    // ACTUALIZAR NOMBRE EN LA BASE DE DATOS (CON REPORTE DE ERROR REAL)
     // ==========================================
     const guardarNombrePerfil = async () => {
         if (!userNameDisplay.trim()) return;
         
-        // Identificamos el ID del usuario actual (dependiendo de cómo lo guarde tu Auth)
+        // Verificamos de dónde viene tu ID de usuario
         const userId = userData?.uid || userData?.id; 
         
         if (!userId) {
-            alert("No se pudo identificar tu usuario para actualizar la base de datos.");
+            alert("Error del sistema: No se detectó un ID de usuario válido (userData.uid).");
             setIsEditingName(false);
             return;
         }
 
         try {
-            // Actualizamos en la colección de Firebase (asumiendo que se llama 'usuarios')
+            // OJO AQUÍ: Si tu colección en Firebase se llama diferente a 'usuarios', cámbialo abajo
             const userRef = doc(db, 'usuarios', userId);
             await updateDoc(userRef, { nombre: userNameDisplay });
             
             setIsEditingName(false);
             alert("¡Tu nombre ha sido actualizado correctamente!");
-        } catch (error) {
-            console.error("Error al actualizar:", error);
-            alert("Hubo un problema al guardar tu nombre en la nube. Revisa tu conexión.");
+        } catch (error: any) {
+            console.error("Detalle técnico del error:", error);
+            // Ahora la alerta nos dirá la verdad
+            alert(`Error de Firebase: ${error.message}`);
         }
     };
 
