@@ -1,5 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
+import { doc, updateDoc } from 'firebase/firestore'; // IMPORTAMOS FIRESTORE
+import { db } from '../../../core/firebase/firebase.config'; // IMPORTAMOS TU BASE DE DATOS
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -46,7 +48,33 @@ export const useStudentsLogic = () => {
 
     useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
 
-    const guardarNombrePerfil = () => { setIsEditingName(false); alert("¡Nombre actualizado correctamente!"); };
+    // ==========================================
+    // ACTUALIZAR NOMBRE EN LA BASE DE DATOS
+    // ==========================================
+    const guardarNombrePerfil = async () => {
+        if (!userNameDisplay.trim()) return;
+        
+        // Identificamos el ID del usuario actual (dependiendo de cómo lo guarde tu Auth)
+        const userId = userData?.uid || userData?.id; 
+        
+        if (!userId) {
+            alert("No se pudo identificar tu usuario para actualizar la base de datos.");
+            setIsEditingName(false);
+            return;
+        }
+
+        try {
+            // Actualizamos en la colección de Firebase (asumiendo que se llama 'usuarios')
+            const userRef = doc(db, 'usuarios', userId);
+            await updateDoc(userRef, { nombre: userNameDisplay });
+            
+            setIsEditingName(false);
+            alert("¡Tu nombre ha sido actualizado correctamente!");
+        } catch (error) {
+            console.error("Error al actualizar:", error);
+            alert("Hubo un problema al guardar tu nombre en la nube. Revisa tu conexión.");
+        }
+    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -91,13 +119,8 @@ export const useStudentsLogic = () => {
         return () => unsub();
     }, [userData]);
 
-    // ==========================================
-    // NUEVO: CÁLCULO DE PROGRESO DE LECCIONES
-    // ==========================================
-    const metaLeccionesAdmin = 0; // Se conectará a Firebase después
-    const maxLeccionImpartida = historialAsistencias.length > 0 
-        ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) 
-        : 0;
+    const metaLeccionesAdmin = 0; 
+    const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
@@ -124,6 +147,6 @@ export const useStudentsLogic = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin // RETORNAMOS VARIABLES DE PROGRESO
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
