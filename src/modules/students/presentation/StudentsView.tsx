@@ -15,9 +15,8 @@ export const StudentsView = () => {
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion,
-        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil,
-        cerrarSesionApp
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -26,9 +25,6 @@ export const StudentsView = () => {
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* =========================================
-                ENCABEZADO GLOBAL VISIBLE
-                ========================================= */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -39,9 +35,6 @@ export const StudentsView = () => {
                 </button>
             </div>
 
-            {/* =========================================
-                PERFIL LATERAL (DRAWER) CON SCROLL CORREGIDO
-                ========================================= */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -50,7 +43,6 @@ export const StudentsView = () => {
                 </div>
                 
                 <div className="pd-content">
-                    {/* Datos de Usuario */}
                     <div className="pd-user-info">
                         <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
@@ -69,7 +61,6 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    {/* Temas de Color */}
                     <div>
                         <h4 className="pd-section-title">Color de la Aplicación</h4>
                         <div className="theme-picker">
@@ -80,10 +71,8 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    {/* Panel de Insignias */}
                     <BadgesPanel userName={userNameDisplay} />
 
-                    {/* Extras de Perfil con Cerrar Sesión */}
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
                         <button className="pd-btn-extra"><i className="fa-solid fa-chart-line"></i> Mi Actividad en el Año</button>
@@ -96,14 +85,27 @@ export const StudentsView = () => {
                 </div>
             </div>
 
-            {/* =========================================
-                PANTALLA DE INICIO (HOME)
-                ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
+                        
+                        {/* WIDGET ALUMNOS + BARRA DE PROGRESO INTEGRADA */}
                         <div className="home-widget widget-alumnos">
-                            <div><div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div><div className="home-stat-big">{alumnos.length}</div></div>
+                            <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
+                                <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div>
+                                <div className="home-stat-big" style={{marginBottom: '10px'}}>{alumnos.length} <span>niños en el campo</span></div>
+                                
+                                <div className="progress-container-dark">
+                                    <div className="progress-header-dark">
+                                        <span>Progreso ({maxLeccionImpartida} impartidas)</span>
+                                        <span>{porcentajeLecciones}%</span>
+                                    </div>
+                                    <div className="progress-bar-bg-dark">
+                                        <div className="progress-bar-fill-dark" style={{ width: `${porcentajeLecciones}%` }}></div>
+                                    </div>
+                                    <p className="progress-msg-dark">Esperando que el administrador defina la meta de lecciones.</p>
+                                </div>
+                            </div>
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
@@ -128,7 +130,6 @@ export const StudentsView = () => {
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
-            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -188,7 +189,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
@@ -233,7 +233,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
@@ -374,20 +373,11 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* NAV INFERIOR FIJO */}
             <div className="main-nav-menu">
-                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
-                    <i className="fa-solid fa-house"></i> Inicio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
-                    <i className="fa-solid fa-address-book"></i> Directorio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
-                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
-                    <i className="fa-solid fa-chart-pie"></i> Reportes
-                </button>
+                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
+                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}><i className="fa-solid fa-address-book"></i> Directorio</button>
+                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}><i className="fa-solid fa-clipboard-user"></i> Asistencia</button>
+                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}><i className="fa-solid fa-chart-pie"></i> Reportes</button>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
