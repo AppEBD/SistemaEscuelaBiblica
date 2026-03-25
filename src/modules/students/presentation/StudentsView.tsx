@@ -16,7 +16,8 @@ export const StudentsView = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion,
-        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil
+        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil,
+        cerrarSesionApp
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -24,6 +25,19 @@ export const StudentsView = () => {
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
+
+            {/* =========================================
+                ENCABEZADO GLOBAL VISIBLE (Sustituye al antiguo)
+                ========================================= */}
+            <div className="app-global-header">
+                <div className="app-brand">
+                    <h2 className="app-brand-title">EBD 2.0</h2>
+                    <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
+                </div>
+                <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
+                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
+                </button>
+            </div>
 
             {/* =========================================
                 PERFIL LATERAL (DRAWER)
@@ -36,7 +50,7 @@ export const StudentsView = () => {
                 </div>
                 
                 <div className="pd-content">
-                    {/* 1. Datos de Usuario (Editables) */}
+                    {/* Datos de Usuario */}
                     <div className="pd-user-info">
                         <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
@@ -55,7 +69,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    {/* 2. Temas de Color */}
+                    {/* Temas de Color */}
                     <div>
                         <h4 className="pd-section-title">Color de la Aplicación</h4>
                         <div className="theme-picker">
@@ -66,37 +80,27 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    {/* 3. Panel de Insignias (Movido de Inicio a aquí) */}
+                    {/* Panel de Insignias */}
                     <BadgesPanel userName={userNameDisplay} />
 
-                    {/* 4. Extras de Perfil */}
+                    {/* Extras de Perfil con Cerrar Sesión */}
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
                         <button className="pd-btn-extra"><i className="fa-solid fa-chart-line"></i> Mi Actividad en el Año</button>
                         <button className="pd-btn-extra"><i className="fa-solid fa-moon"></i> Modo Oscuro (Próximamente)</button>
                         <button className="pd-btn-extra"><i className="fa-solid fa-file-export"></i> Exportar Mis Datos</button>
-                        <button className="pd-btn-extra" style={{color: '#ef4444', marginTop: '10px'}}><i className="fa-solid fa-right-from-bracket" style={{color: '#ef4444'}}></i> Cerrar Sesión</button>
+                        <button className="pd-btn-extra" onClick={cerrarSesionApp} style={{color: '#ef4444', marginTop: '10px', borderColor: '#fee2e2'}}>
+                            <i className="fa-solid fa-right-from-bracket" style={{color: '#ef4444'}}></i> Cerrar Sesión
+                        </button>
                     </div>
                 </div>
             </div>
 
             {/* =========================================
-                PANTALLA DE INICIO
+                PANTALLA DE INICIO (HOME)
                 ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
-                    
-                    {/* Header con botón de Perfil en la esquina */}
-                    <div className="home-header-top">
-                        <div className="home-welcome" style={{textAlign: 'left', margin: 0}}>
-                            <h1>¡Hola, {userNameDisplay.split(' ')[0]}!</h1>
-                            <p>Panel de <strong>{userData?.campo}</strong></p>
-                        </div>
-                        <button className="profile-avatar-btn" onClick={() => setIsProfileOpen(true)}>
-                            {userNameDisplay.charAt(0).toUpperCase()}
-                        </button>
-                    </div>
-
                     <div className="home-widgets-grid">
                         <div className="home-widget widget-alumnos">
                             <div><div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div><div className="home-stat-big">{alumnos.length}</div></div>
@@ -128,7 +132,7 @@ export const StudentsView = () => {
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
-                    <p className="st-header-subtitle">Directorio y Cumpleaños • <strong>{userData?.campo}</strong></p>
+                    <p className="st-header-subtitle">Directorio y Cumpleaños</p>
 
                     <div className="st-tabs-container">
                         <button className={`st-tab ${activeTab === 'directorio' ? 'active' : ''}`} onClick={() => setActiveTab('directorio')}><i className="fa-solid fa-address-book"></i> Directorio</button>
@@ -188,7 +192,7 @@ export const StudentsView = () => {
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
-                    <p className="st-header-subtitle">Registra la ofrenda y pasa lista en <strong>{userData?.campo}</strong>.</p>
+                    <p className="st-header-subtitle">Registra la ofrenda y pasa lista.</p>
                     
                     {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
 
