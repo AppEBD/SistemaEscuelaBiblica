@@ -4,6 +4,7 @@ import Modal from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
+import { BadgesPanel } from './components/BadgesPanel'; // IMPORTAMOS LAS INSIGNIAS
 import './StudentsView.css';
 
 export const StudentsView = () => {
@@ -24,63 +25,33 @@ export const StudentsView = () => {
 
     return (
         <div className="students-dashboard">
-            
+
             {/* =========================================
-                PANTALLA DE INICIO (DASHBOARD LIMPIO)
+                PANTALLA DE INICIO (DASHBOARD ULTRA LIMPIO Y GAMIFICADO)
                 ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     
-                    {/* Tarjetas Clean para el inicio */}
-                    <div className="home-widgets-grid">
-                        
-                        {/* WIDGET 1: TOTAL DE ALUMNOS (Diseño Premium) */}
-                        <div className="home-widget widget-alumnos">
-                            <div className="home-widget-title">
-                                <i className="fa-solid fa-users"></i> 
-                                Total en tu Campo
-                            </div>
-                            <div className="home-stat-big">
-                                {alumnos.length} <span>niños</span>
-                            </div>
+                    {/* WIDGET ÚNICO: TOTAL DE ALUMNOS */}
+                    <div className="home-widget widget-alumnos">
+                        <div className="home-widget-title">
+                            <i className="fa-solid fa-users"></i> 
+                            Total en tu Campo
                         </div>
-
-                        {/* WIDGET 2: ASISTENCIA DE HOY */}
-                        <div className="home-widget">
-                            <div className="home-widget-title">
-                                <i className="fa-solid fa-clipboard-check" style={{color: '#10b981'}}></i> 
-                                Asistencia de Hoy
-                            </div>
-                            <div className="ps-stats" style={{ marginTop: '15px' }}>
-                                <div className="ps-item">
-                                    <span className="ps-val" style={{ color: '#10b981' }}>{resumenAsistencia.presentes}</span>
-                                    <span className="ps-lbl" style={{color: '#64748b'}}>Presentes</span>
-                                </div>
-                                <div className="ps-divider" style={{background: '#e2e8f0'}}></div>
-                                <div className="ps-item">
-                                    <span className="ps-val" style={{ color: '#ef4444' }}>{resumenAsistencia.ausentes}</span>
-                                    <span className="ps-lbl" style={{color: '#64748b'}}>Ausentes</span>
-                                </div>
-                                <div className="ps-divider" style={{background: '#e2e8f0'}}></div>
-                                <div className="ps-item">
-                                    <span className="ps-val" style={{ color: '#f59e0b' }}>{resumenAsistencia.permisos}</span>
-                                    <span className="ps-lbl" style={{color: '#64748b'}}>Permisos</span>
-                                </div>
-                            </div>
+                        <div className="home-stat-big">
+                            {alumnos.length} <span>niños inscritos</span>
                         </div>
-
                     </div>
 
-                    {/* Espacio reservado para las futuras funciones */}
-                    <div className="home-placeholder">
-                        <i className="fa-solid fa-layer-group" style={{fontSize: '40px', color: '#cbd5e1', marginBottom: '15px'}}></i>
-                        <h3 style={{fontSize: '18px', color: '#475569', margin: '0 0 5px 0'}}>Nuevas funciones en camino</h3>
-                        <p style={{fontSize: '14px', color: '#94a3b8', margin: 0}}>Este espacio está reservado para los próximos módulos que agregaremos.</p>
-                    </div>
+                    {/* NUEVO MÓDULO DE INSIGNIAS IMPORTADO */}
+                    {userData?.nombre && (
+                        <BadgesPanel userName={userData.nombre} />
+                    )}
+
                 </div>
             )}
 
-            {/* BOTÓN VOLVER (Solo para sub-menús de reportes) */}
+            {/* BOTÓN VOLVER (Para reportes) */}
             {mainTab === 'reportes' && reportTab !== 'menu' && (
                 <button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}>
                     <i className="fa-solid fa-arrow-left"></i> Volver a Reportes
@@ -192,22 +163,22 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES MEJORADOS */}
+            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
                     {reportTab === 'menu' && (
-                        <div className="home-menu-grid animate-fade-in">
+                        <div className="home-menu-grid animate-fade-in" style={{marginTop: '0'}}>
                             <h1 className="st-header-title">Reportes</h1>
                             <p className="st-header-subtitle">Selecciona el reporte que deseas visualizar.</p>
 
                             <div className="home-module-btn" onClick={() => setReportTab('ranking')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}><i className="fa-solid fa-trophy"></i></div>
-                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas.</p></div>
+                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas exactas.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('clases')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }}><i className="fa-solid fa-book-bible"></i></div>
-                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias y lecciones agrupadas por mes.</p></div>
+                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias agrupadas por mes y año.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('edades')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}><i className="fa-solid fa-filter"></i></div>
@@ -334,7 +305,7 @@ export const StudentsView = () => {
             )}
 
             {/* =========================================
-                BARRA DE NAVEGACIÓN INFERIOR (SIEMPRE VISIBLE)
+                BARRA DE NAVEGACIÓN INFERIOR FIJA
                 ========================================= */}
             <div className="main-nav-menu">
                 <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
