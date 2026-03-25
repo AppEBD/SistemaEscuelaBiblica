@@ -1,7 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, updateDoc } from 'firebase/firestore'; 
-import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -43,39 +41,6 @@ export const useStudentsLogic = () => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
-
-    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
-
-    // ==========================================
-    // ACTUALIZAR NOMBRE EN LA BASE DE DATOS (CON REPORTE DE ERROR REAL)
-    // ==========================================
-    const guardarNombrePerfil = async () => {
-        if (!userNameDisplay.trim()) return;
-        
-        // Verificamos de dónde viene tu ID de usuario
-        const userId = userData?.uid || userData?.id; 
-        
-        if (!userId) {
-            alert("Error del sistema: No se detectó un ID de usuario válido (userData.uid).");
-            setIsEditingName(false);
-            return;
-        }
-
-        try {
-            // OJO AQUÍ: Si tu colección en Firebase se llama diferente a 'usuarios', cámbialo abajo
-            const userRef = doc(db, 'usuarios', userId);
-            await updateDoc(userRef, { nombre: userNameDisplay });
-            
-            setIsEditingName(false);
-            alert("¡Tu nombre ha sido actualizado correctamente!");
-        } catch (error: any) {
-            console.error("Detalle técnico del error:", error);
-            // Ahora la alerta nos dirá la verdad
-            alert(`Error de Firebase: ${error.message}`);
-        }
-    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -147,10 +112,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
-
-
-
