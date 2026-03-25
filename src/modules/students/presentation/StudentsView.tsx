@@ -4,20 +4,18 @@ import Modal from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
-import { BadgesPanel } from './components/BadgesPanel'; // IMPORTAMOS LAS INSIGNIAS
+import { BadgesPanel } from './components/BadgesPanel';
 import './StudentsView.css';
 
 export const StudentsView = () => {
     const { 
         alumnos, alumnosParaAsistencia, cargando, form, setForm, isModalOpen, setIsModalOpen,
-        abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
-        days, months, years, editandoId, userData,
-        activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
-        asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
+        abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno, days, months, years, editandoId, userData,
+        activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes, asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
-        reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes,
-        edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
-        desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking
+        reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
+        desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
+        notificaciones, marcarNotificacion
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -26,37 +24,52 @@ export const StudentsView = () => {
     return (
         <div className="students-dashboard">
 
-            {/* =========================================
-                PANTALLA DE INICIO (DASHBOARD ULTRA LIMPIO Y GAMIFICADO)
-                ========================================= */}
+            {/* PANTALLA DE INICIO */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     
-                    {/* WIDGET ÚNICO: TOTAL DE ALUMNOS */}
-                    <div className="home-widget widget-alumnos">
-                        <div className="home-widget-title">
-                            <i className="fa-solid fa-users"></i> 
-                            Total en tu Campo
+                    <div className="home-widgets-grid">
+                        
+                        {/* 1. WIDGET COMPACTO DE ALUMNOS */}
+                        <div className="home-widget widget-alumnos">
+                            <div>
+                                <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total en tu Campo</div>
+                                <div className="home-stat-big">{alumnos.length} <span>niños inscritos</span></div>
+                            </div>
+                            <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
-                        <div className="home-stat-big">
-                            {alumnos.length} <span>niños inscritos</span>
+
+                        {/* 2. ACORDEÓN DE INSIGNIAS */}
+                        {userData?.nombre && <BadgesPanel userName={userData.nombre} />}
+
+                        {/* 3. WIDGET DE NOTIFICACIONES */}
+                        <div className="home-widget">
+                            <div className="home-widget-title">
+                                <i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Notificaciones
+                            </div>
+                            
+                            <div className="notif-list">
+                                {notificaciones.map(n => (
+                                    <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
+                                        <div className="notif-icon">
+                                            {n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>}
+                                        </div>
+                                        <div className="notif-content">
+                                            <h4 className="notif-title">{n.titulo} {!n.leida && <span className="badge-new">NUEVO</span>}</h4>
+                                            <p className="notif-desc">{n.mensaje}</p>
+                                            <span className="notif-date">{n.fecha}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+
                     </div>
-
-                    {/* NUEVO MÓDULO DE INSIGNIAS IMPORTADO */}
-                    {userData?.nombre && (
-                        <BadgesPanel userName={userData.nombre} />
-                    )}
-
                 </div>
             )}
 
-            {/* BOTÓN VOLVER (Para reportes) */}
-            {mainTab === 'reportes' && reportTab !== 'menu' && (
-                <button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}>
-                    <i className="fa-solid fa-arrow-left"></i> Volver a Reportes
-                </button>
-            )}
+            {/* BOTÓN VOLVER */}
+            {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
             {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
@@ -305,7 +318,7 @@ export const StudentsView = () => {
             )}
 
             {/* =========================================
-                BARRA DE NAVEGACIÓN INFERIOR FIJA
+                BARRA DE NAVEGACIÓN INFERIOR (APP BAR)
                 ========================================= */}
             <div className="main-nav-menu">
                 <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
