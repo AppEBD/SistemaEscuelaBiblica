@@ -1,59 +1,28 @@
 /* =========================================
    VARIABLES GLOBALES Y TEMAS DE COLOR
    ========================================= */
-:root {
-    --primary-color: #4f46e5;
-    --primary-grad: linear-gradient(135deg, #4f46e5, #6366f1);
-    --primary-light: #e0e7ff;
-}
+:root { --primary-color: #4f46e5; --primary-grad: linear-gradient(135deg, #4f46e5, #6366f1); --primary-light: #e0e7ff; }
 .theme-emerald { --primary-color: #10b981; --primary-grad: linear-gradient(135deg, #10b981, #34d399); --primary-light: #d1fae5; }
 .theme-rose { --primary-color: #e11d48; --primary-grad: linear-gradient(135deg, #e11d48, #fb7185); --primary-light: #ffe4e6; }
 .theme-amber { --primary-color: #d97706; --primary-grad: linear-gradient(135deg, #d97706, #fbbf24); --primary-light: #fef3c7; }
 
-.students-dashboard {
-    max-width: 800px; margin: 0 auto; padding: 15px 15px 110px 15px; animation: fadeIn 0.4s ease;
-    font-family: system-ui, -apple-system, sans-serif;
-}
+.students-dashboard { max-width: 800px; margin: 0 auto; padding: 15px 15px 110px 15px; animation: fadeIn 0.4s ease; font-family: system-ui, -apple-system, sans-serif; }
 
-/* =========================================
-   NUEVO ENCABEZADO GLOBAL VISIBLE
-   ========================================= */
-.app-global-header {
-    display: flex; justify-content: space-between; align-items: center;
-    background: white; padding: 15px 20px; border-radius: 20px;
-    margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    border: 1px solid #f1f5f9;
-}
+.app-global-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
 .app-brand { display: flex; flex-direction: column; gap: 2px; }
 .app-brand-title { font-size: 20px; font-weight: 900; color: var(--primary-color); margin: 0; line-height: 1; letter-spacing: -0.5px;}
 .app-brand-subtitle { font-size: 13px; font-weight: 700; color: #64748b; margin: 0; text-transform: capitalize;}
-
-.profile-pill-btn {
-    display: flex; align-items: center; gap: 8px; background: var(--primary-light);
-    color: var(--primary-color); border: 2px solid var(--primary-color);
-    padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: 800;
-    cursor: pointer; transition: 0.2s; white-space: nowrap;
-}
+.profile-pill-btn { display: flex; align-items: center; gap: 8px; background: var(--primary-light); color: var(--primary-color); border: 2px solid var(--primary-color); padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap; }
 .profile-pill-btn i { font-size: 16px; }
 .profile-pill-btn:hover { background: var(--primary-color); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15);}
 
-/* =========================================
-   PANEL LATERAL (PERFIL DRAWER) CORREGIDO EL SCROLL
-   ========================================= */
 .profile-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.4); z-index: 2000; opacity: 0; visibility: hidden; transition: 0.3s ease; backdrop-filter: blur(2px); }
 .profile-overlay.open { opacity: 1; visibility: visible; }
-
-.profile-drawer { 
-    position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; 
-    background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-    box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; 
-    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
-}
+.profile-drawer { position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .profile-drawer.open { right: 0; }
 .pd-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #f1f5f9; position: sticky; top: 0; background: white; z-index: 10; }
 .pd-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; }
 .pd-close { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 12px; color: #475569; cursor: pointer; font-size: 16px; }
-
 .pd-content { padding: 20px 20px 80px 20px; display: flex; flex-direction: column; gap: 25px; flex: 1; }
 
 .pd-user-info { display: flex; align-items: center; gap: 15px; }
@@ -80,38 +49,31 @@
 .pd-btn-extra:hover { background: #f1f5f9; }
 .pd-btn-extra i { color: #64748b; font-size: 18px; width: 20px; text-align: center; }
 
-/* =========================================
-   BARRA DE NAVEGACIÓN INFERIOR
-   ========================================= */
 .main-nav-menu { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; display: flex; justify-content: space-around; background: white; border-radius: 24px 24px 0 0; padding: 15px 15px 25px 15px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; border-bottom: none; z-index: 1000; }
 .main-nav-btn { flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 11px; font-weight: 800; border-radius: 16px; cursor: pointer; color: #94a3b8; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .main-nav-btn i { font-size: 22px; transition: 0.2s; }
 .main-nav-btn.active { color: var(--primary-color); }
 .main-nav-btn.active i { transform: scale(1.15); }
 
-/* =========================================
-   DASHBOARD INICIO Y WIDGETS
-   ========================================= */
 .home-widgets-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 10px;}
 .home-widget { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
 .home-widget-title { font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.widget-alumnos { background: var(--primary-grad); display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border: none; }
-.widget-alumnos .home-widget-title { color: rgba(255,255,255,0.8); margin-bottom: 2px; font-size: 12px; }
+/* Tarjeta Alumnos con Progreso Integrado */
+.widget-alumnos { background: var(--primary-grad); display: flex; flex-direction: column; padding: 20px 20px 15px 20px; border: none; position: relative; overflow: hidden; }
+.widget-alumnos .home-widget-title { color: rgba(255,255,255,0.8); margin-bottom: 5px; font-size: 12px; position: relative; z-index: 2; }
 .widget-alumnos .home-widget-title i { color: white !important; }
-.widget-alumnos .home-stat-big { font-size: 32px; font-weight: 900; color: white; line-height: 1; }
+.widget-alumnos .home-stat-big { font-size: 40px; font-weight: 900; color: white; line-height: 1; position: relative; z-index: 2; }
 .widget-alumnos .home-stat-big span { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; margin-left: 5px;}
-.widget-icon-bg { font-size: 40px; color: rgba(255,255,255,0.15); }
+.widget-icon-bg { position: absolute; right: -10px; top: 10px; font-size: 75px; color: rgba(255,255,255,0.1); z-index: 1; transform: rotate(-10deg); }
 
-/* NUEVO: Barra de Progreso de Lecciones */
-.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.progress-title { font-size: 14px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px; text-transform: uppercase;}
-.progress-bar-bg { width: 100%; height: 10px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
-.progress-bar-fill { height: 100%; background: var(--primary-grad); border-radius: 10px; transition: width 0.5s ease; }
-.progress-msg { font-size: 12px; color: #64748b; font-weight: 600; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px dashed #cbd5e1;}
-.progress-msg i { margin-top: 2px; color: #f59e0b; font-size: 14px; }
+/* Nuevo Sub-Widget de Progreso (Dark Mode Integrado) */
+.progress-container-dark { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; position: relative; z-index: 2; width: 100%;}
+.progress-header-dark { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+.progress-bar-bg-dark { width: 100%; height: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.progress-bar-fill-dark { height: 100%; background: #34d399; border-radius: 10px; transition: width 0.5s ease; box-shadow: 0 0 10px rgba(52, 211, 153, 0.5); }
+.progress-msg-dark { font-size: 11px; color: rgba(255,255,255,0.7); margin: 0; line-height: 1.3; }
 
-/* NOTIFICACIONES */
 .notif-list { display: flex; flex-direction: column; gap: 10px; }
 .notif-item { display: flex; gap: 12px; padding: 12px; border-radius: 14px; border: 1px solid #f1f5f9; background: #f8fafc; cursor: pointer; transition: 0.2s;}
 .notif-item.unread { background: var(--primary-light); border-color: var(--primary-color); }
