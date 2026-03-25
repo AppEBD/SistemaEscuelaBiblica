@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { getAuth, signOut } from 'firebase/auth'; // IMPORTAMOS PARA CERRAR SESIÓN
+import { getAuth, signOut } from 'firebase/auth'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -53,11 +53,18 @@ export const useStudentsLogic = () => {
         alert("¡Nombre actualizado correctamente!");
     };
 
-    // NUEVO: Función para cerrar sesión
+    // ==========================================
+    // CERRAR SESIÓN (CORREGIDO PARA MANTENER TU DISEÑO)
+    // ==========================================
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
             const auth = getAuth();
-            signOut(auth).catch((error) => alert("Error al cerrar sesión: " + error.message));
+            signOut(auth).then(() => {
+                // Al recargar la página, tu App.tsx original retomará el control.
+                // Detectará que no hay sesión activa y mostrará tu pantalla de Login
+                // exactamente como la diseñaste, respetando el "Recordar contraseña".
+                window.location.reload();
+            }).catch((error) => alert("Error al cerrar sesión: " + error.message));
         }
     };
 
@@ -123,6 +130,6 @@ export const useStudentsLogic = () => {
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion,
         isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil,
-        cerrarSesionApp // NUEVO RETORNO
+        cerrarSesionApp
     };
 };
