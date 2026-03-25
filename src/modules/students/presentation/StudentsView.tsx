@@ -24,52 +24,31 @@ export const StudentsView = () => {
 
     return (
         <div className="students-dashboard">
-
-            {/* =========================================
-                BARRA DE NAVEGACIÓN SUPERIOR (SIEMPRE VISIBLE)
-                ========================================= */}
-            <div className="main-nav-menu">
-                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
-                    <i className="fa-solid fa-house"></i> Inicio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
-                    <i className="fa-solid fa-address-book"></i> Directorio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
-                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
-                    <i className="fa-solid fa-chart-pie"></i> Reportes
-                </button>
-            </div>
             
             {/* =========================================
                 PANTALLA DE INICIO (DASHBOARD LIMPIO)
                 ========================================= */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
-                    <div className="home-welcome">
-                        <h1>¡Hola, {userData?.nombre?.split(' ')[0]}!</h1>
-                        <p>Panel principal de <strong>{userData?.campo}</strong></p>
-                    </div>
-
+                    
+                    {/* Tarjetas Clean para el inicio */}
                     <div className="home-widgets-grid">
                         
-                        {/* WIDGET 1: TOTAL DE ALUMNOS */}
-                        <div className="home-widget">
+                        {/* WIDGET 1: TOTAL DE ALUMNOS (Diseño Premium) */}
+                        <div className="home-widget widget-alumnos">
                             <div className="home-widget-title">
-                                <i className="fa-solid fa-users" style={{color: '#4f46e5', fontSize: '18px'}}></i> 
-                                Alumnos Inscritos
+                                <i className="fa-solid fa-users"></i> 
+                                Total en tu Campo
                             </div>
                             <div className="home-stat-big">
-                                {alumnos.length} <span style={{fontSize: '16px', color: '#64748b', fontWeight: '700'}}>niños</span>
+                                {alumnos.length} <span>niños</span>
                             </div>
                         </div>
 
-                        {/* WIDGET 2: ASISTENCIA DE HOY (Recicla el diseño premium) */}
+                        {/* WIDGET 2: ASISTENCIA DE HOY */}
                         <div className="home-widget">
                             <div className="home-widget-title">
-                                <i className="fa-solid fa-clipboard-check" style={{color: '#10b981', fontSize: '18px'}}></i> 
+                                <i className="fa-solid fa-clipboard-check" style={{color: '#10b981'}}></i> 
                                 Asistencia de Hoy
                             </div>
                             <div className="ps-stats" style={{ marginTop: '15px' }}>
@@ -92,11 +71,11 @@ export const StudentsView = () => {
 
                     </div>
 
-                    {/* ESPACIO PARA FUTURAS FUNCIONES */}
+                    {/* Espacio reservado para las futuras funciones */}
                     <div className="home-placeholder">
-                        <i className="fa-solid fa-puzzle-piece" style={{fontSize: '40px', color: '#cbd5e1', marginBottom: '15px'}}></i>
+                        <i className="fa-solid fa-layer-group" style={{fontSize: '40px', color: '#cbd5e1', marginBottom: '15px'}}></i>
                         <h3 style={{fontSize: '18px', color: '#475569', margin: '0 0 5px 0'}}>Nuevas funciones en camino</h3>
-                        <p style={{fontSize: '14px', color: '#94a3b8', margin: 0}}>Este espacio está reservado para los próximos módulos.</p>
+                        <p style={{fontSize: '14px', color: '#94a3b8', margin: 0}}>Este espacio está reservado para los próximos módulos que agregaremos.</p>
                     </div>
                 </div>
             )}
@@ -171,7 +150,10 @@ export const StudentsView = () => {
             {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
-                    {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
+                    <h1 className="st-header-title">Asistencia</h1>
+                    <p className="st-header-subtitle">Registra la ofrenda y pasa lista en <strong>{userData?.campo}</strong>.</p>
+                    
+                    {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
                         <div className="global-ofrenda-card"><div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div><div className="global-ofrenda-input-wrapper"><span>$</span><input type="number" className="global-ofrenda-input" placeholder="0.00" step="0.05" min="0" value={ofrendaDia} onChange={(e) => setOfrendaDia(e.target.value)} /></div></div>
@@ -210,7 +192,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES */}
+            {/* MÓDULO 3: REPORTES MEJORADOS */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
@@ -221,11 +203,11 @@ export const StudentsView = () => {
 
                             <div className="home-module-btn" onClick={() => setReportTab('ranking')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}><i className="fa-solid fa-trophy"></i></div>
-                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas exactas.</p></div>
+                                <div className="home-module-text"><h3>Ranking de Asistencia</h3><p>Top de alumnos con más asistencias y filtrado por fechas.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('clases')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }}><i className="fa-solid fa-book-bible"></i></div>
-                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias agrupadas por mes y año.</p></div>
+                                <div className="home-module-text"><h3>Clases Anteriores</h3><p>Historial completo de asistencias y lecciones agrupadas por mes.</p></div>
                             </div>
                             <div className="home-module-btn" onClick={() => setReportTab('edades')}>
                                 <div className="home-module-icon" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}><i className="fa-solid fa-filter"></i></div>
@@ -284,7 +266,7 @@ export const StudentsView = () => {
                                                 <div className="history-header">
                                                     <div>
                                                         <div className="history-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</div>
-                                                        <div className="history-user"><i className="fa-solid fa-user-pen"></i> Registrado por {asis.registradoPor}</div>
+                                                        <div className="history-user"><i className="fa-solid fa-user-pen"></i> {asis.registradoPor}</div>
                                                     </div>
                                                     <div style={{ textAlign: 'right' }}>
                                                         <div style={{ fontWeight: '900', color: '#1e293b' }}>Lección {asis.numeroLeccion}</div>
@@ -350,6 +332,24 @@ export const StudentsView = () => {
                     )}
                 </div>
             )}
+
+            {/* =========================================
+                BARRA DE NAVEGACIÓN INFERIOR (SIEMPRE VISIBLE)
+                ========================================= */}
+            <div className="main-nav-menu">
+                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
+                    <i className="fa-solid fa-house"></i> Inicio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
+                    <i className="fa-solid fa-address-book"></i> Directorio
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
+                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
+                </button>
+                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
+                    <i className="fa-solid fa-chart-pie"></i> Reportes
+                </button>
+            </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
