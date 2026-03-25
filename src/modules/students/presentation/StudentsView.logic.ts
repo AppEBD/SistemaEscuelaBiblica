@@ -12,19 +12,15 @@ export const useStudentsLogic = () => {
     const [mainTab, setMainTab] = useState<'home' | 'alumnos' | 'asistencia' | 'reportes'>('home');
     const [activeTab, setActiveTab] = useState<'directorio' | 'cumpleanos'>('directorio');
     
-    // REPORTES: Ahora inicia en 'menu' en lugar de 'ranking'
     const [reportTab, setReportTab] = useState<'menu' | 'ranking' | 'clases' | 'edades'>('menu');
     const [historialAsistencias, setHistorialAsistencias] = useState<AsistenciaDia[]>([]);
     
-    // NUEVO: Filtros de Ranking divididos en Día, Mes y Año
     const [desdeD, setDesdeD] = useState<string>('');
     const [desdeM, setDesdeM] = useState<string>('');
     const [desdeY, setDesdeY] = useState<string>('');
-    
     const [hastaD, setHastaD] = useState<string>('');
     const [hastaM, setHastaM] = useState<string>('');
     const [hastaY, setHastaY] = useState<string>('');
-
     const [edadMin, setEdadMin] = useState<number | ''>('');
     const [edadMax, setEdadMax] = useState<number | ''>('');
 
@@ -89,30 +85,19 @@ export const useStudentsLogic = () => {
         return () => unsub();
     }, [userData]);
 
-    // ==========================================
-    // LÓGICAS DE REPORTES
-    // ==========================================
     const obtenerRanking = () => {
         let validas = historialAsistencias;
-
-        // Filtrado INTELIGENTE construyendo la fecha a partir de los selectores
         if (desdeD && desdeM && desdeY) {
-            const d = desdeD.padStart(2, '0');
-            const m = desdeM.padStart(2, '0');
-            const fechaDesde = `${desdeY}-${m}-${d}`;
-            validas = validas.filter(a => a.fecha >= fechaDesde);
+            const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0');
+            validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`);
         }
-
         if (hastaD && hastaM && hastaY) {
-            const d = hastaD.padStart(2, '0');
-            const m = hastaM.padStart(2, '0');
-            const fechaHasta = `${hastaY}-${m}-${d}`;
-            validas = validas.filter(a => a.fecha <= fechaHasta);
+            const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0');
+            validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`);
         }
 
         const conteo: Record<string, number> = {};
         alumnos.forEach(a => conteo[a.id!] = 0);
-
         validas.forEach(asis => {
             if (asis.registros) {
                 Object.entries(asis.registros).forEach(([id, estado]) => {
@@ -121,15 +106,10 @@ export const useStudentsLogic = () => {
             }
         });
 
-        return alumnos.map(a => ({
-            ...a, totalAsistencias: conteo[a.id!] || 0
-        })).sort((a, b) => b.totalAsistencias - a.totalAsistencias);
+        return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias);
     };
 
-    const limpiarFiltrosRanking = () => {
-        setDesdeD(''); setDesdeM(''); setDesdeY('');
-        setHastaD(''); setHastaM(''); setHastaY('');
-    };
+    const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
 
     const obtenerHistorialPorMes = () => {
         const agrupado: Record<string, AsistenciaDia[]> = {};
@@ -148,7 +128,6 @@ export const useStudentsLogic = () => {
             const edadStr = calcularEdadExacta(a.fechaNacimiento, a.edad as number);
             const edadNum = typeof edadStr === 'number' ? edadStr : parseInt(edadStr as string);
             if (isNaN(edadNum)) return false;
-            
             if (edadMin !== '' && edadNum < edadMin) return false;
             if (edadMax !== '' && edadNum > edadMax) return false;
             return true;
