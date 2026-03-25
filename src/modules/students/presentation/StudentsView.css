@@ -37,7 +37,6 @@
 .profile-pill-btn i { font-size: 16px; }
 .profile-pill-btn:hover { background: var(--primary-color); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15);}
 
-
 /* =========================================
    PANEL LATERAL (PERFIL DRAWER) CORREGIDO EL SCROLL
    ========================================= */
@@ -48,7 +47,6 @@
     position: fixed; top: 0; right: -100%; width: 85vw; max-width: 360px; height: 100vh; 
     background: white; z-index: 2001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
     box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; 
-    /* Habilitamos el scroll táctil suave */
     overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
 }
 .profile-drawer.open { right: 0; }
@@ -56,10 +54,8 @@
 .pd-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; }
 .pd-close { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 12px; color: #475569; cursor: pointer; font-size: 16px; }
 
-/* Damos padding bottom inmenso para asegurar el scroll */
 .pd-content { padding: 20px 20px 80px 20px; display: flex; flex-direction: column; gap: 25px; flex: 1; }
 
-/* Editor de Nombre */
 .pd-user-info { display: flex; align-items: center; gap: 15px; }
 .pd-user-avatar { width: 60px; height: 60px; border-radius: 20px; background: var(--primary-grad); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; }
 .pd-name-group { flex: 1; }
@@ -70,7 +66,6 @@
 .pd-input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 2px solid var(--primary-color); outline: none; font-weight: 700; color: #1e293b; width: 100%;}
 .pd-btn-save { background: var(--primary-color); color: white; border: none; border-radius: 10px; padding: 0 15px; cursor: pointer; font-weight: bold; }
 
-/* Paleta de Colores */
 .pd-section-title { font-size: 14px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;}
 .theme-picker { display: flex; gap: 15px; }
 .theme-circle { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }
@@ -80,14 +75,13 @@
 .bg-rose { background: linear-gradient(135deg, #e11d48, #fb7185); } .theme-circle.active.bg-rose { border-color: #fda4af; }
 .bg-amber { background: linear-gradient(135deg, #d97706, #fbbf24); } .theme-circle.active.bg-amber { border-color: #fcd34d; }
 
-/* Extras Panel */
 .pd-extras { display: flex; flex-direction: column; gap: 10px; }
 .pd-btn-extra { background: #f8fafc; border: 1px solid #f1f5f9; padding: 15px; border-radius: 16px; font-weight: 800; color: #334155; text-align: left; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
 .pd-btn-extra:hover { background: #f1f5f9; }
 .pd-btn-extra i { color: #64748b; font-size: 18px; width: 20px; text-align: center; }
 
 /* =========================================
-   BARRA DE NAVEGACIÓN INFERIOR (USANDO VARIABLE)
+   BARRA DE NAVEGACIÓN INFERIOR
    ========================================= */
 .main-nav-menu { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; display: flex; justify-content: space-around; background: white; border-radius: 24px 24px 0 0; padding: 15px 15px 25px 15px; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05); border: 1px solid #f1f5f9; border-bottom: none; z-index: 1000; }
 .main-nav-btn { flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 11px; font-weight: 800; border-radius: 16px; cursor: pointer; color: #94a3b8; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -95,7 +89,9 @@
 .main-nav-btn.active { color: var(--primary-color); }
 .main-nav-btn.active i { transform: scale(1.15); }
 
-/* Dashboard Inicio */
+/* =========================================
+   DASHBOARD INICIO Y WIDGETS
+   ========================================= */
 .home-widgets-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 10px;}
 .home-widget { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
 .home-widget-title { font-size: 14px; font-weight: 800; color: #64748b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -106,6 +102,14 @@
 .widget-alumnos .home-stat-big { font-size: 32px; font-weight: 900; color: white; line-height: 1; }
 .widget-alumnos .home-stat-big span { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; margin-left: 5px;}
 .widget-icon-bg { font-size: 40px; color: rgba(255,255,255,0.15); }
+
+/* NUEVO: Barra de Progreso de Lecciones */
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.progress-title { font-size: 14px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px; text-transform: uppercase;}
+.progress-bar-bg { width: 100%; height: 10px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.progress-bar-fill { height: 100%; background: var(--primary-grad); border-radius: 10px; transition: width 0.5s ease; }
+.progress-msg { font-size: 12px; color: #64748b; font-weight: 600; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px dashed #cbd5e1;}
+.progress-msg i { margin-top: 2px; color: #f59e0b; font-size: 14px; }
 
 /* NOTIFICACIONES */
 .notif-list { display: flex; flex-direction: column; gap: 10px; }
