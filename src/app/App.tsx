@@ -1,51 +1,32 @@
 import React from 'react';
-import { useAuth } from '../modules/auth/application/useAuth';
-import { LoginView } from '../modules/auth/presentation/LoginView';
-import { AdminDashboard } from '../modules/admin/presentation/AdminDashboard';
-// Importamos la nueva vista de los alumnos
-import { StudentsView } from '../modules/students/presentation/StudentsView';
-import './App.css';
+import { useAuth } from './modules/auth/application/useAuth'; // Asegúrate de que esta ruta sea correcta
+import { LoginView } from './modules/auth/presentation/LoginView'; // Ajusta la ruta a tu componente de Login
+import { StudentsView } from './modules/students/presentation/StudentsView';
 
-const App: React.FC = () => {
-  const { userRole, userData, logout } = useAuth();
+export const App = () => {
+    // Obtenemos el estado de la sesión desde tu hook de autenticación
+    const { userData, cargando } = useAuth();
 
-  // Si no hay sesión, mostramos el Login
-  if (!userRole) {
-    return <LoginView />;
-  }
-
-  // Si hay sesión, mostramos la App principal
-  return (
-    <div>
-      <header className="app-header">
-        <div className="app-header-info">
-          <h1>EBD v2.0</h1>
-          <p>{userRole} • {userData?.campo || 'Sede Central'}</p>
-        </div>
-        <button onClick={logout} className="btn-logout">
-          <i className="fas fa-sign-out-alt"></i> Salir
-        </button>
-      </header>
-
-      <main className="app-main">
-        {/* Vista para el Director */}
-        {userRole === 'ADMIN' && <AdminDashboard />}
-        
-        {/* Vista para Maestros y Auxiliares */}
-        {(userRole === 'MAESTRO' || userRole === 'AUXILIAR') && <StudentsView />}
-        
-        {/* Placeholder para los demás roles */}
-        {(userRole === 'LOGISTICA' || userRole === 'SECRETARIA' || userRole === 'TESORERO') && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '20px', textAlign: 'center' }}>
-                <h2>¡Bienvenido, {userData?.nombre}!</h2>
-                <p>Tu panel de {userRole.toLowerCase()} está en construcción.</p>
+    // 1. Mientras Firebase verifica si hay sesión, mostramos un cargando central
+    if (cargando) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#4f46e5' }}>
+                <i className="fa-solid fa-spinner fa-spin fa-3x"></i>
             </div>
-        )}
-      </main>
-    </div>
-  );
+        );
+    }
+
+    // 2. Si no hay datos de usuario, lo mandamos a la pantalla de iniciar sesión
+    if (!userData) {
+        return <LoginView />;
+    }
+
+    // 3. Si el usuario ESTÁ logueado, mostramos nuestra súper aplicación.
+    // Como StudentsView ya tiene su propio menú superior, botón de perfil y cierre de sesión,
+    // NO necesitamos envolverlo en ningún otro <div> o <Header>.
+    return (
+        <StudentsView />
+    );
 };
 
 export default App;
-
-
