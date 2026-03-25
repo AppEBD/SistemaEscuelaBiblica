@@ -6,7 +6,6 @@ import { StudentUseCases } from '../application/student.usecases';
 import { Alumno, AsistenciaDia } from '../domain/student.model';
 
 export const useStudentsLogic = () => {
-    // AQUÍ EXTRAEMOS TU FUNCIÓN LOGOUT OFICIAL
     const { userData, logout } = useAuth(); 
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
     const [cargando, setCargando] = useState(true);
@@ -33,7 +32,6 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
-    // NOTIFICACIONES
     const [notificaciones, setNotificaciones] = useState([
         { id: 1, titulo: "Reunión de Maestros", mensaje: "Sábado a las 4:00 PM. No faltes.", fecha: "Hoy", leida: false },
         { id: 2, titulo: "Material Didáctico", mensaje: "Pasar a la oficina por recursos.", fecha: "Ayer", leida: true }
@@ -41,7 +39,6 @@ export const useStudentsLogic = () => {
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
     const marcarNotificacion = (id: number) => { setNotificaciones(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
 
-    // ESTADOS DEL PERFIL LATERAL
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
     const [isEditingName, setIsEditingName] = useState(false);
@@ -49,24 +46,11 @@ export const useStudentsLogic = () => {
 
     useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
 
-    const guardarNombrePerfil = () => {
-        setIsEditingName(false);
-        alert("¡Nombre actualizado correctamente!");
-    };
+    const guardarNombrePerfil = () => { setIsEditingName(false); alert("¡Nombre actualizado correctamente!"); };
 
-    // ==========================================
-    // CERRAR SESIÓN (CORREGIDO)
-    // Llama a tu función logout nativa para borrar todo el caché
-    // ==========================================
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-            if (logout) {
-                logout(); // Llama a tu AuthContext oficial
-            } else {
-                // Fallback por seguridad
-                const auth = getAuth();
-                signOut(auth).then(() => window.location.reload());
-            }
+            if (logout) { logout(); } else { const auth = getAuth(); signOut(auth).then(() => window.location.reload()); }
         }
     };
 
@@ -107,6 +91,15 @@ export const useStudentsLogic = () => {
         return () => unsub();
     }, [userData]);
 
+    // ==========================================
+    // NUEVO: CÁLCULO DE PROGRESO DE LECCIONES
+    // ==========================================
+    const metaLeccionesAdmin = 0; // Se conectará a Firebase después
+    const maxLeccionImpartida = historialAsistencias.length > 0 
+        ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) 
+        : 0;
+    const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
+
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
     const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
     const obtenerHistorialPorMes = () => { const agrupado: Record<string, AsistenciaDia[]> = {}; historialAsistencias.forEach(asis => { const [year, month] = asis.fecha.split('-'); const nombreMes = months[parseInt(month) - 1]; const key = `${nombreMes} ${year}`; if (!agrupado[key]) agrupado[key] = []; agrupado[key].push(asis); }); return agrupado; };
@@ -130,8 +123,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion,
-        isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil,
-        cerrarSesionApp
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin // RETORNAMOS VARIABLES DE PROGRESO
     };
 };
