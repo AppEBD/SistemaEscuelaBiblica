@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, updateDoc, collection, getDocs } from 'firebase/firestore'; // IMPORTAMOS COLLECTION Y GETDOCS
+import { collection, getDocs } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -10,7 +10,7 @@ import { Alumno, AsistenciaDia } from '../domain/student.model';
 export const useStudentsLogic = () => {
     const { userData, logout } = useAuth(); 
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
-    const [staffList, setStaffList] = useState<any[]>([]); // ESTADO PARA EL STAFF
+    const [staffList, setStaffList] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
 
     const [mainTab, setMainTab] = useState<'home' | 'alumnos' | 'asistencia' | 'reportes'>('home');
@@ -37,12 +37,14 @@ export const useStudentsLogic = () => {
 
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
 
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
+
     // ==========================================
     // BUSCAR A TODO EL STAFF DE ESTA SEDE
     // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
-            // Buscamos en todas las colecciones posibles de usuarios
             const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
             let todoElStaff: any[] = [];
             
@@ -51,15 +53,13 @@ export const useStudentsLogic = () => {
                     const snap = await getDocs(collection(db, nombreCol));
                     snap.forEach(documento => {
                         const data = documento.data();
-                        // Solo agregamos a los que son del mismo campo para no mezclar sedes
                         if (data.campo === userData?.campo) { 
-                            // Extraemos el rol del nombre de la colección (ej: de "usuarios_maestro" sacamos "maestro")
                             const rolLimpio = nombreCol.split('_')[1];
                             todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                         }
                     });
                 } catch (e) {
-                    // Si alguna colección no existe aún, la ignoramos en silencio
+                    // Ignora silenciosamente si la colección aún no existe
                 }
             }
             setStaffList(todoElStaff);
@@ -71,14 +71,13 @@ export const useStudentsLogic = () => {
     }, [userData?.campo]);
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS EXCLUSIVO PARA EL STAFF
+    // CÁLCULO DE CUMPLEAÑOS (SEGURO Y BLINDADO)
     // ==========================================
     const notificacionCumpleanos = useMemo(() => {
         if (staffList.length === 0) return null;
         
         const hoy = new Date();
         const diasDeEstaSemana = new Set<string>();
-        
         const domingo = new Date(hoy);
         domingo.setDate(hoy.getDate() - hoy.getDay());
         
@@ -91,10 +90,14 @@ export const useStudentsLogic = () => {
         }
 
         const cumpleaneros = staffList.filter(user => {
-            if (!user.fechaNacimiento) return false;
-            const mmdd = user.fechaNacimiento.substring(5); // Extrae "MM-DD"
+            // Protección contra fechas vacías o mal formateadas
+            if (!user || typeof user.fechaNacimiento !== 'string') return false;
+            const partes = user.fechaNacimiento.split('-');
+            if (partes.length !== 3) return false;
+
+            const mmdd = `${partes[1]}-${partes[2]}`;
             return diasDeEstaSemana.has(mmdd);
-        }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2], 10) - parseInt(b.fechaNacimiento.split('-')[2], 10));
+        }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2] || '0', 10) - parseInt(b.fechaNacimiento.split('-')[2] || '0', 10));
 
         if (cumpleaneros.length > 0) {
             const lineas = cumpleaneros.map(c => {
@@ -123,13 +126,6 @@ export const useStudentsLogic = () => {
 
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
     const marcarNotificacion = (id: number) => { if (id === 999) return; setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
-
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
-
-    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -248,7 +244,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
