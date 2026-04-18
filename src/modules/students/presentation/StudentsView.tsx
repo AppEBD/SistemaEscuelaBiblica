@@ -24,7 +24,9 @@ export const StudentsView = () => {
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
     const nombreUsuario = userData?.nombre || 'Maestro';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
-    const myUserId = userData?.uid || userData?.id; // Volvemos a usar tu cuenta de usuario
+    
+    // Obtenemos tu ID de usuario de forma segura
+    const myUserId = userData?.uid || userData?.id; 
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
@@ -128,7 +130,9 @@ export const StudentsView = () => {
                                 <div className="notif-list">
                                     {notificaciones.map((n: any) => {
                                         const rData = reaccionesBD[String(n.id)] || { up: 0, down: 0, cake: 0, usuarios: {} };
-                                        const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
+                                        
+                                        // Usamos tu ID seguro para saber si tú, Juan o María votaron.
+                                        const miReaccion = (myUserId && rData.usuarios) ? rData.usuarios[myUserId] : null;
                                         const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
 
                                         return (
@@ -147,6 +151,7 @@ export const StudentsView = () => {
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
                                                 
+                                                {/* BARRA DE REACCIONES REAL-TIME */}
                                                 <div className="notif-reactions">
                                                     <button className={`reaction-btn ${miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'up', e)}>
                                                         👍🏻 {rData.up > 0 ? rData.up : ''}
