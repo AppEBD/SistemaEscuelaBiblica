@@ -109,35 +109,52 @@ export const useStudentsLogic = () => {
         }
     };
 
+    // ==========================================
+    // 1. BÚSQUEDA DEL STAFF 100% EN TIEMPO REAL
+    // ==========================================
     useEffect(() => {
-        const fetchStaff = async () => {
-            const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
-            let todoElStaff: any[] = [];
-            
-            for (const nombreCol of colecciones) {
-                try {
-                    const snap = await getDocs(collection(db, nombreCol));
-                    snap.forEach(documento => {
-                        const data = documento.data();
-                        const campoData = (data.campo || '').toLowerCase().trim();
-                        const campoUser = (userData?.campo || '').toLowerCase().trim();
-
-                        if (campoData === campoUser) { 
-                            const rolLimpio = nombreCol.split('_')[1];
-                            todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
-                        }
-                    });
-                } catch (e) { }
-            }
+        const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
+        const unsubs: any[] = [];
+        const staffMap: Record<string, any[]> = {};
+        
+        const actualizarStaff = () => {
+            const todoElStaff: any[] = [];
+            Object.values(staffMap).forEach(lista => todoElStaff.push(...lista));
             setStaffList(todoElStaff);
         };
-        if (userData?.campo) { fetchStaff(); }
-    }, [userData?.campo]);
+
+        colecciones.forEach(nombreCol => {
+            try {
+                // onSnapshot vigila la base de datos las 24h
+                const unsub = onSnapshot(collection(db, nombreCol), (snapshot) => {
+                    const listaCol: any[] = [];
+                    snapshot.forEach(documento => {
+                        const data = documento.data();
+                        const rolLimpio = nombreCol.split('_')[1];
+                        
+                        // ELIMINADO EL FILTRO DE CAMPO/SEDE.
+                        // Ahora entra TODO el equipo a la lista global.
+                        listaCol.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
+                    });
+                    staffMap[nombreCol] = listaCol;
+                    actualizarStaff();
+                }, (error) => {
+                    // Ignora silenciosamente si la colección aún no existe
+                });
+                unsubs.push(unsub);
+            } catch (e) {}
+        });
+
+        // Limpieza de las escuchas al cerrar la pantalla
+        return () => {
+            unsubs.forEach(unsub => unsub && unsub());
+        };
+    }, []);
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS (CON LÓGICA DE TIEMPO: PASADO, PRESENTE, FUTURO)
+    // 2. CÁLCULO DE CUMPLEAÑOS (INDIVIDUALES)
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -145,7 +162,6 @@ export const useStudentsLogic = () => {
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
         
-        // Calculamos el día de ayer para ser ultra precisos en la etiqueta de fecha
         const ayer = new Date(hoy);
         ayer.setDate(hoy.getDate() - 1);
         const mmddAyer = `${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
@@ -178,7 +194,6 @@ export const useStudentsLogic = () => {
             const esMio = c.id === userId;
             const mmddCumple = c.fechaNacimiento.substring(5);
             
-            // Lógica de "Viaje en el tiempo"
             const esHoy = mmddCumple === mmddHoy;
             const esAyer = mmddCumple === mmddAyer;
             const yaPaso = mmddCumple < mmddHoy; 
