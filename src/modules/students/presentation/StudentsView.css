@@ -68,7 +68,6 @@
 .progress-bar-fill-dark { height: 100%; background: #34d399; border-radius: 10px; transition: width 0.5s ease; box-shadow: 0 0 10px rgba(52, 211, 153, 0.5); }
 .progress-msg-dark { font-size: 11px; color: rgba(255,255,255,0.7); margin: 0; line-height: 1.3; }
 
-/* NOTIFICACIONES */
 .notif-list { display: flex; flex-direction: column; gap: 10px; }
 .notif-item { display: flex; gap: 12px; padding: 12px; border-radius: 14px; border: 1px solid #f1f5f9; background: #f8fafc; cursor: pointer; transition: 0.2s;}
 .notif-item.unread { background: var(--primary-light); border-color: var(--primary-color); }
@@ -76,10 +75,7 @@
 .notif-item.unread .notif-icon { background: var(--primary-color); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
 .notif-content { flex: 1; }
 .notif-title { font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 3px 0; display: flex; align-items: center;}
-
-/* EL ARREGLO: Agregamos white-space: pre-line para que detecte los saltos de línea (\n) */
 .notif-desc { font-size: 13px; font-weight: 500; color: #475569; margin: 0 0 5px 0; line-height: 1.5; white-space: pre-line; }
-
 .notif-date { font-size: 10px; font-weight: 800; color: #94a3b8; }
 .badge-new { background: #ef4444; color: white; font-size: 8px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; letter-spacing: 0.5px;}
 
@@ -208,3 +204,24 @@
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
+
+/* =========================================
+   ANIMACIÓN DE CONFETI PARA CUMPLEAÑOS 
+   ========================================= */
+@keyframes fadeOutDelay { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes floatingEmoji { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+
+.birthday-overlay {
+    position: fixed; top:0; left:0; width:100vw; height:100vh;
+    background: rgba(15,23,42,0.95); z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    animation: fadeOutDelay 5.5s ease forwards;
+    pointer-events: none; 
+}
+.birthday-overlay h1 { 
+    color: #fcd34d; font-size: 40px; text-align: center; margin: 0; padding: 0 20px;
+    text-shadow: 0 4px 20px rgba(245,158,11,0.6); 
+    animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+.emoji-confetti { position: absolute; font-size: 35px; animation: floatingEmoji linear infinite; }
