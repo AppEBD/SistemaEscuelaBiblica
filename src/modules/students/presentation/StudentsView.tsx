@@ -15,13 +15,12 @@ export const StudentsView = () => {
         ofrendaDia, manejarCambioOfrenda, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
-    const nombreUsuario = userData?.nombre || 'Maestro';
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
@@ -32,7 +31,7 @@ export const StudentsView = () => {
                     <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
-                    <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
+                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
                 </button>
             </div>
 
@@ -45,9 +44,9 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
-                            <h3 className="pd-name-display">{nombreUsuario}</h3>
+                            <h3 className="pd-name-display">{userNameDisplay}</h3>
                             <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
                         </div>
                     </div>
@@ -62,7 +61,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={nombreUsuario} />
+                    <BadgesPanel userName={userNameDisplay} />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
@@ -99,27 +98,46 @@ export const StudentsView = () => {
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
+                        {/* WIDGET DE NOTIFICACIONES */}
                         <div className="home-widget">
-                            <div className="home-widget-title"><i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Notificaciones</div>
-                            <div className="notif-list">
-                                {notificaciones.map(n => (
-                                    <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
-                                        <div className="notif-icon">{n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>}</div>
-                                        <div className="notif-content">
-                                            <h4 className="notif-title">{n.titulo} {!n.leida && <span className="badge-new">NUEVO</span>}</h4>
-                                            <p className="notif-desc">{n.mensaje}</p>
-                                            <span className="notif-date">{n.fecha}</span>
+                            <div className="home-widget-title"><i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Cumpleaños</div>
+                            
+                            {notificaciones.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8' }}>
+                                    <i className="fa-regular fa-bell-slash" style={{ fontSize: '30px', marginBottom: '10px', opacity: 0.5 }}></i>
+                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: '600' }}>No hay avisos ni cumpleañeros esta semana.</p>
+                                </div>
+                            ) : (
+                                <div className="notif-list">
+                                    {notificaciones.map((n: any) => (
+                                        <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
+                                            <div className="notif-icon">
+                                                {n.isCumple 
+                                                    ? <i className="fa-solid fa-cake-candles" style={{color: '#ec4899'}}></i> 
+                                                    : (n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>)
+                                                }
+                                            </div>
+                                            <div className="notif-content">
+                                                <h4 className="notif-title">
+                                                    {n.titulo} 
+                                                    {!n.leida && !n.isCumple && <span className="badge-new">NUEVO</span>}
+                                                </h4>
+                                                <p className="notif-desc">{n.mensaje}</p>
+                                                <span className="notif-date">{n.fecha}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
+
                     </div>
                 </div>
             )}
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
+            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -179,6 +197,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
@@ -294,7 +313,6 @@ export const StudentsView = () => {
                                 <button className="btn-limpiar-filtros" onClick={limpiarFiltrosRanking}><i className="fa-solid fa-eraser"></i> Limpiar Filtros</button>
                             </div>
                             
-                            {/* NUEVO: LÓGICA DE MEDALLAS ARREGLADA */}
                             {obtenerRanking().map((alumno, index) => {
                                 const isMedal = index < 3;
                                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
