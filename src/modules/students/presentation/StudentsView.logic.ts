@@ -1,7 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, updateDoc } from 'firebase/firestore'; 
-import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -91,13 +89,7 @@ export const useStudentsLogic = () => {
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
-    // ==========================================
-    // REGLA MATEMÁTICA ESTRICTA (Max 99.99)
-    // ==========================================
     const manejarCambioOfrenda = (valor: string) => {
-        // Permite máximo 2 dígitos numéricos enteros y máximo 2 decimales.
-        // Ejemplos permitidos: "1", "12", "1.5", "12.75", "0.75"
-        // Ejemplos bloqueados: "100" (son 3 dígitos enteros), "1.123" (son 3 decimales)
         if (valor === '' || /^\d{0,2}(\.\d{0,2})?$/.test(valor)) {
             setOfrendaDia(valor);
         }
@@ -111,6 +103,9 @@ export const useStudentsLogic = () => {
     const alumnosParaAsistencia = alumnos.filter(alumno => { if (asistenciaDocId) return asistencia.hasOwnProperty(alumno.id!); return true; });
     const resumenAsistencia = { total: alumnosParaAsistencia.length, presentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Presente').length, ausentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Ausente').length, permisos: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Permiso').length, };
 
+    // ==========================================
+    // ENVÍO DE ASISTENCIA CON REPORTE DE ERROR REAL
+    // ==========================================
     const enviarAsistencia = async () => { 
         if (!userData?.campo || !userData?.nombre) return; 
 
@@ -124,12 +119,32 @@ export const useStudentsLogic = () => {
             const fechaHoy = new Date().toISOString().split('T')[0]; 
             const registrosFinales: Record<string, string> = {}; 
             alumnosParaAsistencia.forEach(a => { registrosFinales[a.id!] = asistencia[a.id!] || 'Presente'; }); 
-            const payload = { id: asistenciaDocId || undefined, campo: userData.campo, fecha: fechaHoy, registros: registrosFinales as any, resumen: { ...resumenAsistencia, ofrendaTotal: parseFloat(ofrendaDia) || 0 }, registradoPor: userData.nombre, numeroLeccion: numeroLeccion, leccionDada: seDioLeccion }; 
+            
+            // Seguridad: Forzamos la conversión a número para evitar que Firebase colapse si la ofrenda está vacía
+            const ofrendaNumerica = parseFloat(ofrendaDia || "0") || 0;
+
+            const payload = { 
+                id: asistenciaDocId || undefined, 
+                campo: userData.campo, 
+                fecha: fechaHoy, 
+                registros: registrosFinales as any, 
+                resumen: { ...resumenAsistencia, ofrendaTotal: ofrendaNumerica }, 
+                registradoPor: userData.nombre, 
+                numeroLeccion: numeroLeccion, 
+                leccionDada: seDioLeccion 
+            }; 
+
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
-            setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
+            setAsistenciaDocId(docId); 
+            setAsistenciaRegistradaPor(userData.nombre); 
+            setIsSubmitted(true); 
+            
             StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); 
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        } catch (error) { alert("Error al guardar."); } 
+        } catch (error: any) { 
+            console.error("Detalle técnico del error al guardar asistencia:", error);
+            alert(`Error de Firebase: ${error.message}`); 
+        } 
     };
 
     const editarAsistencia = () => { setIsSubmitted(false); };
