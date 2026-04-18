@@ -17,13 +17,14 @@ export const StudentsView = () => {
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay,
-        reacciones, manejarReaccion
+        reaccionesBD, manejarReaccion
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
     const nombreUsuario = userData?.nombre || 'Maestro';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
+    const myUserId = userData?.uid || userData?.id; 
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
@@ -126,7 +127,9 @@ export const StudentsView = () => {
                             ) : (
                                 <div className="notif-list">
                                     {notificaciones.map((n: any) => {
-                                        const r = reacciones[n.id] || { up: 0, down: 0, cake: 0, miReaccion: null };
+                                        // Leemos de la base de datos en tiempo real con el ID en String
+                                        const rData = reaccionesBD[String(n.id)] || { up: 0, down: 0, cake: 0, usuarios: {} };
+                                        const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
                                         const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
 
                                         return (
@@ -145,21 +148,21 @@ export const StudentsView = () => {
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
                                                 
-                                                {/* BARRA DE REACCIONES */}
+                                                {/* BARRA DE REACCIONES REAL-TIME */}
                                                 <div className="notif-reactions">
-                                                    <button className={`reaction-btn ${r.miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(n.id, 'up', e)}>
-                                                        👍🏻 {r.up > 0 ? r.up : ''}
+                                                    <button className={`reaction-btn ${miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'up', e)}>
+                                                        👍🏻 {rData.up > 0 ? rData.up : ''}
                                                     </button>
                                                     
                                                     {!esCumple && (
-                                                        <button className={`reaction-btn ${r.miReaccion === 'down' ? 'active-down' : ''}`} onClick={(e) => manejarReaccion(n.id, 'down', e)}>
-                                                            👎🏻 {r.down > 0 ? r.down : ''}
+                                                        <button className={`reaction-btn ${miReaccion === 'down' ? 'active-down' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'down', e)}>
+                                                            👎🏻 {rData.down > 0 ? rData.down : ''}
                                                         </button>
                                                     )}
                                                     
                                                     {esCumple && (
-                                                        <button className={`reaction-btn ${r.miReaccion === 'cake' ? 'active-cake' : ''}`} onClick={(e) => manejarReaccion(n.id, 'cake', e)}>
-                                                            🎂 {r.cake > 0 ? r.cake : ''}
+                                                        <button className={`reaction-btn ${miReaccion === 'cake' ? 'active-cake' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'cake', e)}>
+                                                            🎂 {rData.cake > 0 ? rData.cake : ''}
                                                         </button>
                                                     )}
                                                 </div>
