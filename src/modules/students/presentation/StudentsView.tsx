@@ -127,7 +127,6 @@ export const StudentsView = () => {
                             ) : (
                                 <div className="notif-list">
                                     {notificaciones.map((n: any) => {
-                                        // Leemos de la base de datos en tiempo real con el ID en String
                                         const rData = reaccionesBD[String(n.id)] || { up: 0, down: 0, cake: 0, usuarios: {} };
                                         const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
                                         const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
@@ -148,7 +147,6 @@ export const StudentsView = () => {
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
                                                 
-                                                {/* BARRA DE REACCIONES REAL-TIME */}
                                                 <div className="notif-reactions">
                                                     <button className={`reaction-btn ${miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'up', e)}>
                                                         👍🏻 {rData.up > 0 ? rData.up : ''}
