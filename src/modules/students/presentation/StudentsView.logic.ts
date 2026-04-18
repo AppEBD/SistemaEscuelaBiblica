@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, collection, getDocs, onSnapshot, setDoc } from 'firebase/firestore'; 
+import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore'; // IMPORTAMOS runTransaction
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -40,18 +40,29 @@ export const useStudentsLogic = () => {
     ]);
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
+    // ==========================================
+    // 1. TEMA DE COLOR PERSISTENTE (GUARDA EN MEMORIA)
+    // ==========================================
+    const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>(() => {
+        return (localStorage.getItem('ebd_theme') as any) || 'indigo';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('ebd_theme', appTheme);
+    }, [appTheme]);
+
+    // ==========================================
+    // 2. REACCIONES CON TRANSACCIONES SEGURAS
+    // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
-            snapshot.forEach(doc => {
-                reacts[doc.id] = doc.data();
-            });
+            snapshot.forEach(doc => { reacts[doc.id] = doc.data(); });
             setReaccionesBD(reacts);
         });
         return () => unsub();
@@ -65,96 +76,89 @@ export const useStudentsLogic = () => {
         try { navigator.vibrate(50); } catch(err){} 
 
         const docRef = doc(db, 'interacciones_avisos', notifId);
-        const actualData = reaccionesBD[notifId] || { up: 0, down: 0, cake: 0, usuarios: {} };
-        const misVotosActuales = actualData.usuarios || {};
-        const miVotoAnterior = misVotosActuales[userId];
 
-        let nuevoUp = actualData.up || 0;
-        let nuevoDown = actualData.down || 0;
-        let nuevoCake = actualData.cake || 0;
-        let nuevoVotoMio: string | null = tipo;
-
-        if (miVotoAnterior === tipo) {
-            nuevoVotoMio = null; 
-            if (tipo === 'up') nuevoUp--;
-            if (tipo === 'down') nuevoDown--;
-            if (tipo === 'cake') nuevoCake--;
-        } else {
-            if (miVotoAnterior === 'up') nuevoUp--;
-            if (miVotoAnterior === 'down') nuevoDown--;
-            if (miVotoAnterior === 'cake') nuevoCake--;
-            
-            if (tipo === 'up') nuevoUp++;
-            if (tipo === 'down') nuevoDown++;
-            if (tipo === 'cake') nuevoCake++;
-        }
-
-        nuevoUp = Math.max(0, nuevoUp);
-        nuevoDown = Math.max(0, nuevoDown);
-        nuevoCake = Math.max(0, nuevoCake);
-
-        const nuevosUsuarios = { ...misVotosActuales };
-        if (nuevoVotoMio === null) {
-            delete nuevosUsuarios[userId];
-        } else {
-            nuevosUsuarios[userId] = nuevoVotoMio;
-        }
-
+        // Usamos runTransaction para que nadie pueda restar más de la cuenta
         try {
-            await setDoc(docRef, {
-                up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
-            }, { merge: true });
+            await runTransaction(db, async (transaction) => {
+                const sfDoc = await transaction.get(docRef);
+                const actualData = sfDoc.exists() ? sfDoc.data() : { up: 0, down: 0, cake: 0, usuarios: {} };
+                
+                const misVotosActuales = actualData.usuarios || {};
+                const miVotoAnterior = misVotosActuales[userId];
+
+                let nuevoUp = actualData.up || 0;
+                let nuevoDown = actualData.down || 0;
+                let nuevoCake = actualData.cake || 0;
+                let nuevoVotoMio: string | null = tipo;
+
+                if (miVotoAnterior === tipo) {
+                    nuevoVotoMio = null; 
+                    if (tipo === 'up') nuevoUp--;
+                    if (tipo === 'down') nuevoDown--;
+                    if (tipo === 'cake') nuevoCake--;
+                } else {
+                    if (miVotoAnterior === 'up') nuevoUp--;
+                    if (miVotoAnterior === 'down') nuevoDown--;
+                    if (miVotoAnterior === 'cake') nuevoCake--;
+                    
+                    if (tipo === 'up') nuevoUp++;
+                    if (tipo === 'down') nuevoDown++;
+                    if (tipo === 'cake') nuevoCake++;
+                }
+
+                // Blindaje extra: nunca bajar de 0
+                nuevoUp = Math.max(0, nuevoUp);
+                nuevoDown = Math.max(0, nuevoDown);
+                nuevoCake = Math.max(0, nuevoCake);
+
+                const nuevosUsuarios = { ...misVotosActuales };
+                if (nuevoVotoMio === null) {
+                    delete nuevosUsuarios[userId];
+                } else {
+                    nuevosUsuarios[userId] = nuevoVotoMio;
+                }
+
+                transaction.set(docRef, {
+                    up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
+                }, { merge: true });
+            });
         } catch (error) {
-            console.error("Error guardando reacción:", error);
+            console.error("Error guardando reacción en tiempo real:", error);
         }
     };
 
     // ==========================================
-    // 1. BÚSQUEDA DEL STAFF 100% EN TIEMPO REAL
+    // BUSCAR AL STAFF
     // ==========================================
     useEffect(() => {
-        const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
-        const unsubs: any[] = [];
-        const staffMap: Record<string, any[]> = {};
-        
-        const actualizarStaff = () => {
-            const todoElStaff: any[] = [];
-            Object.values(staffMap).forEach(lista => todoElStaff.push(...lista));
+        const fetchStaff = async () => {
+            const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
+            let todoElStaff: any[] = [];
+            
+            for (const nombreCol of colecciones) {
+                try {
+                    const snap = await getDocs(collection(db, nombreCol));
+                    snap.forEach(documento => {
+                        const data = documento.data();
+                        const campoData = (data.campo || '').toLowerCase().trim();
+                        const campoUser = (userData?.campo || '').toLowerCase().trim();
+
+                        if (campoData === campoUser) { 
+                            const rolLimpio = nombreCol.split('_')[1];
+                            todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
+                        }
+                    });
+                } catch (e) { }
+            }
             setStaffList(todoElStaff);
         };
-
-        colecciones.forEach(nombreCol => {
-            try {
-                // onSnapshot vigila la base de datos las 24h
-                const unsub = onSnapshot(collection(db, nombreCol), (snapshot) => {
-                    const listaCol: any[] = [];
-                    snapshot.forEach(documento => {
-                        const data = documento.data();
-                        const rolLimpio = nombreCol.split('_')[1];
-                        
-                        // ELIMINADO EL FILTRO DE CAMPO/SEDE.
-                        // Ahora entra TODO el equipo a la lista global.
-                        listaCol.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
-                    });
-                    staffMap[nombreCol] = listaCol;
-                    actualizarStaff();
-                }, (error) => {
-                    // Ignora silenciosamente si la colección aún no existe
-                });
-                unsubs.push(unsub);
-            } catch (e) {}
-        });
-
-        // Limpieza de las escuchas al cerrar la pantalla
-        return () => {
-            unsubs.forEach(unsub => unsub && unsub());
-        };
-    }, []);
+        if (userData?.campo) { fetchStaff(); }
+    }, [userData?.campo]);
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // 2. CÁLCULO DE CUMPLEAÑOS (INDIVIDUALES)
+    // CÁLCULO DE CUMPLEAÑOS
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -245,8 +249,24 @@ export const useStudentsLogic = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
+    // ==========================================
+    // 3. MOTOR DE ORDENAMIENTO (HOY -> AYER -> ESTA SEMANA)
+    // ==========================================
+    const getPesoFecha = (fechaStr: string) => {
+        const f = (fechaStr || '').toLowerCase();
+        if (f === 'hoy') return 1;
+        if (f === 'ayer') return 2;
+        if (f === 'esta semana') return 3;
+        if (f === 'semana pasada') return 4;
+        if (f === 'este mes') return 5;
+        if (f === 'mes pasado') return 6;
+        return 99; // Para "Sistema" o textos desconocidos
+    };
+
     const notificaciones = useMemo(() => {
-        return [...notificacionesCumple, ...notificacionesAdmin];
+        const todas = [...notificacionesCumple, ...notificacionesAdmin];
+        // Ordenamos del peso más bajo (1=Hoy) al más alto (99=Sistema)
+        return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
     }, [notificacionesAdmin, notificacionesCumple]);
 
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
