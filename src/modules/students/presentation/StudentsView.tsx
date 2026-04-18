@@ -24,7 +24,7 @@ export const StudentsView = () => {
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
     const nombreUsuario = userData?.nombre || 'Maestro';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
-    const myUserId = userData?.uid || userData?.id; 
+    const myUserId = userData?.uid || userData?.id; // Volvemos a usar tu cuenta de usuario
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
