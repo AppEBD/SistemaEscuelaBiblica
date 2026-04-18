@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore'; // IMPORTAMOS runTransaction
+import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -44,18 +44,18 @@ export const useStudentsLogic = () => {
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // 1. TEMA DE COLOR PERSISTENTE (GUARDA EN MEMORIA)
+    // 1. TEMA DE COLOR PERSISTENTE (CON CANDADO)
     // ==========================================
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>(() => {
-        return (localStorage.getItem('ebd_theme') as any) || 'indigo';
+        return (localStorage.getItem('ebd_theme_v2') as any) || 'indigo';
     });
 
     useEffect(() => {
-        localStorage.setItem('ebd_theme', appTheme);
+        localStorage.setItem('ebd_theme_v2', appTheme);
     }, [appTheme]);
 
     // ==========================================
-    // 2. REACCIONES CON TRANSACCIONES SEGURAS
+    // 2. REACCIONES WHATSAPP STYLE (NO SE RESTAN)
     // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
@@ -77,7 +77,6 @@ export const useStudentsLogic = () => {
 
         const docRef = doc(db, 'interacciones_avisos', notifId);
 
-        // Usamos runTransaction para que nadie pueda restar más de la cuenta
         try {
             await runTransaction(db, async (transaction) => {
                 const sfDoc = await transaction.get(docRef);
@@ -86,49 +85,44 @@ export const useStudentsLogic = () => {
                 const misVotosActuales = actualData.usuarios || {};
                 const miVotoAnterior = misVotosActuales[userId];
 
+                // REGLA ESTRICTA TIPO WHATSAPP: Si das clic en la misma reacción, NO HACE NADA (No se resta).
+                if (miVotoAnterior === tipo) {
+                    return; 
+                }
+
                 let nuevoUp = actualData.up || 0;
                 let nuevoDown = actualData.down || 0;
                 let nuevoCake = actualData.cake || 0;
-                let nuevoVotoMio: string | null = tipo;
 
-                if (miVotoAnterior === tipo) {
-                    nuevoVotoMio = null; 
-                    if (tipo === 'up') nuevoUp--;
-                    if (tipo === 'down') nuevoDown--;
-                    if (tipo === 'cake') nuevoCake--;
-                } else {
-                    if (miVotoAnterior === 'up') nuevoUp--;
-                    if (miVotoAnterior === 'down') nuevoDown--;
-                    if (miVotoAnterior === 'cake') nuevoCake--;
-                    
-                    if (tipo === 'up') nuevoUp++;
-                    if (tipo === 'down') nuevoDown++;
-                    if (tipo === 'cake') nuevoCake++;
-                }
+                // Si tenía una reacción distinta, la cambiamos (Restamos la vieja)
+                if (miVotoAnterior === 'up') nuevoUp--;
+                if (miVotoAnterior === 'down') nuevoDown--;
+                if (miVotoAnterior === 'cake') nuevoCake--;
+                
+                // Sumamos la nueva elección
+                if (tipo === 'up') nuevoUp++;
+                if (tipo === 'down') nuevoDown++;
+                if (tipo === 'cake') nuevoCake++;
 
-                // Blindaje extra: nunca bajar de 0
+                // Seguridad: los números nunca pueden ser menores a cero
                 nuevoUp = Math.max(0, nuevoUp);
                 nuevoDown = Math.max(0, nuevoDown);
                 nuevoCake = Math.max(0, nuevoCake);
 
                 const nuevosUsuarios = { ...misVotosActuales };
-                if (nuevoVotoMio === null) {
-                    delete nuevosUsuarios[userId];
-                } else {
-                    nuevosUsuarios[userId] = nuevoVotoMio;
-                }
+                nuevosUsuarios[userId] = tipo;
 
                 transaction.set(docRef, {
                     up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
                 }, { merge: true });
             });
         } catch (error) {
-            console.error("Error guardando reacción en tiempo real:", error);
+            console.error("Error guardando reacción:", error);
         }
     };
 
     // ==========================================
-    // BUSCAR AL STAFF
+    // 3. BUSCAR AL STAFF GLOBAL DE LA SEDE
     // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
@@ -148,7 +142,9 @@ export const useStudentsLogic = () => {
                             todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                         }
                     });
-                } catch (e) { }
+                } catch (e) { 
+                    console.warn(`Ignorando colección ${nombreCol} por posible falta de permisos.`);
+                }
             }
             setStaffList(todoElStaff);
         };
@@ -158,7 +154,7 @@ export const useStudentsLogic = () => {
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS
+    // 4. CÁLCULO INTELIGENTE DE CUMPLEAÑOS
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -250,22 +246,22 @@ export const useStudentsLogic = () => {
     }, [esMiCumpleHoy, hasShownOverlay]);
 
     // ==========================================
-    // 3. MOTOR DE ORDENAMIENTO (HOY -> AYER -> ESTA SEMANA)
+    // 5. MOTOR DE ORDENAMIENTO (PRIORIDAD)
     // ==========================================
     const getPesoFecha = (fechaStr: string) => {
-        const f = (fechaStr || '').toLowerCase();
+        const f = (fechaStr || '').toLowerCase().trim();
         if (f === 'hoy') return 1;
         if (f === 'ayer') return 2;
         if (f === 'esta semana') return 3;
         if (f === 'semana pasada') return 4;
         if (f === 'este mes') return 5;
         if (f === 'mes pasado') return 6;
-        return 99; // Para "Sistema" o textos desconocidos
+        return 99; // Para "Sistema" o cualquier otra fecha lejana
     };
 
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
-        // Ordenamos del peso más bajo (1=Hoy) al más alto (99=Sistema)
+        // Las ordena numéricamente: 1 (Hoy) hasta arriba, 99 (Sistema) hasta abajo.
         return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
     }, [notificacionesAdmin, notificacionesCumple]);
 
