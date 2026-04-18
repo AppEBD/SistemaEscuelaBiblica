@@ -35,55 +35,79 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
-    const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
-
+    const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([
+        { id: 1, titulo: "Bienvenida", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos oficiales.", fecha: "Sistema", leida: false }
+    ]);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
 
-    // ESTADOS PARA EL CONFETI
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // 1. BUSCAR A TODO EL STAFF (GLOBAL, SIN FILTRO DE SEDE)
+    // NUEVO: SISTEMA DE REACCIONES (WATSAPP STYLE)
     // ==========================================
+    // Inicializamos con algunas reacciones de prueba para que se vea vivo
+    const [reacciones, setReacciones] = useState<Record<number, { up: number, down: number, cake: number, miReaccion: string | null }>>({
+        999: { up: 2, down: 0, cake: 5, miReaccion: null },
+        1: { up: 1, down: 0, cake: 0, miReaccion: null }
+    });
+
+    const manejarReaccion = (id: number, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
+        e.stopPropagation(); // Evita que al dar like, se marque como leída la notificación entera
+        
+        try { navigator.vibrate(50); } catch(err){} // Pequeña vibración en celulares
+
+        setReacciones(prev => {
+            const actual = prev[id] || { up: 0, down: 0, cake: 0, miReaccion: null };
+            let nuevo = { ...actual };
+
+            // Si vuelve a tocar la misma reacción, se la quitamos
+            if (actual.miReaccion === tipo) {
+                nuevo[tipo]--;
+                nuevo.miReaccion = null;
+            } else {
+                // Si tenía otra reacción antes, se la restamos primero
+                if (actual.miReaccion) nuevo[actual.miReaccion as 'up'|'down'|'cake']--;
+                // Y le sumamos la nueva
+                nuevo[tipo]++;
+                nuevo.miReaccion = tipo;
+            }
+            return { ...prev, [id]: nuevo };
+        });
+    };
+
     useEffect(() => {
         const fetchStaff = async () => {
             const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
             let todoElStaff: any[] = [];
-            
             for (const nombreCol of colecciones) {
                 try {
                     const snap = await getDocs(collection(db, nombreCol));
                     snap.forEach(documento => {
                         const data = documento.data();
-                        const rolLimpio = nombreCol.split('_')[1];
-                        // Agregamos a TODOS, de todas las sedes
-                        todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
+                        const campoData = (data.campo || '').toLowerCase().trim();
+                        const campoUser = (userData?.campo || '').toLowerCase().trim();
+
+                        if (campoData === campoUser) { 
+                            const rolLimpio = nombreCol.split('_')[1];
+                            todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
+                        }
                     });
-                } catch (e) {
-                    // Ignorar si la colección no existe
-                }
+                } catch (e) {}
             }
             setStaffList(todoElStaff);
         };
-        
-        fetchStaff();
-    }, []);
+        if (userData?.campo) { fetchStaff(); }
+    }, [userData?.campo]);
 
-    // ==========================================
-    // 2. CÁLCULO INTELIGENTE DE CUMPLEAÑOS
-    // ==========================================
     const { notifPersonal, notifEquipo, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null, esMiCumpleHoy: false };
-        
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-        
         const diasDeEstaSemana = new Set<string>();
         const domingo = new Date(hoy);
         domingo.setDate(hoy.getDate() - hoy.getDay());
-        
         for (let i = 0; i < 7; i++) {
             const dia = new Date(domingo);
             dia.setDate(domingo.getDate() + i);
@@ -95,11 +119,9 @@ export const useStudentsLogic = () => {
         const userId = userData?.uid || userData?.id;
         const miPerfil = staffList.find(s => s.id === userId);
         const nombreUsuario = userData?.nombre || 'Maestro';
-        
         let personalNotif = null;
         let miCumpleFlag = false;
 
-        // A. Verificamos si HOY es mi cumpleaños (Para el Confeti y el aviso individual)
         if (miPerfil && typeof miPerfil.fechaNacimiento === 'string') {
             const miCumpleMMDD = miPerfil.fechaNacimiento.substring(5);
             if (miCumpleMMDD === mmddHoy) {
@@ -115,12 +137,9 @@ export const useStudentsLogic = () => {
             }
         }
 
-        // B. Lista del equipo que cumple años ESTA semana
         const cumpleaneros = staffList.filter(user => {
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
-            // EXCLUIMOS al usuario actual de la lista grupal
             if (user.id === userId) return false; 
-
             const partes = user.fechaNacimiento.split('-');
             if (partes.length !== 3) return false;
             const mmdd = `${partes[1]}-${partes[2]}`;
@@ -132,7 +151,6 @@ export const useStudentsLogic = () => {
             const lineas = cumpleaneros.map(c => {
                 const dia = c.fechaNacimiento.split('-')[2];
                 const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
-                // Añadimos la Sede (Campo) para que sepan de dónde es
                 const sedeDisplay = c.campo ? ` - ${c.campo}` : '';
                 return `• ${c.nombre} (${rolCapitalizado}${sedeDisplay}) - Día ${dia}`;
             });
@@ -150,9 +168,6 @@ export const useStudentsLogic = () => {
         return { notifPersonal: personalNotif, notifEquipo: equipoNotif, esMiCumpleHoy: miCumpleFlag };
     }, [staffList, userData]);
 
-    // ==========================================
-    // DISPARADOR DEL CONFETI 
-    // ==========================================
     useEffect(() => {
         if (esMiCumpleHoy && !hasShownOverlay) {
             setShowBirthdayOverlay(true);
@@ -162,11 +177,10 @@ export const useStudentsLogic = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
-    // Juntamos todo
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesAdmin];
         if (notifEquipo) todas.unshift(notifEquipo);
-        if (notifPersonal) todas.unshift(notifPersonal); // La personal va hasta arriba
+        if (notifPersonal) todas.unshift(notifPersonal); 
         return todas;
     }, [notificacionesAdmin, notifPersonal, notifEquipo]);
 
@@ -279,6 +293,7 @@ export const useStudentsLogic = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay,
+        reacciones, manejarReaccion // EXPORTAMOS REACCIONES
     };
 };
