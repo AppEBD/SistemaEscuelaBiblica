@@ -36,6 +36,7 @@ export const useStudentsLogic = () => {
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
+
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
 
@@ -44,7 +45,7 @@ export const useStudentsLogic = () => {
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // BUSCAR A TODO EL STAFF 
+    // 1. BUSCAR A TODO EL STAFF (GLOBAL, SIN FILTRO DE SEDE)
     // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
@@ -56,28 +57,22 @@ export const useStudentsLogic = () => {
                     const snap = await getDocs(collection(db, nombreCol));
                     snap.forEach(documento => {
                         const data = documento.data();
-                        const campoData = (data.campo || '').toLowerCase().trim();
-                        const campoUser = (userData?.campo || '').toLowerCase().trim();
-
-                        if (campoData === campoUser) { 
-                            const rolLimpio = nombreCol.split('_')[1];
-                            todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
-                        }
+                        const rolLimpio = nombreCol.split('_')[1];
+                        // Agregamos a TODOS, de todas las sedes
+                        todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                     });
                 } catch (e) {
-                    // Ignorar
+                    // Ignorar si la colección no existe
                 }
             }
             setStaffList(todoElStaff);
         };
         
-        if (userData?.campo) {
-            fetchStaff();
-        }
-    }, [userData?.campo]);
+        fetchStaff();
+    }, []);
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS (SEGURO CONTRA CRASHES)
+    // 2. CÁLCULO INTELIGENTE DE CUMPLEAÑOS
     // ==========================================
     const { notifPersonal, notifEquipo, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null, esMiCumpleHoy: false };
@@ -104,7 +99,7 @@ export const useStudentsLogic = () => {
         let personalNotif = null;
         let miCumpleFlag = false;
 
-        // 1. Verificamos el cumple personal
+        // A. Verificamos si HOY es mi cumpleaños (Para el Confeti y el aviso individual)
         if (miPerfil && typeof miPerfil.fechaNacimiento === 'string') {
             const miCumpleMMDD = miPerfil.fechaNacimiento.substring(5);
             if (miCumpleMMDD === mmddHoy) {
@@ -120,9 +115,12 @@ export const useStudentsLogic = () => {
             }
         }
 
-        // 2. Lista del equipo
+        // B. Lista del equipo que cumple años ESTA semana
         const cumpleaneros = staffList.filter(user => {
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
+            // EXCLUIMOS al usuario actual de la lista grupal
+            if (user.id === userId) return false; 
+
             const partes = user.fechaNacimiento.split('-');
             if (partes.length !== 3) return false;
             const mmdd = `${partes[1]}-${partes[2]}`;
@@ -134,8 +132,9 @@ export const useStudentsLogic = () => {
             const lineas = cumpleaneros.map(c => {
                 const dia = c.fechaNacimiento.split('-')[2];
                 const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
-                const nombreMostrar = c.id === userId ? `${c.nombre} (Tú)` : c.nombre;
-                return `• ${nombreMostrar} (${rolCapitalizado}) - Día ${dia}`;
+                // Añadimos la Sede (Campo) para que sepan de dónde es
+                const sedeDisplay = c.campo ? ` - ${c.campo}` : '';
+                return `• ${c.nombre} (${rolCapitalizado}${sedeDisplay}) - Día ${dia}`;
             });
 
             equipoNotif = {
@@ -152,7 +151,7 @@ export const useStudentsLogic = () => {
     }, [staffList, userData]);
 
     // ==========================================
-    // DISPARADOR SEGURO DE ANIMACIÓN (USEEFFECT)
+    // DISPARADOR DEL CONFETI 
     // ==========================================
     useEffect(() => {
         if (esMiCumpleHoy && !hasShownOverlay) {
@@ -163,11 +162,11 @@ export const useStudentsLogic = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
-    // Combina todas las notificaciones
+    // Juntamos todo
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesAdmin];
         if (notifEquipo) todas.unshift(notifEquipo);
-        if (notifPersonal) todas.unshift(notifPersonal); 
+        if (notifPersonal) todas.unshift(notifPersonal); // La personal va hasta arriba
         return todas;
     }, [notificacionesAdmin, notifPersonal, notifEquipo]);
 
