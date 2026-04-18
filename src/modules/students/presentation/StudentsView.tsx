@@ -15,7 +15,7 @@ export const StudentsView = () => {
         ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
@@ -371,26 +371,38 @@ export const StudentsView = () => {
 
             {/* NAV INFERIOR FIJO */}
             <div className="main-nav-menu">
-                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}>
-                    <i className="fa-solid fa-house"></i> Inicio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}>
-                    <i className="fa-solid fa-address-book"></i> Directorio
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}>
-                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
-                </button>
-                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}>
-                    <i className="fa-solid fa-chart-pie"></i> Reportes
-                </button>
+                <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
+                <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}><i className="fa-solid fa-address-book"></i> Directorio</button>
+                <button className={`main-nav-btn ${mainTab === 'asistencia' ? 'active' : ''}`} onClick={() => setMainTab('asistencia')}><i className="fa-solid fa-clipboard-user"></i> Asistencia</button>
+                <button className={`main-nav-btn ${mainTab === 'reportes' ? 'active' : ''}`} onClick={() => { setMainTab('reportes'); setReportTab('menu'); }}><i className="fa-solid fa-chart-pie"></i> Reportes</button>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editandoId ? "Editar Alumno" : "Registrar Nuevo Alumno"}>
                 <form onSubmit={guardarAlumno}>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre Completo</label><input className="ebd-input" type="text" placeholder="Ej: Adrian Alfredo..." value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }} /></div>
                     <div className="ebd-form-group" style={{ marginBottom: '15px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Género</label><select className="ebd-input" value={form.genero} onChange={e => setForm({...form, genero: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Seleccione...</option><option value="Masculino">Niño</option><option value="Femenino">Niña</option></select></div>
-                    <div className="ebd-form-group" style={{ marginBottom: '25px' }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha de Nacimiento</label><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}><select className="ebd-input" value={form.birthDay} onChange={e => setForm({...form, birthDay: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select><select className="ebd-input" value={form.birthMonth} onChange={e => setForm({...form, birthMonth: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select><select className="ebd-input" value={form.birthYear} onChange={e => setForm({...form, birthYear: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div></div>
-                    <div className="admin-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}><Button type="button" className="btn-denegar" onClick={() => setIsModalOpen(false)}>Cancelar</Button><Button type="submit" className="btn-aprobar" style={{ background: '#10b981' }}>Guardar</Button></div>
+                    
+                    <div className="ebd-form-group" style={{ marginBottom: '25px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha de Nacimiento</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <select className="ebd-input" value={form.birthDay} onChange={e => setForm({...form, birthDay: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                            <select className="ebd-input" value={form.birthMonth} onChange={e => setForm({...form, birthMonth: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
+                            <select className="ebd-input" value={form.birthYear} onChange={e => setForm({...form, birthYear: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                        </div>
+                        
+                        {/* NUEVO: CÁLCULO DE EDAD EN VIVO */}
+                        {form.birthDay && form.birthMonth && form.birthYear && (
+                            <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--primary-color)', fontWeight: '800', background: 'var(--primary-light)', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
+                                <i className="fa-solid fa-cake-candles"></i> 
+                                Edad calculada: {calcularEdadExacta(`${form.birthYear}-${form.birthMonth.padStart(2, '0')}-${form.birthDay.padStart(2, '0')}`, 0)} años
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="admin-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                        <Button type="button" className="btn-denegar" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                        <Button type="submit" className="btn-aprobar" style={{ background: '#10b981' }}>Guardar</Button>
+                    </div>
                 </form>
             </Modal>
         </div>
