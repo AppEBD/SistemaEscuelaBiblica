@@ -1,5 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
+import { doc, updateDoc } from 'firebase/firestore'; 
+import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -41,6 +43,26 @@ export const useStudentsLogic = () => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
+
+    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
+
+    const guardarNombrePerfil = async () => {
+        if (!userNameDisplay.trim()) return;
+        const userId = userData?.uid || userData?.id; 
+        if (!userId) { alert("Error del sistema: No se detectó un ID de usuario válido."); setIsEditingName(false); return; }
+
+        try {
+            let nombreColeccion = 'usuarios_maestro'; 
+            if (userData?.rol === 'AUXILIAR') { nombreColeccion = 'usuarios_auxiliar'; } 
+            else if (userData?.rol === 'MAESTRO') { nombreColeccion = 'usuarios_maestro'; }
+
+            const userRef = doc(db, nombreColeccion, userId);
+            await updateDoc(userRef, { nombre: userNameDisplay });
+            setIsEditingName(false); alert("¡Tu nombre ha sido actualizado correctamente!");
+        } catch (error: any) { console.error("Detalle técnico del error:", error); alert(`Error de Firebase: ${error.message}`); }
+    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -89,6 +111,16 @@ export const useStudentsLogic = () => {
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
+    // ==========================================
+    // NUEVO: MANEJO DEL PUNTO DECIMAL EN OFRENDA
+    // ==========================================
+    const manejarCambioOfrenda = (valor: string) => {
+        // Expresión regular: Permite números y opcionalmente un punto con hasta 2 decimales
+        if (valor === '' || /^\d*\.?\d{0,2}$/.test(valor)) {
+            setOfrendaDia(valor);
+        }
+    };
+
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
     const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
     const obtenerHistorialPorMes = () => { const agrupado: Record<string, AsistenciaDia[]> = {}; historialAsistencias.forEach(asis => { const [year, month] = asis.fecha.split('-'); const nombreMes = months[parseInt(month) - 1]; const key = `${nombreMes} ${year}`; if (!agrupado[key]) agrupado[key] = []; agrupado[key].push(asis); }); return agrupado; };
@@ -97,7 +129,32 @@ export const useStudentsLogic = () => {
     const alumnosParaAsistencia = alumnos.filter(alumno => { if (asistenciaDocId) return asistencia.hasOwnProperty(alumno.id!); return true; });
     const resumenAsistencia = { total: alumnosParaAsistencia.length, presentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Presente').length, ausentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Ausente').length, permisos: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Permiso').length, };
 
-    const enviarAsistencia = async () => { if (!userData?.campo || !userData?.nombre) return; try { const fechaHoy = new Date().toISOString().split('T')[0]; const registrosFinales: Record<string, string> = {}; alumnosParaAsistencia.forEach(a => { registrosFinales[a.id!] = asistencia[a.id!] || 'Presente'; }); const payload = { id: asistenciaDocId || undefined, campo: userData.campo, fecha: fechaHoy, registros: registrosFinales as any, resumen: { ...resumenAsistencia, ofrendaTotal: parseFloat(ofrendaDia) || 0 }, registradoPor: userData.nombre, numeroLeccion: numeroLeccion, leccionDada: seDioLeccion }; const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (error) { alert("Error al guardar."); } };
+    const enviarAsistencia = async () => { 
+        if (!userData?.campo || !userData?.nombre) return; 
+
+        // ==========================================
+        // NUEVO: CANDADO AUTO-INCREMENTAL DE LECCIÓN
+        // ==========================================
+        // Si no es una edición (!asistenciaDocId) y marcamos que SÍ se dio la lección, 
+        // el número de lección OBLIGATORIAMENTE debe ser mayor al último registrado.
+        if (!asistenciaDocId && seDioLeccion && numeroLeccion <= maxLeccionImpartida) {
+            alert(`🛑 ALERTA: La lección ${numeroLeccion} ya fue impartida anteriormente.\n\nEl sistema es auto-incremental. Como ya diste hasta la lección ${maxLeccionImpartida}, la lección de hoy debería ser la ${maxLeccionImpartida + 1}.`);
+            setNumeroLeccion(maxLeccionImpartida + 1); // Auto-corrige el input
+            return; // Detiene el guardado para que el usuario confirme
+        }
+
+        try { 
+            const fechaHoy = new Date().toISOString().split('T')[0]; 
+            const registrosFinales: Record<string, string> = {}; 
+            alumnosParaAsistencia.forEach(a => { registrosFinales[a.id!] = asistencia[a.id!] || 'Presente'; }); 
+            const payload = { id: asistenciaDocId || undefined, campo: userData.campo, fecha: fechaHoy, registros: registrosFinales as any, resumen: { ...resumenAsistencia, ofrendaTotal: parseFloat(ofrendaDia) || 0 }, registradoPor: userData.nombre, numeroLeccion: numeroLeccion, leccionDada: seDioLeccion }; 
+            const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
+            setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
+            StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); 
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+        } catch (error) { alert("Error al guardar."); } 
+    };
+
     const editarAsistencia = () => { setIsSubmitted(false); };
     const obtenerCumpleanerosPorMes = () => { const agrupados: Record<number, Alumno[]> = {}; for (let i = 1; i <= 12; i++) agrupados[i] = []; alumnos.forEach(alumno => { if (alumno.fechaNacimiento) { const mes = parseInt(alumno.fechaNacimiento.split('-')[1], 10); if (!isNaN(mes)) agrupados[mes].push(alumno); } }); Object.keys(agrupados).forEach(mes => { agrupados[mes as any].sort((a, b) => { const diaA = parseInt(a.fechaNacimiento.split('-')[2], 10); const diaB = parseInt(b.fechaNacimiento.split('-')[2], 10); return diaA - diaB; }); }); return agrupados; };
     const abrirModalNuevo = () => { setForm(estadoInicial); setEditandoId(null); setIsModalOpen(true); };
@@ -108,11 +165,11 @@ export const useStudentsLogic = () => {
     return {
         alumnos, alumnosParaAsistencia, cargando, form, setForm, isModalOpen, setIsModalOpen, abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno,
         days, months, years, editandoId, userData, activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes,
-        asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia, ofrendaDia, setOfrendaDia,
+        asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia, ofrendaDia, manejarCambioOfrenda,
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
