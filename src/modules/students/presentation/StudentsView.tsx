@@ -79,6 +79,7 @@ export const StudentsView = () => {
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
+                        
                         <div className="home-widget widget-alumnos">
                             <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
                                 <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div>
@@ -187,7 +188,6 @@ export const StudentsView = () => {
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
                         
-                        {/* CAJITA DE OFRENDA MEJORADA */}
                         <div className="global-ofrenda-card">
                             <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
                             <div className="global-ofrenda-input-wrapper">
@@ -205,7 +205,6 @@ export const StudentsView = () => {
                                             textAlign: ofrendaDia ? 'right' : 'center'
                                         }}
                                     />
-                                    {/* MAGIA VISUAL: Si escribe entero, se agrega el .00 gris */}
                                     {ofrendaDia !== '' && !ofrendaDia.includes('.') && (
                                         <span className="global-ofrenda-decimals">.00</span>
                                     )}
@@ -295,12 +294,16 @@ export const StudentsView = () => {
                                 <button className="btn-limpiar-filtros" onClick={limpiarFiltrosRanking}><i className="fa-solid fa-eraser"></i> Limpiar Filtros</button>
                             </div>
                             
+                            {/* NUEVO: LÓGICA DE MEDALLAS ARREGLADA */}
                             {obtenerRanking().map((alumno, index) => {
+                                const isMedal = index < 3;
                                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-                                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`;
                                 return (
                                     <div className={`rank-card ${rankClass}`} key={alumno.id}>
-                                        <div className="rank-medal">{medalla}</div>
+                                        <div className={isMedal ? "rank-medal" : "rank-number"}>
+                                            {isMedal ? medalla : `#${medalla}`}
+                                        </div>
                                         <div className="rank-info"><h4 className="rank-name">{alumno.nombre}</h4><span className="rank-score"><i className="fa-solid fa-check"></i> Presente {alumno.totalAsistencias as number} veces</span></div>
                                     </div>
                                 )
