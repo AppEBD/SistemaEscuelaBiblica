@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore'; 
+import { doc, collection, getDocs, onSnapshot, setDoc } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -55,11 +55,12 @@ export const useStudentsLogic = () => {
     }, [appTheme]);
 
     // ==========================================
-    // 2. REACCIONES WHATSAPP STYLE (LÓGICA PERFECTA)
+    // 2. REACCIONES WHATSAPP STYLE (NUEVO MOTOR)
     // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     useEffect(() => {
+        // Escuchamos la base de datos en tiempo real
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
             snapshot.forEach(doc => { reacts[doc.id] = doc.data(); });
@@ -71,50 +72,45 @@ export const useStudentsLogic = () => {
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
         const userId = userData?.uid || userData?.id; 
-        if (!userId) return;
+        if (!userId) return; // Si no hay usuario logueado, no hace nada
 
         try { navigator.vibrate(50); } catch(err){} 
 
         const docRef = doc(db, 'interacciones_avisos', notifId);
+        
+        // Agarramos la lista de votos actual desde la memoria en vivo
+        const actualData = reaccionesBD[notifId] || { usuarios: {} };
+        const misVotosActuales = actualData.usuarios || {};
+        
+        // Hacemos una copia para modificarla
+        const nuevosUsuarios = { ...misVotosActuales };
+        const miVotoAnterior = nuevosUsuarios[userId];
+
+        // REGLA DE WHATSAPP:
+        // Si toco el botón que ya tenía seleccionado, ME ARREPIENTO (borra mi voto).
+        if (miVotoAnterior === tipo) {
+            delete nuevosUsuarios[userId];
+        } 
+        // Si toco un botón diferente o no había votado, GUARDA MI NUEVO VOTO.
+        else {
+            nuevosUsuarios[userId] = tipo;
+        }
 
         try {
-            await runTransaction(db, async (transaction) => {
-                const sfDoc = await transaction.get(docRef);
-                const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
-                const usuarios = actualData.usuarios || {};
-
-                // LÓGICA WHATSAPP:
-                // Si tocas el botón que ya tenías seleccionado, te arrepientes (se borra).
-                // Si tocas un botón nuevo, reemplaza tu voto anterior.
-                if (usuarios[userId] === tipo) {
-                    delete usuarios[userId];
-                } else {
-                    usuarios[userId] = tipo;
-                }
-
-                // RECUENTO TOTAL DESDE CERO: 
-                // Evitamos sumas/restas a ciegas. Contamos matemáticamente a todos.
-                let up = 0, down = 0, cake = 0;
-                Object.values(usuarios).forEach(voto => {
-                    if (voto === 'up') up++;
-                    if (voto === 'down') down++;
-                    if (voto === 'cake') cake++;
-                });
-
-                // Guardamos los totales exactos
-                transaction.set(docRef, {
-                    up, down, cake, usuarios
-                }, { merge: true });
-            });
+            // Reemplazamos el documento COMPLETO solo con la lista de usuarios.
+            // Esto elimina por completo los errores de sumas y restas infinitas.
+            await setDoc(docRef, { usuarios: nuevosUsuarios });
         } catch (error) {
             console.error("Error guardando reacción:", error);
         }
     };
 
     // ==========================================
-    // 3. BUSCAR AL STAFF GLOBAL (EN VIVO)
+    // 3. BÚSQUEDA DEL STAFF (ESPERANDO LOGIN)
     // ==========================================
     useEffect(() => {
+        if (!userData || !userData.uid) return; // Espera a que el usuario cargue
+
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
         const unsubs: any[] = [];
         const staffMap: Record<string, any[]> = {};
@@ -136,13 +132,15 @@ export const useStudentsLogic = () => {
                     });
                     staffMap[nombreCol] = listaCol;
                     actualizarStaff();
-                }, (error) => {});
+                }, (error) => {
+                    console.log(`Nota: No se pudo leer ${nombreCol}. Puede que esté vacía o protegida.`);
+                });
                 unsubs.push(unsub);
             } catch (e) {}
         });
 
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, []);
+    }, [userData]);
 
     const currentYear = new Date().getFullYear();
 
@@ -240,7 +238,7 @@ export const useStudentsLogic = () => {
     }, [esMiCumpleHoy, hasShownOverlay]);
 
     // ==========================================
-    // 5. MOTOR DE ORDENAMIENTO (PRIORIDAD)
+    // 5. MOTOR DE PRIORIDAD DE ORDEN
     // ==========================================
     const getPesoFecha = (fechaStr: string) => {
         const f = (fechaStr || '').toLowerCase().trim();
@@ -250,11 +248,12 @@ export const useStudentsLogic = () => {
         if (f === 'semana pasada') return 4;
         if (f === 'este mes') return 5;
         if (f === 'mes pasado') return 6;
-        return 99; 
+        return 99; // Todo lo demás (como "Sistema") va al final
     };
 
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
+        // Asegura que "Hoy" (1) vaya antes que "Ayer" (2), etc.
         return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
     }, [notificacionesAdmin, notificacionesCumple]);
 
