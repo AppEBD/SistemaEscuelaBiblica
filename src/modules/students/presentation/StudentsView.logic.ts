@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, collection, getDocs, onSnapshot, setDoc } from 'firebase/firestore'; 
+import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -44,7 +44,7 @@ export const useStudentsLogic = () => {
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // 1. TEMA DE COLOR PERSISTENTE
+    // TEMA DE COLOR PERSISTENTE
     // ==========================================
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>(() => {
         return (localStorage.getItem('ebd_theme_v2') as any) || 'indigo';
@@ -55,12 +55,11 @@ export const useStudentsLogic = () => {
     }, [appTheme]);
 
     // ==========================================
-    // 2. REACCIONES WHATSAPP STYLE (NUEVO MOTOR)
+    // REACCIONES WHATSAPP STYLE (PERFECTAS)
     // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     useEffect(() => {
-        // Escuchamos la base de datos en tiempo real
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
             snapshot.forEach(doc => { reacts[doc.id] = doc.data(); });
@@ -72,44 +71,45 @@ export const useStudentsLogic = () => {
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
         const userId = userData?.uid || userData?.id; 
-        if (!userId) return; // Si no hay usuario logueado, no hace nada
+        if (!userId) return;
 
         try { navigator.vibrate(50); } catch(err){} 
 
         const docRef = doc(db, 'interacciones_avisos', notifId);
-        
-        // Agarramos la lista de votos actual desde la memoria en vivo
-        const actualData = reaccionesBD[notifId] || { usuarios: {} };
-        const misVotosActuales = actualData.usuarios || {};
-        
-        // Hacemos una copia para modificarla
-        const nuevosUsuarios = { ...misVotosActuales };
-        const miVotoAnterior = nuevosUsuarios[userId];
-
-        // REGLA DE WHATSAPP:
-        // Si toco el botón que ya tenía seleccionado, ME ARREPIENTO (borra mi voto).
-        if (miVotoAnterior === tipo) {
-            delete nuevosUsuarios[userId];
-        } 
-        // Si toco un botón diferente o no había votado, GUARDA MI NUEVO VOTO.
-        else {
-            nuevosUsuarios[userId] = tipo;
-        }
 
         try {
-            // Reemplazamos el documento COMPLETO solo con la lista de usuarios.
-            // Esto elimina por completo los errores de sumas y restas infinitas.
-            await setDoc(docRef, { usuarios: nuevosUsuarios });
+            await runTransaction(db, async (transaction) => {
+                const sfDoc = await transaction.get(docRef);
+                const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
+                const usuarios = actualData.usuarios || {};
+
+                // Regla Toggle: Clic en la misma = borrar. Clic en otra = cambiar.
+                if (usuarios[userId] === tipo) {
+                    delete usuarios[userId];
+                } else {
+                    usuarios[userId] = tipo;
+                }
+
+                // Recuento exacto y sin errores
+                let up = 0, down = 0, cake = 0;
+                Object.values(usuarios).forEach(voto => {
+                    if (voto === 'up') up++;
+                    if (voto === 'down') down++;
+                    if (voto === 'cake') cake++;
+                });
+
+                transaction.set(docRef, { up, down, cake, usuarios }, { merge: true });
+            });
         } catch (error) {
             console.error("Error guardando reacción:", error);
         }
     };
 
     // ==========================================
-    // 3. BÚSQUEDA DEL STAFF (ESPERANDO LOGIN)
+    // BÚSQUEDA DEL STAFF (RESTAURADA Y SEGURA)
     // ==========================================
     useEffect(() => {
-        if (!userData || !userData.uid) return; // Espera a que el usuario cargue
+        if (!userData?.campo) return; // Restauramos la validación correcta
 
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
         const unsubs: any[] = [];
@@ -128,24 +128,23 @@ export const useStudentsLogic = () => {
                     snapshot.forEach(documento => {
                         const data = documento.data();
                         const rolLimpio = nombreCol.split('_')[1];
+                        // Entran TODOS sin importar el campo para avisos globales
                         listaCol.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                     });
                     staffMap[nombreCol] = listaCol;
                     actualizarStaff();
-                }, (error) => {
-                    console.log(`Nota: No se pudo leer ${nombreCol}. Puede que esté vacía o protegida.`);
-                });
+                }, (error) => {});
                 unsubs.push(unsub);
             } catch (e) {}
         });
 
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, [userData]);
+    }, [userData?.campo]); // Dependencia correcta
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // 4. CÁLCULO DE CUMPLEAÑOS
+    // CÁLCULO DE CUMPLEAÑOS INDIVIDUALES
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -238,7 +237,7 @@ export const useStudentsLogic = () => {
     }, [esMiCumpleHoy, hasShownOverlay]);
 
     // ==========================================
-    // 5. MOTOR DE PRIORIDAD DE ORDEN
+    // MOTOR DE ORDENAMIENTO DE AVISOS
     // ==========================================
     const getPesoFecha = (fechaStr: string) => {
         const f = (fechaStr || '').toLowerCase().trim();
@@ -248,12 +247,11 @@ export const useStudentsLogic = () => {
         if (f === 'semana pasada') return 4;
         if (f === 'este mes') return 5;
         if (f === 'mes pasado') return 6;
-        return 99; // Todo lo demás (como "Sistema") va al final
+        return 99; // Avisos generales ("Sistema") van al fondo
     };
 
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
-        // Asegura que "Hoy" (1) vaya antes que "Ayer" (2), etc.
         return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
     }, [notificacionesAdmin, notificacionesCumple]);
 
