@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { collection, getDocs } from 'firebase/firestore'; 
+import { doc, updateDoc, collection, getDocs } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -10,7 +10,7 @@ import { Alumno, AsistenciaDia } from '../domain/student.model';
 export const useStudentsLogic = () => {
     const { userData, logout } = useAuth(); 
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
-    const [staffList, setStaffList] = useState<any[]>([]);
+    const [staffList, setStaffList] = useState<any[]>([]); 
     const [cargando, setCargando] = useState(true);
 
     const [mainTab, setMainTab] = useState<'home' | 'alumnos' | 'asistencia' | 'reportes'>('home');
@@ -39,9 +39,17 @@ export const useStudentsLogic = () => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
+
+    // NUEVOS ESTADOS PARA EL CONFETI
+    const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
+    const [hasShownOverlay, setHasShownOverlay] = useState(false);
+
+    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
 
     // ==========================================
-    // BUSCAR A TODO EL STAFF DE ESTA SEDE
+    // BUSCAR A TODO EL STAFF (IGNORANDO MAYÚSCULAS/ESPACIOS)
     // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
@@ -53,13 +61,17 @@ export const useStudentsLogic = () => {
                     const snap = await getDocs(collection(db, nombreCol));
                     snap.forEach(documento => {
                         const data = documento.data();
-                        if (data.campo === userData?.campo) { 
+                        // Normalizamos los textos para que "La Isla" sea igual a "la isla "
+                        const campoData = (data.campo || '').toLowerCase().trim();
+                        const campoUser = (userData?.campo || '').toLowerCase().trim();
+
+                        if (campoData === campoUser) { 
                             const rolLimpio = nombreCol.split('_')[1];
                             todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                         }
                     });
                 } catch (e) {
-                    // Ignora silenciosamente si la colección aún no existe
+                    // Si una colección no existe, simplemente seguimos buscando en las demás
                 }
             }
             setStaffList(todoElStaff);
@@ -71,12 +83,14 @@ export const useStudentsLogic = () => {
     }, [userData?.campo]);
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS (SEGURO Y BLINDADO)
+    // CÁLCULO DE CUMPLEAÑOS Y ANIMACIÓN
     // ==========================================
-    const notificacionCumpleanos = useMemo(() => {
-        if (staffList.length === 0) return null;
+    const { notifPersonal, notifEquipo } = useMemo(() => {
+        if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null };
         
         const hoy = new Date();
+        const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        
         const diasDeEstaSemana = new Set<string>();
         const domingo = new Date(hoy);
         domingo.setDate(hoy.getDate() - hoy.getDay());
@@ -89,43 +103,72 @@ export const useStudentsLogic = () => {
             diasDeEstaSemana.add(`${mesFormat}-${diaFormat}`);
         }
 
+        // 1. Verificar si es mi cumpleaños HOY para el Confeti
+        const userId = userData?.uid || userData?.id;
+        const miPerfil = staffList.find(s => s.id === userId);
+        let personalNotif = null;
+
+        if (miPerfil && typeof miPerfil.fechaNacimiento === 'string') {
+            const miCumpleMMDD = miPerfil.fechaNacimiento.substring(5);
+            if (miCumpleMMDD === mmddHoy) {
+                // Disparamos la animación solo 1 vez por sesión
+                if (!hasShownOverlay) {
+                    setShowBirthdayOverlay(true);
+                    setHasShownOverlay(true);
+                    setTimeout(() => setShowBirthdayOverlay(false), 5500); // Ocultar tras 5.5s
+                }
+                
+                personalNotif = {
+                    id: 998,
+                    titulo: "🎉 ¡Feliz Cumpleaños!",
+                    mensaje: `¡Felicidades en tu cumpleaños, ${userNameDisplay.split(' ')[0]}! Que Dios bendiga tu vida grandemente y recompense tu esfuerzo.`,
+                    fecha: "Hoy",
+                    leida: true,
+                    isCumplePersonal: true
+                };
+            }
+        }
+
+        // 2. Lista de cumpleañeros de la semana
         const cumpleaneros = staffList.filter(user => {
-            // Protección contra fechas vacías o mal formateadas
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
             const partes = user.fechaNacimiento.split('-');
             if (partes.length !== 3) return false;
-
             const mmdd = `${partes[1]}-${partes[2]}`;
             return diasDeEstaSemana.has(mmdd);
         }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2] || '0', 10) - parseInt(b.fechaNacimiento.split('-')[2] || '0', 10));
 
+        let equipoNotif = null;
         if (cumpleaneros.length > 0) {
             const lineas = cumpleaneros.map(c => {
                 const dia = c.fechaNacimiento.split('-')[2];
                 const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
-                return `• ${c.nombre} (${rolCapitalizado}) - Día ${dia}`;
+                const nombreMostrar = c.id === userId ? `${c.nombre} (Tú)` : c.nombre;
+                return `• ${nombreMostrar} (${rolCapitalizado}) - Día ${dia}`;
             });
 
-            return {
+            equipoNotif = {
                 id: 999,
                 titulo: "🎂 Cumpleaños del Equipo",
-                mensaje: `¡Semana de celebración en el equipo! No olvides felicitar a:\n\n${lineas.join('\n')}`,
+                mensaje: `¡Es semana de celebración! No olvides felicitar a:\n\n${lineas.join('\n')}`,
                 fecha: "Esta semana",
                 leida: true, 
-                isCumple: true
+                isCumpleEquipo: true
             };
         }
-        return null;
-    }, [staffList]);
+
+        return { notifPersonal: personalNotif, notifEquipo: equipoNotif };
+    }, [staffList, userData, hasShownOverlay, userNameDisplay]);
 
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesAdmin];
-        if (notificacionCumpleanos) { todas.unshift(notificacionCumpleanos); }
+        if (notifEquipo) todas.unshift(notifEquipo);
+        if (notifPersonal) todas.unshift(notifPersonal); // La personal siempre hasta arriba
         return todas;
-    }, [notificacionesAdmin, notificacionCumpleanos]);
+    }, [notificacionesAdmin, notifPersonal, notifEquipo]);
 
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
-    const marcarNotificacion = (id: number) => { if (id === 999) return; setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
+    const marcarNotificacion = (id: number) => { if (id === 998 || id === 999) return; setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -174,11 +217,7 @@ export const useStudentsLogic = () => {
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
-    const manejarCambioOfrenda = (valor: string) => {
-        if (valor === '' || /^\d{0,2}(\.\d{0,2})?$/.test(valor)) {
-            setOfrendaDia(valor);
-        }
-    };
+    const manejarCambioOfrenda = (valor: string) => { if (valor === '' || /^\d{0,2}(\.\d{0,2})?$/.test(valor)) { setOfrendaDia(valor); } };
 
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
     const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
@@ -213,21 +252,13 @@ export const useStudentsLogic = () => {
                 leccionDada: seDioLeccion 
             }; 
 
-            if (asistenciaDocId) {
-                payload.id = asistenciaDocId; 
-            }
+            if (asistenciaDocId) { payload.id = asistenciaDocId; }
 
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
-            setAsistenciaDocId(docId); 
-            setAsistenciaRegistradaPor(userData.nombre); 
-            setIsSubmitted(true); 
-            
+            setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
             StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); 
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        } catch (error: any) { 
-            console.error("Detalle técnico del error al guardar asistencia:", error);
-            alert(`Error de Firebase: ${error.message}`); 
-        } 
+        } catch (error: any) { console.error("Detalle técnico del error al guardar asistencia:", error); alert(`Error de Firebase: ${error.message}`); } 
     };
 
     const editarAsistencia = () => { setIsSubmitted(false); };
@@ -244,7 +275,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay // Retornamos para la vista
     };
 };
