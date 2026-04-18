@@ -21,6 +21,7 @@ export const StudentsView = () => {
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
+    const nombreUsuario = userData?.nombre || 'Maestro';
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
@@ -31,7 +32,7 @@ export const StudentsView = () => {
                     <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
-                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
+                    <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
                 </button>
             </div>
 
@@ -44,9 +45,9 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
-                            <h3 className="pd-name-display">{userNameDisplay}</h3>
+                            <h3 className="pd-name-display">{nombreUsuario}</h3>
                             <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
                         </div>
                     </div>
@@ -61,7 +62,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={userNameDisplay} />
+                    <BadgesPanel userName={nombreUsuario} />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
@@ -98,7 +99,6 @@ export const StudentsView = () => {
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
-                        {/* WIDGET DE NOTIFICACIONES */}
                         <div className="home-widget">
                             <div className="home-widget-title"><i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Cumpleaños</div>
                             
@@ -130,14 +130,12 @@ export const StudentsView = () => {
                                 </div>
                             )}
                         </div>
-
                     </div>
                 </div>
             )}
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
-            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -197,13 +195,30 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
                     <p className="st-header-subtitle">Registra la ofrenda y pasa lista.</p>
                     
-                    {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
+                    {/* MENSAJE DE ÉXITO */}
+                    {isSubmitted && (
+                        <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}>
+                            <i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}
+                        </div>
+                    )}
+
+                    {/* NUEVO: BOTÓN DE EDITAR MOVIDO HASTA ARRIBA (JUSTO DEBAJO DEL ÉXITO) */}
+                    {isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
+                        esElAutorDeAsistencia ? (
+                            <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia} style={{ marginTop: 0, marginBottom: '25px' }}>
+                                <i className="fa-solid fa-lock-open"></i> Editar datos guardados
+                            </button>
+                        ) : (
+                            <div style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginBottom: '25px', fontWeight: 'bold' }}>
+                                <i className="fa-solid fa-lock" style={{ marginRight: '5px' }}></i> Bloqueado: La asistencia fue enviada por {asistenciaRegistradaPor}.
+                            </div>
+                        )
+                    )}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
                         
@@ -257,11 +272,11 @@ export const StudentsView = () => {
                         )}
                     </div>
 
-                    {alumnosParaAsistencia.length > 0 && !cargando && (
-                        isSubmitted ? (
-                            esElAutorDeAsistencia ? (<button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia}><i className="fa-solid fa-lock-open"></i> Editar datos guardados</button>) : 
-                            (<div style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginTop: '20px', fontWeight: 'bold' }}><i className="fa-solid fa-lock" style={{ marginRight: '5px' }}></i> Bloqueado: La asistencia fue enviada por {asistenciaRegistradaPor}.</div>)
-                        ) : (<button className="btn-enviar-asistencia animate-fade-in" onClick={enviarAsistencia}><i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia y Ofrenda</button>)
+                    {/* BOTÓN ENVIAR (SOLO APARECE SI NO SE HA ENVIADO LA ASISTENCIA) */}
+                    {!isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
+                        <button className="btn-enviar-asistencia animate-fade-in" onClick={enviarAsistencia}>
+                            <i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia y Ofrenda
+                        </button>
                     )}
                 </div>
             )}
