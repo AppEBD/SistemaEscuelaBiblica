@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
 import { doc, updateDoc } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
@@ -34,15 +34,96 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
-    const [notificaciones, setNotificaciones] = useState([
-        { id: 1, titulo: "Reunión de Maestros", mensaje: "Sábado a las 4:00 PM. No faltes.", fecha: "Hoy", leida: false },
-        { id: 2, titulo: "Material Didáctico", mensaje: "Pasar a la oficina por recursos.", fecha: "Ayer", leida: true }
-    ]);
+    // ==========================================
+    // SISTEMA DE NOTIFICACIONES LIMPIO
+    // ==========================================
+    // 1. Notificaciones oficiales del Admin (Vacío por ahora)
+    const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
+
+    // 2. Cálculo en vivo de los cumpleañeros de ESTA semana (Domingo a Sábado)
+    const notificacionCumpleanos = useMemo(() => {
+        if (alumnos.length === 0) return null;
+        
+        const hoy = new Date();
+        const diaSemana = hoy.getDay(); // 0 es Domingo
+        
+        // Calculamos las fechas extremas de esta semana
+        const inicioSemana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - diaSemana);
+        const finSemana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + (6 - diaSemana), 23, 59, 59);
+
+        // Filtramos quién cumple años en este rango de días
+        const cumpleaneros = alumnos.filter(a => {
+            if (!a.fechaNacimiento) return false;
+            const partes = a.fechaNacimiento.split('-');
+            if (partes.length !== 3) return false;
+            
+            const mes = parseInt(partes[1], 10) - 1; // Enero es 0
+            const dia = parseInt(partes[2], 10);
+            
+            const fechaCumple = new Date(hoy.getFullYear(), mes, dia);
+            return fechaCumple >= inicioSemana && fechaCumple <= finSemana;
+        }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2], 10) - parseInt(b.fechaNacimiento.split('-')[2], 10));
+
+        if (cumpleaneros.length > 0) {
+            const lineas = cumpleaneros.map(c => {
+                const dia = c.fechaNacimiento.split('-')[2];
+                const rol = c.genero === 'Femenino' ? 'Alumna' : 'Alumno';
+                return `• ${c.nombre} (${rol}) - Día ${dia}`;
+            });
+
+            return {
+                id: 999, // ID reservado para cumpleaños automáticos
+                titulo: "🎂 Cumpleañeros de la Semana",
+                mensaje: `¡Es semana de celebración! No olvides felicitar a:\n\n${lineas.join('\n')}`,
+                fecha: "Esta semana",
+                leida: true, // No tiene sentido "marcar como leída" una lista que debe estar visible
+                isCumple: true
+            };
+        }
+        return null;
+    }, [alumnos]);
+
+    // 3. Juntamos las notificaciones del Admin con los cumpleaños
+    const notificaciones = useMemo(() => {
+        const todas = [...notificacionesAdmin];
+        if (notificacionCumpleanos) {
+            todas.unshift(notificacionCumpleanos); // Ponemos los cumpleaños arriba
+        }
+        return todas;
+    }, [notificacionesAdmin, notificacionCumpleanos]);
+
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
-    const marcarNotificacion = (id: number) => { setNotificaciones(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
+    
+    const marcarNotificacion = (id: number) => { 
+        if (id === 999) return; // Las de cumple no cambian de estado
+        setNotificacionesAdmin(prev => prev.map(n => { 
+            if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } 
+            return n; 
+        })); 
+    };
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
+
+    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
+
+    const guardarNombrePerfil = async () => {
+        if (!userNameDisplay.trim()) return;
+        const userId = userData?.uid || userData?.id; 
+        if (!userId) { alert("Error del sistema: No se detectó un ID de usuario válido."); setIsEditingName(false); return; }
+
+        try {
+            let nombreColeccion = 'usuarios_maestro'; 
+            if (userData?.rol === 'AUXILIAR') { nombreColeccion = 'usuarios_auxiliar'; } 
+            else if (userData?.rol === 'MAESTRO') { nombreColeccion = 'usuarios_maestro'; }
+
+            const userRef = doc(db, nombreColeccion, userId);
+            await updateDoc(userRef, { nombre: userNameDisplay });
+            setIsEditingName(false); alert("¡Tu nombre ha sido actualizado correctamente!");
+        } catch (error: any) { console.error("Detalle técnico del error:", error); alert(`Error de Firebase: ${error.message}`); }
+    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -86,57 +167,6 @@ export const useStudentsLogic = () => {
         StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial));
         return () => unsub();
     }, [userData]);
-
-    // ==========================================
-    // NUEVO: GENERADOR DE NOTIFICACIÓN DE CUMPLEAÑOS
-    // ==========================================
-    useEffect(() => {
-        if (alumnos.length === 0) return;
-
-        const hoy = new Date();
-        const diaSemana = hoy.getDay(); // 0 es Domingo
-        
-        // Calculamos el inicio y fin de la semana actual
-        const inicioSemana = new Date(hoy);
-        inicioSemana.setDate(hoy.getDate() - diaSemana);
-        inicioSemana.setHours(0, 0, 0, 0);
-
-        const finSemana = new Date(inicioSemana);
-        finSemana.setDate(inicioSemana.getDate() + 6);
-        finSemana.setHours(23, 59, 59, 999);
-
-        // Filtramos alumnos que cumplen años esta semana
-        const cumpleaneros = alumnos.filter(a => {
-            if (!a.fechaNacimiento) return false;
-            const [_, mStr, dStr] = a.fechaNacimiento.split('-');
-            const fechaCumple = new Date(hoy.getFullYear(), parseInt(mStr) - 1, parseInt(dStr));
-            fechaCumple.setHours(0, 0, 0, 0);
-            
-            return fechaCumple >= inicioSemana && fechaCumple <= finSemana;
-        }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2]) - parseInt(b.fechaNacimiento.split('-')[2]));
-
-        if (cumpleaneros.length > 0) {
-            const lineas = cumpleaneros.map(c => {
-                const dia = c.fechaNacimiento.split('-')[2];
-                const rol = c.genero === 'Femenino' ? 'Alumna' : 'Alumno';
-                return `• ${c.nombre} (${rol}) - Día ${dia}`;
-            });
-
-            const notifCumple = {
-                id: 999, // ID reservado para cumpleaños
-                titulo: "🎂 Cumpleañeros de la Semana",
-                mensaje: `¡Es semana de celebración! No olvides felicitar a:\n\n${lineas.join('\n')}`,
-                fecha: "Esta semana",
-                leida: false
-            };
-
-            setNotificaciones(prev => {
-                // Evitamos duplicar la notificación
-                const sinCumples = prev.filter(n => n.id !== 999);
-                return [notifCumple, ...sinCumples];
-            });
-        }
-    }, [alumnos]);
 
     const metaLeccionesAdmin = 0; 
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
@@ -212,7 +242,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
