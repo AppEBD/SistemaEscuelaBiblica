@@ -24,8 +24,6 @@ export const StudentsView = () => {
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
     const nombreUsuario = userData?.nombre || 'Maestro';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
-    
-    // Obtenemos tu ID de usuario de forma segura
     const myUserId = userData?.uid || userData?.id; 
 
     return (
@@ -129,11 +127,18 @@ export const StudentsView = () => {
                             ) : (
                                 <div className="notif-list">
                                     {notificaciones.map((n: any) => {
-                                        const rData = reaccionesBD[String(n.id)] || { up: 0, down: 0, cake: 0, usuarios: {} };
-                                        
-                                        // Usamos tu ID seguro para saber si tú, Juan o María votaron.
-                                        const miReaccion = (myUserId && rData.usuarios) ? rData.usuarios[myUserId] : null;
+                                        const rData = reaccionesBD[String(n.id)] || { usuarios: {} };
+                                        const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
                                         const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
+
+                                        // NUEVO: Contamos matemáticamente a partir del objeto. 
+                                        // Es 100% exacto y nunca se bugea.
+                                        let up = 0, down = 0, cake = 0;
+                                        Object.values(rData.usuarios).forEach(voto => {
+                                            if (voto === 'up') up++;
+                                            if (voto === 'down') down++;
+                                            if (voto === 'cake') cake++;
+                                        });
 
                                         return (
                                         <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
@@ -151,21 +156,20 @@ export const StudentsView = () => {
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
                                                 
-                                                {/* BARRA DE REACCIONES REAL-TIME */}
                                                 <div className="notif-reactions">
                                                     <button className={`reaction-btn ${miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'up', e)}>
-                                                        👍🏻 {rData.up > 0 ? rData.up : ''}
+                                                        👍🏻 {up > 0 ? up : ''}
                                                     </button>
                                                     
                                                     {!esCumple && (
                                                         <button className={`reaction-btn ${miReaccion === 'down' ? 'active-down' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'down', e)}>
-                                                            👎🏻 {rData.down > 0 ? rData.down : ''}
+                                                            👎🏻 {down > 0 ? down : ''}
                                                         </button>
                                                     )}
                                                     
                                                     {esCumple && (
                                                         <button className={`reaction-btn ${miReaccion === 'cake' ? 'active-cake' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'cake', e)}>
-                                                            🎂 {rData.cake > 0 ? rData.cake : ''}
+                                                            🎂 {cake > 0 ? cake : ''}
                                                         </button>
                                                     )}
                                                 </div>
