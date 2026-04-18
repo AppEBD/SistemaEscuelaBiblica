@@ -15,17 +15,19 @@ export const StudentsView = () => {
         ofrendaDia, manejarCambioOfrenda, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
     const nombreUsuario = userData?.nombre || 'Maestro';
+    const inicial = nombreUsuario.charAt(0).toUpperCase();
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
+            {/* ENCABEZADO GLOBAL VISIBLE */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -36,6 +38,7 @@ export const StudentsView = () => {
                 </button>
             </div>
 
+            {/* PERFIL LATERAL (DRAWER) */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -45,7 +48,7 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{inicial}</div>
                         <div className="pd-name-group">
                             <h3 className="pd-name-display">{nombreUsuario}</h3>
                             <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
@@ -76,6 +79,7 @@ export const StudentsView = () => {
                 </div>
             </div>
 
+            {/* PANTALLA DE INICIO (HOME) */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
@@ -136,6 +140,7 @@ export const StudentsView = () => {
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
+            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -195,19 +200,20 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
                     <p className="st-header-subtitle">Registra la ofrenda y pasa lista.</p>
                     
-                    {/* MENSAJE DE ÉXITO */}
+                    {/* MENSAJE VERDE DE ÉXITO */}
                     {isSubmitted && (
-                        <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}>
+                        <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}>
                             <i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}
                         </div>
                     )}
 
-                    {/* NUEVO: BOTÓN DE EDITAR MOVIDO HASTA ARRIBA (JUSTO DEBAJO DEL ÉXITO) */}
+                    {/* NUEVO: BOTÓN DE EDITAR EN LA PARTE SUPERIOR */}
                     {isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
                         esElAutorDeAsistencia ? (
                             <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia} style={{ marginTop: 0, marginBottom: '25px' }}>
@@ -272,7 +278,6 @@ export const StudentsView = () => {
                         )}
                     </div>
 
-                    {/* BOTÓN ENVIAR (SOLO APARECE SI NO SE HA ENVIADO LA ASISTENCIA) */}
                     {!isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
                         <button className="btn-enviar-asistencia animate-fade-in" onClick={enviarAsistencia}>
                             <i className="fa-solid fa-cloud-arrow-up"></i> Guardar Asistencia y Ofrenda
@@ -281,6 +286,7 @@ export const StudentsView = () => {
                 </div>
             )}
 
+            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
