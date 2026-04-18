@@ -1,5 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
+import { doc, updateDoc } from 'firebase/firestore'; 
+import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -85,6 +87,57 @@ export const useStudentsLogic = () => {
         return () => unsub();
     }, [userData]);
 
+    // ==========================================
+    // NUEVO: GENERADOR DE NOTIFICACIÓN DE CUMPLEAÑOS
+    // ==========================================
+    useEffect(() => {
+        if (alumnos.length === 0) return;
+
+        const hoy = new Date();
+        const diaSemana = hoy.getDay(); // 0 es Domingo
+        
+        // Calculamos el inicio y fin de la semana actual
+        const inicioSemana = new Date(hoy);
+        inicioSemana.setDate(hoy.getDate() - diaSemana);
+        inicioSemana.setHours(0, 0, 0, 0);
+
+        const finSemana = new Date(inicioSemana);
+        finSemana.setDate(inicioSemana.getDate() + 6);
+        finSemana.setHours(23, 59, 59, 999);
+
+        // Filtramos alumnos que cumplen años esta semana
+        const cumpleaneros = alumnos.filter(a => {
+            if (!a.fechaNacimiento) return false;
+            const [_, mStr, dStr] = a.fechaNacimiento.split('-');
+            const fechaCumple = new Date(hoy.getFullYear(), parseInt(mStr) - 1, parseInt(dStr));
+            fechaCumple.setHours(0, 0, 0, 0);
+            
+            return fechaCumple >= inicioSemana && fechaCumple <= finSemana;
+        }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2]) - parseInt(b.fechaNacimiento.split('-')[2]));
+
+        if (cumpleaneros.length > 0) {
+            const lineas = cumpleaneros.map(c => {
+                const dia = c.fechaNacimiento.split('-')[2];
+                const rol = c.genero === 'Femenino' ? 'Alumna' : 'Alumno';
+                return `• ${c.nombre} (${rol}) - Día ${dia}`;
+            });
+
+            const notifCumple = {
+                id: 999, // ID reservado para cumpleaños
+                titulo: "🎂 Cumpleañeros de la Semana",
+                mensaje: `¡Es semana de celebración! No olvides felicitar a:\n\n${lineas.join('\n')}`,
+                fecha: "Esta semana",
+                leida: false
+            };
+
+            setNotificaciones(prev => {
+                // Evitamos duplicar la notificación
+                const sinCumples = prev.filter(n => n.id !== 999);
+                return [notifCumple, ...sinCumples];
+            });
+        }
+    }, [alumnos]);
+
     const metaLeccionesAdmin = 0; 
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
@@ -118,7 +171,6 @@ export const useStudentsLogic = () => {
             alumnosParaAsistencia.forEach(a => { registrosFinales[a.id!] = asistencia[a.id!] || 'Presente'; }); 
             const ofrendaNumerica = parseFloat(ofrendaDia || "0") || 0;
 
-            // EL ARREGLO: Eliminamos la propiedad 'id' si no existe, en lugar de pasar 'undefined'
             const payload: any = { 
                 campo: userData.campo, 
                 fecha: fechaHoy, 
@@ -130,7 +182,7 @@ export const useStudentsLogic = () => {
             }; 
 
             if (asistenciaDocId) {
-                payload.id = asistenciaDocId; // Solo agregamos el ID si estamos editando
+                payload.id = asistenciaDocId; 
             }
 
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
