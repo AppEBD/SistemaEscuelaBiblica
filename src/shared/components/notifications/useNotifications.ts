@@ -1,26 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { doc, collection, getDocs, onSnapshot, runTransaction } from 'firebase/firestore';
+import { doc, collection, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../../modules/auth/application/useAuth';
 
 export const useNotifications = () => {
     const { userData } = useAuth();
     const [staffList, setStaffList] = useState<any[]>([]);
+    
+    // Avisos generales
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([
         { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva para todos los maestros y auxiliares.", fecha: "Sistema", leida: false }
     ]);
+
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
-    const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
-    const [deviceId] = useState(() => {
-        let id = localStorage.getItem('ebd_device_id');
-        if (!id) {
-            id = 'dev_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
-            localStorage.setItem('ebd_device_id', id);
-        }
-        return id;
-    });
+    // ==========================================
+    // REACCIONES WHATSAPP STYLE (SIN ERRORES DE SUMA/RESTA)
+    // ==========================================
+    const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
@@ -45,9 +43,14 @@ export const useNotifications = () => {
                 const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
                 const usuarios = actualData.usuarios || {};
 
-                if (usuarios[userId] === tipo) { delete usuarios[userId]; } 
-                else { usuarios[userId] = tipo; }
+                // Lógica de WhatsApp: Si tocas el mismo, se quita. Si tocas otro, se reemplaza.
+                if (usuarios[userId] === tipo) {
+                    delete usuarios[userId];
+                } else {
+                    usuarios[userId] = tipo;
+                }
 
+                // Recuento matemático desde cero (nunca falla, nunca da negativos)
                 let up = 0, down = 0, cake = 0;
                 Object.values(usuarios).forEach(voto => {
                     if (voto === 'up') up++;
@@ -57,11 +60,15 @@ export const useNotifications = () => {
 
                 transaction.set(docRef, { up, down, cake, usuarios }, { merge: true });
             });
-        } catch (error) { console.error("Error guardando reacción:", error); }
+        } catch (error) {
+            console.error("Error guardando reacción:", error);
+        }
     };
 
+    // ==========================================
+    // DESCARGAR A TODO EL STAFF (EN VIVO)
+    // ==========================================
     useEffect(() => {
-        if (!userData || !userData.uid) return;
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
         const unsubs: any[] = [];
         const staffMap: Record<string, any[]> = {};
@@ -83,19 +90,27 @@ export const useNotifications = () => {
                     });
                     staffMap[nombreCol] = listaCol;
                     actualizarStaff();
-                }, () => {});
+                }, (error) => {
+                    console.warn(`Aviso: No se pudo leer la colección ${nombreCol}.`);
+                });
                 unsubs.push(unsub);
             } catch (e) {}
         });
+
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, [userData]);
+    }, []);
 
     const currentYear = new Date().getFullYear();
 
+    // ==========================================
+    // CÁLCULO DE CUMPLEAÑOS
+    // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
+        
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        
         const ayer = new Date(hoy);
         ayer.setDate(hoy.getDate() - 1);
         const mmddAyer = `${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
@@ -103,6 +118,7 @@ export const useNotifications = () => {
         const diasDeEstaSemana = new Set<string>();
         const domingo = new Date(hoy);
         domingo.setDate(hoy.getDate() - hoy.getDay());
+        
         for (let i = 0; i < 7; i++) {
             const dia = new Date(domingo);
             dia.setDate(domingo.getDate() + i);
@@ -126,9 +142,11 @@ export const useNotifications = () => {
         const cards = cumpleaneros.map(c => {
             const esMio = c.id === userId;
             const mmddCumple = c.fechaNacimiento.substring(5);
+            
             const esHoy = mmddCumple === mmddHoy;
             const esAyer = mmddCumple === mmddAyer;
             const yaPaso = mmddCumple < mmddHoy; 
+
             const diaNum = c.fechaNacimiento.split('-')[2];
             const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
             const sedeDisplay = c.campo ? ` - ${c.campo}` : '';
@@ -142,7 +160,8 @@ export const useNotifications = () => {
                     mensaje: esHoy 
                         ? `¡Felicidades en tu día especial, ${nombreUsuario.split(' ')[0]}! Que Dios te bendiga grandemente hoy.`
                         : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}. ¡Deseamos que hayas tenido un día muy bendecido!` : `Tu cumpleaños es esta semana (Día ${diaNum}). ¡Ya casi celebramos!`),
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumplePersonal: true
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
+                    leida: true, isCumplePersonal: true
                 };
             } else {
                 return {
@@ -151,7 +170,8 @@ export const useNotifications = () => {
                     mensaje: esHoy
                         ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado}${sedeDisplay})! No olvides enviarle una felicitación.`
                         : (yaPaso ? `El día ${diaNum} fue el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Aún estás a tiempo de felicitarle!` : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Prepárate para felicitarle!`),
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumpleEquipo: true
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
+                    leida: true, isCumpleEquipo: true
                 };
             }
         });
@@ -168,11 +188,18 @@ export const useNotifications = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
+    // ==========================================
+    // MOTOR DE PRIORIDAD Y ORDENAMIENTO
+    // ==========================================
     const getPesoFecha = (fechaStr: string) => {
         const f = (fechaStr || '').toLowerCase().trim();
-        if (f === 'hoy') return 1; if (f === 'ayer') return 2; if (f === 'esta semana') return 3;
-        if (f === 'semana pasada') return 4; if (f === 'este mes') return 5; if (f === 'mes pasado') return 6;
-        return 99; 
+        if (f === 'hoy') return 1;
+        if (f === 'ayer') return 2;
+        if (f === 'esta semana') return 3;
+        if (f === 'semana pasada') return 4;
+        if (f === 'este mes') return 5;
+        if (f === 'mes pasado') return 6;
+        return 99; // Sistema
     };
 
     const notificaciones = useMemo(() => {
@@ -186,5 +213,8 @@ export const useNotifications = () => {
         setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); 
     };
 
-    return { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData };
+    return { 
+        notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, 
+        showBirthdayOverlay, userData 
+    };
 };
