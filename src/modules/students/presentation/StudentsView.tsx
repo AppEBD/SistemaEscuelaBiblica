@@ -131,8 +131,6 @@ export const StudentsView = () => {
                                         const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
                                         const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
 
-                                        // NUEVO: Contamos matemáticamente a partir del objeto. 
-                                        // Es 100% exacto y nunca se bugea.
                                         let up = 0, down = 0, cake = 0;
                                         Object.values(rData.usuarios).forEach(voto => {
                                             if (voto === 'up') up++;
