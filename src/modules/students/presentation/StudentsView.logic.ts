@@ -44,7 +44,7 @@ export const useStudentsLogic = () => {
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // 1. TEMA DE COLOR PERSISTENTE (CON CANDADO)
+    // 1. TEMA DE COLOR PERSISTENTE
     // ==========================================
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>(() => {
         return (localStorage.getItem('ebd_theme_v2') as any) || 'indigo';
@@ -55,7 +55,7 @@ export const useStudentsLogic = () => {
     }, [appTheme]);
 
     // ==========================================
-    // 2. REACCIONES WHATSAPP STYLE (NO SE RESTAN)
+    // 2. REACCIONES WHATSAPP STYLE (CON USER_ID Y TOGGLE LIBRE)
     // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
@@ -70,7 +70,7 @@ export const useStudentsLogic = () => {
 
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
-        const userId = userData?.uid || userData?.id;
+        const userId = userData?.uid || userData?.id; // Volvemos a usar la cuenta de usuario real
         if (!userId) return;
 
         try { navigator.vibrate(50); } catch(err){} 
@@ -85,32 +85,38 @@ export const useStudentsLogic = () => {
                 const misVotosActuales = actualData.usuarios || {};
                 const miVotoAnterior = misVotosActuales[userId];
 
-                // REGLA ESTRICTA TIPO WHATSAPP: Si das clic en la misma reacción, NO HACE NADA (No se resta).
-                if (miVotoAnterior === tipo) {
-                    return; 
-                }
-
                 let nuevoUp = actualData.up || 0;
                 let nuevoDown = actualData.down || 0;
                 let nuevoCake = actualData.cake || 0;
+                let nuevoVotoMio: string | null = tipo;
 
-                // Si tenía una reacción distinta, la cambiamos (Restamos la vieja)
-                if (miVotoAnterior === 'up') nuevoUp--;
-                if (miVotoAnterior === 'down') nuevoDown--;
-                if (miVotoAnterior === 'cake') nuevoCake--;
-                
-                // Sumamos la nueva elección
-                if (tipo === 'up') nuevoUp++;
-                if (tipo === 'down') nuevoDown++;
-                if (tipo === 'cake') nuevoCake++;
+                // Lógica Toggle: Si toco la misma, me la quita. Si no la tenía, me la pone.
+                if (miVotoAnterior === tipo) {
+                    nuevoVotoMio = null; 
+                    if (tipo === 'up') nuevoUp--;
+                    if (tipo === 'down') nuevoDown--;
+                    if (tipo === 'cake') nuevoCake--;
+                } else {
+                    if (miVotoAnterior === 'up') nuevoUp--;
+                    if (miVotoAnterior === 'down') nuevoDown--;
+                    if (miVotoAnterior === 'cake') nuevoCake--;
+                    
+                    if (tipo === 'up') nuevoUp++;
+                    if (tipo === 'down') nuevoDown++;
+                    if (tipo === 'cake') nuevoCake++;
+                }
 
-                // Seguridad: los números nunca pueden ser menores a cero
+                // Blindaje anti-negativos
                 nuevoUp = Math.max(0, nuevoUp);
                 nuevoDown = Math.max(0, nuevoDown);
                 nuevoCake = Math.max(0, nuevoCake);
 
                 const nuevosUsuarios = { ...misVotosActuales };
-                nuevosUsuarios[userId] = tipo;
+                if (nuevoVotoMio === null) {
+                    delete nuevosUsuarios[userId];
+                } else {
+                    nuevosUsuarios[userId] = nuevoVotoMio;
+                }
 
                 transaction.set(docRef, {
                     up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
@@ -122,39 +128,46 @@ export const useStudentsLogic = () => {
     };
 
     // ==========================================
-    // 3. BUSCAR AL STAFF GLOBAL DE LA SEDE
+    // 3. BUSCAR AL STAFF GLOBAL (¡SIN FILTROS!)
     // ==========================================
     useEffect(() => {
-        const fetchStaff = async () => {
-            const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
-            let todoElStaff: any[] = [];
-            
-            for (const nombreCol of colecciones) {
-                try {
-                    const snap = await getDocs(collection(db, nombreCol));
-                    snap.forEach(documento => {
-                        const data = documento.data();
-                        const campoData = (data.campo || '').toLowerCase().trim();
-                        const campoUser = (userData?.campo || '').toLowerCase().trim();
-
-                        if (campoData === campoUser) { 
-                            const rolLimpio = nombreCol.split('_')[1];
-                            todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
-                        }
-                    });
-                } catch (e) { 
-                    console.warn(`Ignorando colección ${nombreCol} por posible falta de permisos.`);
-                }
-            }
+        const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
+        const unsubs: any[] = [];
+        const staffMap: Record<string, any[]> = {};
+        
+        const actualizarStaff = () => {
+            const todoElStaff: any[] = [];
+            Object.values(staffMap).forEach(lista => todoElStaff.push(...lista));
             setStaffList(todoElStaff);
         };
-        if (userData?.campo) { fetchStaff(); }
-    }, [userData?.campo]);
+
+        colecciones.forEach(nombreCol => {
+            try {
+                // Si Firebase rechaza por seguridad, lanzará un error y lo ignoraremos.
+                // Si tienes permisos, traerá a todos los usuarios de la base de datos.
+                const unsub = onSnapshot(collection(db, nombreCol), (snapshot) => {
+                    const listaCol: any[] = [];
+                    snapshot.forEach(documento => {
+                        const data = documento.data();
+                        const rolLimpio = nombreCol.split('_')[1];
+                        listaCol.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
+                    });
+                    staffMap[nombreCol] = listaCol;
+                    actualizarStaff();
+                }, (error) => {
+                    console.error(`Firebase bloqueó el acceso a la colección ${nombreCol}. Revisa las reglas de seguridad.`);
+                });
+                unsubs.push(unsub);
+            } catch (e) {}
+        });
+
+        return () => { unsubs.forEach(unsub => unsub && unsub()); };
+    }, []);
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // 4. CÁLCULO INTELIGENTE DE CUMPLEAÑOS
+    // 4. CÁLCULO DE CUMPLEAÑOS
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -200,6 +213,7 @@ export const useStudentsLogic = () => {
 
             const diaNum = c.fechaNacimiento.split('-')[2];
             const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
+            const sedeDisplay = c.campo ? ` - ${c.campo}` : '';
             
             const notifId = `cumple-${c.id}-${currentYear}`;
 
@@ -222,10 +236,10 @@ export const useStudentsLogic = () => {
                     id: notifId,
                     titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : (yaPaso ? `🎂 Cumpleaños reciente de ${c.nombre.split(' ')[0]}` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`),
                     mensaje: esHoy
-                        ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado})! No olvides enviarle una felicitación.`
+                        ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado}${sedeDisplay})! No olvides enviarle una felicitación.`
                         : (yaPaso
-                            ? `El día ${diaNum} fue el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Aún estás a tiempo de desearle bendiciones!`
-                            : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Prepárate para felicitarle!`),
+                            ? `El día ${diaNum} fue el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Aún estás a tiempo de desearle bendiciones!`
+                            : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Prepárate para felicitarle!`),
                     fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
                     leida: true, 
                     isCumpleEquipo: true
@@ -256,12 +270,11 @@ export const useStudentsLogic = () => {
         if (f === 'semana pasada') return 4;
         if (f === 'este mes') return 5;
         if (f === 'mes pasado') return 6;
-        return 99; // Para "Sistema" o cualquier otra fecha lejana
+        return 99;
     };
 
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
-        // Las ordena numéricamente: 1 (Hoy) hasta arriba, 99 (Sistema) hasta abajo.
         return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
     }, [notificacionesAdmin, notificacionesCumple]);
 
