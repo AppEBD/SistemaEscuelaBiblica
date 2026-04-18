@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, updateDoc, collection, getDocs } from 'firebase/firestore'; 
+import { doc, collection, getDocs } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -36,20 +36,15 @@ export const useStudentsLogic = () => {
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
-
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
 
-    // NUEVOS ESTADOS PARA EL CONFETI
+    // ESTADOS PARA EL CONFETI
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
-    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
-
     // ==========================================
-    // BUSCAR A TODO EL STAFF (IGNORANDO MAYÚSCULAS/ESPACIOS)
+    // BUSCAR A TODO EL STAFF 
     // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
@@ -61,7 +56,6 @@ export const useStudentsLogic = () => {
                     const snap = await getDocs(collection(db, nombreCol));
                     snap.forEach(documento => {
                         const data = documento.data();
-                        // Normalizamos los textos para que "La Isla" sea igual a "la isla "
                         const campoData = (data.campo || '').toLowerCase().trim();
                         const campoUser = (userData?.campo || '').toLowerCase().trim();
 
@@ -71,7 +65,7 @@ export const useStudentsLogic = () => {
                         }
                     });
                 } catch (e) {
-                    // Si una colección no existe, simplemente seguimos buscando en las demás
+                    // Ignorar
                 }
             }
             setStaffList(todoElStaff);
@@ -83,10 +77,10 @@ export const useStudentsLogic = () => {
     }, [userData?.campo]);
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS Y ANIMACIÓN
+    // CÁLCULO DE CUMPLEAÑOS (SEGURO CONTRA CRASHES)
     // ==========================================
-    const { notifPersonal, notifEquipo } = useMemo(() => {
-        if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null };
+    const { notifPersonal, notifEquipo, esMiCumpleHoy } = useMemo(() => {
+        if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null, esMiCumpleHoy: false };
         
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -103,25 +97,22 @@ export const useStudentsLogic = () => {
             diasDeEstaSemana.add(`${mesFormat}-${diaFormat}`);
         }
 
-        // 1. Verificar si es mi cumpleaños HOY para el Confeti
         const userId = userData?.uid || userData?.id;
         const miPerfil = staffList.find(s => s.id === userId);
+        const nombreUsuario = userData?.nombre || 'Maestro';
+        
         let personalNotif = null;
+        let miCumpleFlag = false;
 
+        // 1. Verificamos el cumple personal
         if (miPerfil && typeof miPerfil.fechaNacimiento === 'string') {
             const miCumpleMMDD = miPerfil.fechaNacimiento.substring(5);
             if (miCumpleMMDD === mmddHoy) {
-                // Disparamos la animación solo 1 vez por sesión
-                if (!hasShownOverlay) {
-                    setShowBirthdayOverlay(true);
-                    setHasShownOverlay(true);
-                    setTimeout(() => setShowBirthdayOverlay(false), 5500); // Ocultar tras 5.5s
-                }
-                
+                miCumpleFlag = true;
                 personalNotif = {
                     id: 998,
                     titulo: "🎉 ¡Feliz Cumpleaños!",
-                    mensaje: `¡Felicidades en tu cumpleaños, ${userNameDisplay.split(' ')[0]}! Que Dios bendiga tu vida grandemente y recompense tu esfuerzo.`,
+                    mensaje: `¡Felicidades en tu cumpleaños, ${nombreUsuario.split(' ')[0]}! Que Dios bendiga tu vida grandemente y recompense tu esfuerzo.`,
                     fecha: "Hoy",
                     leida: true,
                     isCumplePersonal: true
@@ -129,7 +120,7 @@ export const useStudentsLogic = () => {
             }
         }
 
-        // 2. Lista de cumpleañeros de la semana
+        // 2. Lista del equipo
         const cumpleaneros = staffList.filter(user => {
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
             const partes = user.fechaNacimiento.split('-');
@@ -157,13 +148,26 @@ export const useStudentsLogic = () => {
             };
         }
 
-        return { notifPersonal: personalNotif, notifEquipo: equipoNotif };
-    }, [staffList, userData, hasShownOverlay, userNameDisplay]);
+        return { notifPersonal: personalNotif, notifEquipo: equipoNotif, esMiCumpleHoy: miCumpleFlag };
+    }, [staffList, userData]);
 
+    // ==========================================
+    // DISPARADOR SEGURO DE ANIMACIÓN (USEEFFECT)
+    // ==========================================
+    useEffect(() => {
+        if (esMiCumpleHoy && !hasShownOverlay) {
+            setShowBirthdayOverlay(true);
+            setHasShownOverlay(true);
+            const timer = setTimeout(() => setShowBirthdayOverlay(false), 5500);
+            return () => clearTimeout(timer);
+        }
+    }, [esMiCumpleHoy, hasShownOverlay]);
+
+    // Combina todas las notificaciones
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesAdmin];
         if (notifEquipo) todas.unshift(notifEquipo);
-        if (notifPersonal) todas.unshift(notifPersonal); // La personal siempre hasta arriba
+        if (notifPersonal) todas.unshift(notifPersonal); 
         return todas;
     }, [notificacionesAdmin, notifPersonal, notifEquipo]);
 
@@ -258,7 +262,7 @@ export const useStudentsLogic = () => {
             setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
             StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); 
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        } catch (error: any) { console.error("Detalle técnico del error al guardar asistencia:", error); alert(`Error de Firebase: ${error.message}`); } 
+        } catch (error: any) { console.error("Detalle técnico del error:", error); alert(`Error de Firebase: ${error.message}`); } 
     };
 
     const editarAsistencia = () => { setIsSubmitted(false); };
@@ -275,7 +279,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay // Retornamos para la vista
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay
     };
 };
