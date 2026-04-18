@@ -27,7 +27,6 @@ export const StudentsView = () => {
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* OVERLAY DE CONFETI (SÓLO SI ES TU CUMPLEAÑOS HOY) */}
             {showBirthdayOverlay && (
                 <div className="birthday-overlay">
                     <div className="emoji-confetti" style={{left: '10%', animationDuration: '3s', animationDelay: '0s'}}>🎉</div>
@@ -216,14 +215,12 @@ export const StudentsView = () => {
                     <h1 className="st-header-title">Asistencia</h1>
                     <p className="st-header-subtitle">Registra la ofrenda y pasa lista.</p>
                     
-                    {/* MENSAJE DE ÉXITO ARRIBA */}
                     {isSubmitted && (
                         <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}>
                             <i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}
                         </div>
                     )}
 
-                    {/* BOTÓN DE EDITAR ARRIBA PARA EVITAR SCROLL */}
                     {isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
                         esElAutorDeAsistencia ? (
                             <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia} style={{ marginTop: 0, marginBottom: '25px' }}>
@@ -237,6 +234,7 @@ export const StudentsView = () => {
                     )}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
+                        
                         <div className="global-ofrenda-card">
                             <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
                             <div className="global-ofrenda-input-wrapper">
