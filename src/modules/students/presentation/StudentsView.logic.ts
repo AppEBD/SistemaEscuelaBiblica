@@ -103,9 +103,6 @@ export const useStudentsLogic = () => {
     const alumnosParaAsistencia = alumnos.filter(alumno => { if (asistenciaDocId) return asistencia.hasOwnProperty(alumno.id!); return true; });
     const resumenAsistencia = { total: alumnosParaAsistencia.length, presentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Presente').length, ausentes: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Ausente').length, permisos: alumnosParaAsistencia.filter(a => (asistencia[a.id!] || 'Presente') === 'Permiso').length, };
 
-    // ==========================================
-    // ENVÍO DE ASISTENCIA CON REPORTE DE ERROR REAL
-    // ==========================================
     const enviarAsistencia = async () => { 
         if (!userData?.campo || !userData?.nombre) return; 
 
@@ -119,20 +116,22 @@ export const useStudentsLogic = () => {
             const fechaHoy = new Date().toISOString().split('T')[0]; 
             const registrosFinales: Record<string, string> = {}; 
             alumnosParaAsistencia.forEach(a => { registrosFinales[a.id!] = asistencia[a.id!] || 'Presente'; }); 
-            
-            // Seguridad: Forzamos la conversión a número para evitar que Firebase colapse si la ofrenda está vacía
             const ofrendaNumerica = parseFloat(ofrendaDia || "0") || 0;
 
-            const payload = { 
-                id: asistenciaDocId || undefined, 
+            // EL ARREGLO: Eliminamos la propiedad 'id' si no existe, en lugar de pasar 'undefined'
+            const payload: any = { 
                 campo: userData.campo, 
                 fecha: fechaHoy, 
-                registros: registrosFinales as any, 
+                registros: registrosFinales, 
                 resumen: { ...resumenAsistencia, ofrendaTotal: ofrendaNumerica }, 
                 registradoPor: userData.nombre, 
                 numeroLeccion: numeroLeccion, 
                 leccionDada: seDioLeccion 
             }; 
+
+            if (asistenciaDocId) {
+                payload.id = asistenciaDocId; // Solo agregamos el ID si estamos editando
+            }
 
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
             setAsistenciaDocId(docId); 
