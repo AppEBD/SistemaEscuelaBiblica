@@ -12,7 +12,7 @@ export const StudentsView = () => {
         alumnos, alumnosParaAsistencia, cargando, form, setForm, isModalOpen, setIsModalOpen,
         abrirModalNuevo, abrirModalEditar, guardarAlumno, eliminarAlumno, days, months, years, editandoId, userData,
         activeTab, setActiveTab, mainTab, setMainTab, obtenerCumpleanerosPorMes, asistencia, actualizarAsistencia, resumenAsistencia, enviarAsistencia,
-        ofrendaDia, setOfrendaDia, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
+        ofrendaDia, manejarCambioOfrenda, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
@@ -21,19 +21,18 @@ export const StudentsView = () => {
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
-    const nombreUsuario = userData?.nombre || 'Maestro';
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* ENCABEZADO GLOBAL VISIBLE */}
+            {/* ENCABEZADO GLOBAL */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
                     <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
-                    <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
+                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
                 </button>
             </div>
 
@@ -47,10 +46,10 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
-                            <h3 className="pd-name-display">{nombreUsuario}</h3>
-                            <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
+                            <h3 className="pd-name-display">{userNameDisplay}</h3>
+                            <p className="pd-role">Maestro en {userData?.campo}</p>
                         </div>
                     </div>
 
@@ -64,7 +63,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={nombreUsuario} />
+                    <BadgesPanel userName={userNameDisplay} />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
@@ -192,7 +191,22 @@ export const StudentsView = () => {
                     {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
-                        <div className="global-ofrenda-card"><div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div><div className="global-ofrenda-input-wrapper"><span>$</span><input type="number" className="global-ofrenda-input" placeholder="0.00" step="0.05" min="0" value={ofrendaDia} onChange={(e) => setOfrendaDia(e.target.value)} /></div></div>
+                        <div className="global-ofrenda-card">
+                            <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
+                            <div className="global-ofrenda-input-wrapper">
+                                <span>$</span>
+                                {/* NUEVO: CAMBIADO EL TIPO DE INPUT Y LA FUNCIÓN DE CAMBIO */}
+                                <input 
+                                    type="text" 
+                                    inputMode="decimal"
+                                    className="global-ofrenda-input" 
+                                    placeholder="0.00" 
+                                    value={ofrendaDia} 
+                                    onChange={(e) => manejarCambioOfrenda(e.target.value)} 
+                                />
+                            </div>
+                        </div>
+
                         <div className="premium-summary"><div className="ps-header">Resumen de Hoy</div><div className="ps-stats"><div className="ps-item"><span className="ps-val" style={{ color: '#10b981' }}>{resumenAsistencia.presentes}</span><span className="ps-lbl">Presentes</span></div><div className="ps-divider"></div><div className="ps-item"><span className="ps-val" style={{ color: '#ef4444' }}>{resumenAsistencia.ausentes}</span><span className="ps-lbl">Ausentes</span></div><div className="ps-divider"></div><div className="ps-item"><span className="ps-val" style={{ color: '#f59e0b' }}>{resumenAsistencia.permisos}</span><span className="ps-lbl">Permisos</span></div></div></div>
                         
                         <div className="lesson-tracker-box">
@@ -390,7 +404,6 @@ export const StudentsView = () => {
                             <select className="ebd-input" value={form.birthYear} onChange={e => setForm({...form, birthYear: e.target.value})} required style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
                         </div>
                         
-                        {/* NUEVO: CÁLCULO DE EDAD EN VIVO */}
                         {form.birthDay && form.birthMonth && form.birthYear && (
                             <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--primary-color)', fontWeight: '800', background: 'var(--primary-light)', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px', width: 'fit-content' }}>
                                 <i className="fa-solid fa-cake-candles"></i> 
