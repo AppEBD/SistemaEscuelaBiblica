@@ -35,7 +35,6 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
-    // Los IDs de los avisos ahora son STRINGS para que encajen en Firebase
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([
         { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva para todos los maestros y auxiliares.", fecha: "Sistema", leida: false }
     ]);
@@ -45,13 +44,9 @@ export const useStudentsLogic = () => {
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
-    // ==========================================
-    // NUEVO: REACCIONES 100% REAL-TIME CON FIREBASE
-    // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     useEffect(() => {
-        // Esto escucha la base de datos en VIVO. Cada vez que alguien vota, tu pantalla se actualiza sola.
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
             snapshot.forEach(doc => {
@@ -70,7 +65,6 @@ export const useStudentsLogic = () => {
         try { navigator.vibrate(50); } catch(err){} 
 
         const docRef = doc(db, 'interacciones_avisos', notifId);
-        
         const actualData = reaccionesBD[notifId] || { up: 0, down: 0, cake: 0, usuarios: {} };
         const misVotosActuales = actualData.usuarios || {};
         const miVotoAnterior = misVotosActuales[userId];
@@ -80,7 +74,6 @@ export const useStudentsLogic = () => {
         let nuevoCake = actualData.cake || 0;
         let nuevoVotoMio: string | null = tipo;
 
-        // Lógica de "Toggle" inteligente
         if (miVotoAnterior === tipo) {
             nuevoVotoMio = null; 
             if (tipo === 'up') nuevoUp--;
@@ -96,7 +89,6 @@ export const useStudentsLogic = () => {
             if (tipo === 'cake') nuevoCake++;
         }
 
-        // Evitamos números negativos por seguridad
         nuevoUp = Math.max(0, nuevoUp);
         nuevoDown = Math.max(0, nuevoDown);
         nuevoCake = Math.max(0, nuevoCake);
@@ -117,9 +109,6 @@ export const useStudentsLogic = () => {
         }
     };
 
-    // ==========================================
-    // BUSCAR AL STAFF DE LA SEDE
-    // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
             const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
@@ -148,13 +137,18 @@ export const useStudentsLogic = () => {
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // GENERADOR DE CUMPLEAÑOS INDIVIDUALES
+    // CÁLCULO DE CUMPLEAÑOS (CON LÓGICA DE TIEMPO: PASADO, PRESENTE, FUTURO)
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
         
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        
+        // Calculamos el día de ayer para ser ultra precisos en la etiqueta de fecha
+        const ayer = new Date(hoy);
+        ayer.setDate(hoy.getDate() - 1);
+        const mmddAyer = `${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
         
         const diasDeEstaSemana = new Set<string>();
         const domingo = new Date(hoy);
@@ -180,37 +174,44 @@ export const useStudentsLogic = () => {
             return diasDeEstaSemana.has(mmdd);
         }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2] || '0', 10) - parseInt(b.fechaNacimiento.split('-')[2] || '0', 10));
 
-        // Generamos UNA tarjeta individual para cada persona que cumpla años esta semana
         const cards = cumpleaneros.map(c => {
             const esMio = c.id === userId;
             const mmddCumple = c.fechaNacimiento.substring(5);
+            
+            // Lógica de "Viaje en el tiempo"
             const esHoy = mmddCumple === mmddHoy;
+            const esAyer = mmddCumple === mmddAyer;
+            const yaPaso = mmddCumple < mmddHoy; 
+
             const diaNum = c.fechaNacimiento.split('-')[2];
             const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
             
-            // ID Único y Persistente en Firebase: ej. "cumple-Jq8as8d-2026"
             const notifId = `cumple-${c.id}-${currentYear}`;
 
             if (esMio) {
                 if (esHoy) miCumpleFlag = true;
                 return {
                     id: notifId,
-                    titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : "🎉 ¡Tu cumpleaños se acerca!",
+                    titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : (yaPaso ? "🎉 ¡Esperamos que la hayas pasado genial!" : "🎉 ¡Tu cumpleaños se acerca!"),
                     mensaje: esHoy 
                         ? `¡Felicidades en tu día especial, ${nombreUsuario.split(' ')[0]}! Que Dios te bendiga grandemente hoy.`
-                        : `Tu cumpleaños es esta semana (Día ${diaNum}). ¡Ya casi celebramos!`,
-                    fecha: esHoy ? "Hoy" : "Esta semana",
+                        : (yaPaso 
+                            ? `Tu cumpleaños fue el día ${diaNum}. ¡Deseamos que hayas tenido un día muy bendecido lleno de alegría!`
+                            : `Tu cumpleaños es esta semana (Día ${diaNum}). ¡Ya casi celebramos!`),
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
                     leida: true,
                     isCumplePersonal: true
                 };
             } else {
                 return {
                     id: notifId,
-                    titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`,
+                    titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : (yaPaso ? `🎂 Cumpleaños reciente de ${c.nombre.split(' ')[0]}` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`),
                     mensaje: esHoy
                         ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado})! No olvides enviarle una felicitación.`
-                        : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Prepárate para felicitarle!`,
-                    fecha: esHoy ? "Hoy" : "Esta semana",
+                        : (yaPaso
+                            ? `El día ${diaNum} fue el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Aún estás a tiempo de desearle bendiciones!`
+                            : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Prepárate para felicitarle!`),
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
                     leida: true, 
                     isCumpleEquipo: true
                 };
@@ -230,7 +231,6 @@ export const useStudentsLogic = () => {
     }, [esMiCumpleHoy, hasShownOverlay]);
 
     const notificaciones = useMemo(() => {
-        // Juntamos los avisos del admin y los individuales de cumpleaños
         return [...notificacionesCumple, ...notificacionesAdmin];
     }, [notificacionesAdmin, notificacionesCumple]);
 
