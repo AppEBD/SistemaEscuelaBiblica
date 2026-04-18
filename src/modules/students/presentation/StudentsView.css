@@ -1,6 +1,3 @@
-/* =========================================
-   VARIABLES GLOBALES Y TEMAS DE COLOR
-   ========================================= */
 :root { --primary-color: #4f46e5; --primary-grad: linear-gradient(135deg, #4f46e5, #6366f1); --primary-light: #e0e7ff; }
 .theme-emerald { --primary-color: #10b981; --primary-grad: linear-gradient(135deg, #10b981, #34d399); --primary-light: #d1fae5; }
 .theme-rose { --primary-color: #e11d48; --primary-grad: linear-gradient(135deg, #e11d48, #fb7185); --primary-light: #ffe4e6; }
@@ -119,8 +116,6 @@
 .bday-age { font-size: 13px; font-weight: 700; color: #f472b6; background: #fdf2f8; padding: 5px 12px; border-radius: 12px; display: inline-block;}
 
 .locked-section { opacity: 0.6; pointer-events: none; filter: grayscale(0.8); transition: all 0.4s ease; }
-
-/* NUEVO DISEÑO PARA LA CAJA DE OFRENDA */
 .global-ofrenda-card { background: var(--primary-light); border: 2px dashed var(--primary-color); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; }
 .global-ofrenda-title { font-size: 16px; font-weight: 900; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 .global-ofrenda-input-wrapper { display: flex; align-items: center; background: white; padding: 10px 25px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -183,6 +178,14 @@
 .rank-2 { background: linear-gradient(to right, #f8fafc, #ffffff); border-left: 5px solid #94a3b8; }
 .rank-3 { background: linear-gradient(to right, #fff7ed, #ffffff); border-left: 5px solid #d97706; }
 .rank-medal { font-size: 24px; width: 40px; text-align: center; }
+
+/* NUEVA CLASE PARA EL NÚMERO DE RANKING 4+ */
+.rank-number {
+    font-size: 14px; font-weight: 900; color: #64748b; background: #f1f5f9;
+    width: 32px; height: 32px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; margin: 0 4px;
+}
+
 .rank-info { flex: 1; }
 .rank-name { font-weight: 900; color: #1e293b; font-size: 16px; margin: 0 0 5px 0; }
 .rank-score { font-size: 13px; font-weight: 800; color: #10b981; background: #dcfce7; padding: 4px 10px; border-radius: 10px; display: inline-block; }
