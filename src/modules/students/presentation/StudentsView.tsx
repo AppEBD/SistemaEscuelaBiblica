@@ -5,7 +5,7 @@ import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
 import { BadgesPanel } from './components/BadgesPanel';
-import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget'; // IMPORTAMOS NUESTRO WIDGET
+import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget'; // IMPORTA EL WIDGET
 import './StudentsView.css';
 
 export const StudentsView = () => {
@@ -101,7 +101,7 @@ export const StudentsView = () => {
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
-                        {/* ¡ASÍ DE LIMPIO QUEDÓ ESTO! TODO SE MANEJA ADENTRO */}
+                        {/* ACÁ CARGA TU WIDGET INDEPENDIENTE */}
                         <NotificationsWidget />
 
                     </div>
