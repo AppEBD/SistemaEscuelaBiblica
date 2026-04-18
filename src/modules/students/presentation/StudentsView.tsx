@@ -16,7 +16,8 @@ export const StudentsView = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay,
+        reacciones, manejarReaccion
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -124,7 +125,11 @@ export const StudentsView = () => {
                                 </div>
                             ) : (
                                 <div className="notif-list">
-                                    {notificaciones.map((n: any) => (
+                                    {notificaciones.map((n: any) => {
+                                        const r = reacciones[n.id] || { up: 0, down: 0, cake: 0, miReaccion: null };
+                                        const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
+
+                                        return (
                                         <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
                                             <div className="notif-icon">
                                                 {n.isCumplePersonal ? <i className="fa-solid fa-gift" style={{color: '#f59e0b'}}></i> :
@@ -135,13 +140,32 @@ export const StudentsView = () => {
                                             <div className="notif-content">
                                                 <h4 className="notif-title">
                                                     {n.titulo} 
-                                                    {!n.leida && !n.isCumplePersonal && !n.isCumpleEquipo && <span className="badge-new">NUEVO</span>}
+                                                    {!n.leida && !esCumple && <span className="badge-new">NUEVO</span>}
                                                 </h4>
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
+                                                
+                                                {/* BARRA DE REACCIONES */}
+                                                <div className="notif-reactions">
+                                                    <button className={`reaction-btn ${r.miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(n.id, 'up', e)}>
+                                                        👍🏻 {r.up > 0 ? r.up : ''}
+                                                    </button>
+                                                    
+                                                    {!esCumple && (
+                                                        <button className={`reaction-btn ${r.miReaccion === 'down' ? 'active-down' : ''}`} onClick={(e) => manejarReaccion(n.id, 'down', e)}>
+                                                            👎🏻 {r.down > 0 ? r.down : ''}
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {esCumple && (
+                                                        <button className={`reaction-btn ${r.miReaccion === 'cake' ? 'active-cake' : ''}`} onClick={(e) => manejarReaccion(n.id, 'cake', e)}>
+                                                            🎂 {r.cake > 0 ? r.cake : ''}
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
                             )}
                         </div>
@@ -234,7 +258,6 @@ export const StudentsView = () => {
                     )}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
-                        
                         <div className="global-ofrenda-card">
                             <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
                             <div className="global-ofrenda-input-wrapper">
