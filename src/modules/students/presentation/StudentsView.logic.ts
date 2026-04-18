@@ -1,6 +1,6 @@
-import { useState, useEffect, FormEvent, useMemo } from 'react';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
-import { doc, collection, getDocs } from 'firebase/firestore'; 
+import { doc, collection, getDocs, onSnapshot, setDoc } from 'firebase/firestore'; 
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -35,52 +35,96 @@ export const useStudentsLogic = () => {
     const [asistenciaDocId, setAsistenciaDocId] = useState<string | null>(null);
     const [asistenciaRegistradaPor, setAsistenciaRegistradaPor] = useState<string | null>(null);
 
+    // Los IDs de los avisos ahora son STRINGS para que encajen en Firebase
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([
-        { id: 1, titulo: "Bienvenida", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos oficiales.", fecha: "Sistema", leida: false }
+        { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva para todos los maestros y auxiliares.", fecha: "Sistema", leida: false }
     ]);
+
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
-
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
 
     // ==========================================
-    // NUEVO: SISTEMA DE REACCIONES (WATSAPP STYLE)
+    // NUEVO: REACCIONES 100% REAL-TIME CON FIREBASE
     // ==========================================
-    // Inicializamos con algunas reacciones de prueba para que se vea vivo
-    const [reacciones, setReacciones] = useState<Record<number, { up: number, down: number, cake: number, miReaccion: string | null }>>({
-        999: { up: 2, down: 0, cake: 5, miReaccion: null },
-        1: { up: 1, down: 0, cake: 0, miReaccion: null }
-    });
+    const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
-    const manejarReaccion = (id: number, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
-        e.stopPropagation(); // Evita que al dar like, se marque como leída la notificación entera
-        
-        try { navigator.vibrate(50); } catch(err){} // Pequeña vibración en celulares
-
-        setReacciones(prev => {
-            const actual = prev[id] || { up: 0, down: 0, cake: 0, miReaccion: null };
-            let nuevo = { ...actual };
-
-            // Si vuelve a tocar la misma reacción, se la quitamos
-            if (actual.miReaccion === tipo) {
-                nuevo[tipo]--;
-                nuevo.miReaccion = null;
-            } else {
-                // Si tenía otra reacción antes, se la restamos primero
-                if (actual.miReaccion) nuevo[actual.miReaccion as 'up'|'down'|'cake']--;
-                // Y le sumamos la nueva
-                nuevo[tipo]++;
-                nuevo.miReaccion = tipo;
-            }
-            return { ...prev, [id]: nuevo };
+    useEffect(() => {
+        // Esto escucha la base de datos en VIVO. Cada vez que alguien vota, tu pantalla se actualiza sola.
+        const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
+            const reacts: Record<string, any> = {};
+            snapshot.forEach(doc => {
+                reacts[doc.id] = doc.data();
+            });
+            setReaccionesBD(reacts);
         });
+        return () => unsub();
+    }, []);
+
+    const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
+        e.stopPropagation(); 
+        const userId = userData?.uid || userData?.id;
+        if (!userId) return;
+
+        try { navigator.vibrate(50); } catch(err){} 
+
+        const docRef = doc(db, 'interacciones_avisos', notifId);
+        
+        const actualData = reaccionesBD[notifId] || { up: 0, down: 0, cake: 0, usuarios: {} };
+        const misVotosActuales = actualData.usuarios || {};
+        const miVotoAnterior = misVotosActuales[userId];
+
+        let nuevoUp = actualData.up || 0;
+        let nuevoDown = actualData.down || 0;
+        let nuevoCake = actualData.cake || 0;
+        let nuevoVotoMio: string | null = tipo;
+
+        // Lógica de "Toggle" inteligente
+        if (miVotoAnterior === tipo) {
+            nuevoVotoMio = null; 
+            if (tipo === 'up') nuevoUp--;
+            if (tipo === 'down') nuevoDown--;
+            if (tipo === 'cake') nuevoCake--;
+        } else {
+            if (miVotoAnterior === 'up') nuevoUp--;
+            if (miVotoAnterior === 'down') nuevoDown--;
+            if (miVotoAnterior === 'cake') nuevoCake--;
+            
+            if (tipo === 'up') nuevoUp++;
+            if (tipo === 'down') nuevoDown++;
+            if (tipo === 'cake') nuevoCake++;
+        }
+
+        // Evitamos números negativos por seguridad
+        nuevoUp = Math.max(0, nuevoUp);
+        nuevoDown = Math.max(0, nuevoDown);
+        nuevoCake = Math.max(0, nuevoCake);
+
+        const nuevosUsuarios = { ...misVotosActuales };
+        if (nuevoVotoMio === null) {
+            delete nuevosUsuarios[userId];
+        } else {
+            nuevosUsuarios[userId] = nuevoVotoMio;
+        }
+
+        try {
+            await setDoc(docRef, {
+                up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
+            }, { merge: true });
+        } catch (error) {
+            console.error("Error guardando reacción:", error);
+        }
     };
 
+    // ==========================================
+    // BUSCAR AL STAFF DE LA SEDE
+    // ==========================================
     useEffect(() => {
         const fetchStaff = async () => {
             const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
             let todoElStaff: any[] = [];
+            
             for (const nombreCol of colecciones) {
                 try {
                     const snap = await getDocs(collection(db, nombreCol));
@@ -94,20 +138,28 @@ export const useStudentsLogic = () => {
                             todoElStaff.push({ ...data, id: documento.id, rolParaCumple: rolLimpio });
                         }
                     });
-                } catch (e) {}
+                } catch (e) { }
             }
             setStaffList(todoElStaff);
         };
         if (userData?.campo) { fetchStaff(); }
     }, [userData?.campo]);
 
-    const { notifPersonal, notifEquipo, esMiCumpleHoy } = useMemo(() => {
-        if (staffList.length === 0) return { notifPersonal: null, notifEquipo: null, esMiCumpleHoy: false };
+    const currentYear = new Date().getFullYear();
+
+    // ==========================================
+    // GENERADOR DE CUMPLEAÑOS INDIVIDUALES
+    // ==========================================
+    const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
+        if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
+        
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        
         const diasDeEstaSemana = new Set<string>();
         const domingo = new Date(hoy);
         domingo.setDate(hoy.getDate() - hoy.getDay());
+        
         for (let i = 0; i < 7; i++) {
             const dia = new Date(domingo);
             dia.setDate(domingo.getDate() + i);
@@ -117,56 +169,56 @@ export const useStudentsLogic = () => {
         }
 
         const userId = userData?.uid || userData?.id;
-        const miPerfil = staffList.find(s => s.id === userId);
         const nombreUsuario = userData?.nombre || 'Maestro';
-        let personalNotif = null;
         let miCumpleFlag = false;
-
-        if (miPerfil && typeof miPerfil.fechaNacimiento === 'string') {
-            const miCumpleMMDD = miPerfil.fechaNacimiento.substring(5);
-            if (miCumpleMMDD === mmddHoy) {
-                miCumpleFlag = true;
-                personalNotif = {
-                    id: 998,
-                    titulo: "🎉 ¡Feliz Cumpleaños!",
-                    mensaje: `¡Felicidades en tu cumpleaños, ${nombreUsuario.split(' ')[0]}! Que Dios bendiga tu vida grandemente y recompense tu esfuerzo.`,
-                    fecha: "Hoy",
-                    leida: true,
-                    isCumplePersonal: true
-                };
-            }
-        }
 
         const cumpleaneros = staffList.filter(user => {
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
-            if (user.id === userId) return false; 
             const partes = user.fechaNacimiento.split('-');
             if (partes.length !== 3) return false;
             const mmdd = `${partes[1]}-${partes[2]}`;
             return diasDeEstaSemana.has(mmdd);
         }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2] || '0', 10) - parseInt(b.fechaNacimiento.split('-')[2] || '0', 10));
 
-        let equipoNotif = null;
-        if (cumpleaneros.length > 0) {
-            const lineas = cumpleaneros.map(c => {
-                const dia = c.fechaNacimiento.split('-')[2];
-                const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
-                const sedeDisplay = c.campo ? ` - ${c.campo}` : '';
-                return `• ${c.nombre} (${rolCapitalizado}${sedeDisplay}) - Día ${dia}`;
-            });
+        // Generamos UNA tarjeta individual para cada persona que cumpla años esta semana
+        const cards = cumpleaneros.map(c => {
+            const esMio = c.id === userId;
+            const mmddCumple = c.fechaNacimiento.substring(5);
+            const esHoy = mmddCumple === mmddHoy;
+            const diaNum = c.fechaNacimiento.split('-')[2];
+            const rolCapitalizado = c.rolParaCumple ? c.rolParaCumple.charAt(0).toUpperCase() + c.rolParaCumple.slice(1) : 'Staff';
+            
+            // ID Único y Persistente en Firebase: ej. "cumple-Jq8as8d-2026"
+            const notifId = `cumple-${c.id}-${currentYear}`;
 
-            equipoNotif = {
-                id: 999,
-                titulo: "🎂 Cumpleaños del Equipo",
-                mensaje: `¡Es semana de celebración! No olvides felicitar a:\n\n${lineas.join('\n')}`,
-                fecha: "Esta semana",
-                leida: true, 
-                isCumpleEquipo: true
-            };
-        }
+            if (esMio) {
+                if (esHoy) miCumpleFlag = true;
+                return {
+                    id: notifId,
+                    titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : "🎉 ¡Tu cumpleaños se acerca!",
+                    mensaje: esHoy 
+                        ? `¡Felicidades en tu día especial, ${nombreUsuario.split(' ')[0]}! Que Dios te bendiga grandemente hoy.`
+                        : `Tu cumpleaños es esta semana (Día ${diaNum}). ¡Ya casi celebramos!`,
+                    fecha: esHoy ? "Hoy" : "Esta semana",
+                    leida: true,
+                    isCumplePersonal: true
+                };
+            } else {
+                return {
+                    id: notifId,
+                    titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`,
+                    mensaje: esHoy
+                        ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado})! No olvides enviarle una felicitación.`
+                        : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}). ¡Prepárate para felicitarle!`,
+                    fecha: esHoy ? "Hoy" : "Esta semana",
+                    leida: true, 
+                    isCumpleEquipo: true
+                };
+            }
+        });
 
-        return { notifPersonal: personalNotif, notifEquipo: equipoNotif, esMiCumpleHoy: miCumpleFlag };
-    }, [staffList, userData]);
+        return { notificacionesCumple: cards, esMiCumpleHoy: miCumpleFlag };
+    }, [staffList, userData, currentYear]);
 
     useEffect(() => {
         if (esMiCumpleHoy && !hasShownOverlay) {
@@ -178,14 +230,15 @@ export const useStudentsLogic = () => {
     }, [esMiCumpleHoy, hasShownOverlay]);
 
     const notificaciones = useMemo(() => {
-        const todas = [...notificacionesAdmin];
-        if (notifEquipo) todas.unshift(notifEquipo);
-        if (notifPersonal) todas.unshift(notifPersonal); 
-        return todas;
-    }, [notificacionesAdmin, notifPersonal, notifEquipo]);
+        // Juntamos los avisos del admin y los individuales de cumpleaños
+        return [...notificacionesCumple, ...notificacionesAdmin];
+    }, [notificacionesAdmin, notificacionesCumple]);
 
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
-    const marcarNotificacion = (id: number) => { if (id === 998 || id === 999) return; setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); };
+    const marcarNotificacion = (id: string) => { 
+        if (id.startsWith('cumple-')) return; 
+        setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); 
+    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -195,7 +248,6 @@ export const useStudentsLogic = () => {
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 20 }, (_, i) => currentYear - i);
 
     useEffect(() => {
@@ -294,6 +346,6 @@ export const useStudentsLogic = () => {
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay,
-        reacciones, manejarReaccion // EXPORTAMOS REACCIONES
+        reaccionesBD, manejarReaccion 
     };
 };
