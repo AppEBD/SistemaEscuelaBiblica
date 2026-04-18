@@ -15,28 +15,27 @@ export const StudentsView = () => {
         ofrendaDia, manejarCambioOfrenda, numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
     const esElAutorDeAsistencia = asistenciaRegistradaPor === userData?.nombre;
+    const nombreUsuario = userData?.nombre || 'Maestro';
 
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* ENCABEZADO GLOBAL */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
                     <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
-                    <i className="fa-solid fa-circle-user"></i> {userNameDisplay.split(' ')[0]}
+                    <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
                 </button>
             </div>
 
-            {/* PERFIL LATERAL (DRAWER) */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -46,10 +45,10 @@ export const StudentsView = () => {
                 
                 <div className="pd-content">
                     <div className="pd-user-info">
-                        <div className="pd-user-avatar">{userNameDisplay.charAt(0).toUpperCase()}</div>
+                        <div className="pd-user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
                         <div className="pd-name-group">
-                            <h3 className="pd-name-display">{userNameDisplay}</h3>
-                            <p className="pd-role">Maestro en {userData?.campo}</p>
+                            <h3 className="pd-name-display">{nombreUsuario}</h3>
+                            <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
                         </div>
                     </div>
 
@@ -63,7 +62,7 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={userNameDisplay} />
+                    <BadgesPanel userName={nombreUsuario} />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
@@ -77,11 +76,9 @@ export const StudentsView = () => {
                 </div>
             </div>
 
-            {/* PANTALLA DE INICIO (HOME) */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
-                        
                         <div className="home-widget widget-alumnos">
                             <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
                                 <div className="home-widget-title"><i className="fa-solid fa-users"></i> Total Inscritos</div>
@@ -122,7 +119,6 @@ export const StudentsView = () => {
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
-            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -182,7 +178,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
@@ -191,19 +186,30 @@ export const StudentsView = () => {
                     {isSubmitted && (<div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}><i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}</div>)}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
+                        
+                        {/* CAJITA DE OFRENDA MEJORADA */}
                         <div className="global-ofrenda-card">
                             <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
                             <div className="global-ofrenda-input-wrapper">
-                                <span>$</span>
-                                {/* NUEVO: CAMBIADO EL TIPO DE INPUT Y LA FUNCIÓN DE CAMBIO */}
-                                <input 
-                                    type="text" 
-                                    inputMode="decimal"
-                                    className="global-ofrenda-input" 
-                                    placeholder="0.00" 
-                                    value={ofrendaDia} 
-                                    onChange={(e) => manejarCambioOfrenda(e.target.value)} 
-                                />
+                                <span className="global-ofrenda-currency">$</span>
+                                <div className="global-ofrenda-input-group">
+                                    <input 
+                                        type="text" 
+                                        inputMode="decimal"
+                                        className="global-ofrenda-input" 
+                                        placeholder="0.00" 
+                                        value={ofrendaDia} 
+                                        onChange={(e) => manejarCambioOfrenda(e.target.value)} 
+                                        style={{ 
+                                            width: ofrendaDia ? `${ofrendaDia.length + 0.3}ch` : '80px', 
+                                            textAlign: ofrendaDia ? 'right' : 'center'
+                                        }}
+                                    />
+                                    {/* MAGIA VISUAL: Si escribe entero, se agrega el .00 gris */}
+                                    {ofrendaDia !== '' && !ofrendaDia.includes('.') && (
+                                        <span className="global-ofrenda-decimals">.00</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -242,7 +248,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
@@ -383,7 +388,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* NAV INFERIOR FIJO */}
             <div className="main-nav-menu">
                 <button className={`main-nav-btn ${mainTab === 'home' ? 'active' : ''}`} onClick={() => setMainTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
                 <button className={`main-nav-btn ${mainTab === 'alumnos' ? 'active' : ''}`} onClick={() => setMainTab('alumnos')}><i className="fa-solid fa-address-book"></i> Directorio</button>
