@@ -43,26 +43,6 @@ export const useStudentsLogic = () => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [appTheme, setAppTheme] = useState<'indigo' | 'emerald' | 'rose' | 'amber'>('indigo');
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [userNameDisplay, setUserNameDisplay] = useState(userData?.nombre || 'Maestro');
-
-    useEffect(() => { if (userData?.nombre) setUserNameDisplay(userData.nombre); }, [userData]);
-
-    const guardarNombrePerfil = async () => {
-        if (!userNameDisplay.trim()) return;
-        const userId = userData?.uid || userData?.id; 
-        if (!userId) { alert("Error del sistema: No se detectó un ID de usuario válido."); setIsEditingName(false); return; }
-
-        try {
-            let nombreColeccion = 'usuarios_maestro'; 
-            if (userData?.rol === 'AUXILIAR') { nombreColeccion = 'usuarios_auxiliar'; } 
-            else if (userData?.rol === 'MAESTRO') { nombreColeccion = 'usuarios_maestro'; }
-
-            const userRef = doc(db, nombreColeccion, userId);
-            await updateDoc(userRef, { nombre: userNameDisplay });
-            setIsEditingName(false); alert("¡Tu nombre ha sido actualizado correctamente!");
-        } catch (error: any) { console.error("Detalle técnico del error:", error); alert(`Error de Firebase: ${error.message}`); }
-    };
 
     const cerrarSesionApp = () => {
         if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
@@ -112,11 +92,13 @@ export const useStudentsLogic = () => {
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
     // ==========================================
-    // NUEVO: MANEJO DEL PUNTO DECIMAL EN OFRENDA
+    // REGLA MATEMÁTICA ESTRICTA (Max 99.99)
     // ==========================================
     const manejarCambioOfrenda = (valor: string) => {
-        // Expresión regular: Permite números y opcionalmente un punto con hasta 2 decimales
-        if (valor === '' || /^\d*\.?\d{0,2}$/.test(valor)) {
+        // Permite máximo 2 dígitos numéricos enteros y máximo 2 decimales.
+        // Ejemplos permitidos: "1", "12", "1.5", "12.75", "0.75"
+        // Ejemplos bloqueados: "100" (son 3 dígitos enteros), "1.123" (son 3 decimales)
+        if (valor === '' || /^\d{0,2}(\.\d{0,2})?$/.test(valor)) {
             setOfrendaDia(valor);
         }
     };
@@ -132,15 +114,10 @@ export const useStudentsLogic = () => {
     const enviarAsistencia = async () => { 
         if (!userData?.campo || !userData?.nombre) return; 
 
-        // ==========================================
-        // NUEVO: CANDADO AUTO-INCREMENTAL DE LECCIÓN
-        // ==========================================
-        // Si no es una edición (!asistenciaDocId) y marcamos que SÍ se dio la lección, 
-        // el número de lección OBLIGATORIAMENTE debe ser mayor al último registrado.
         if (!asistenciaDocId && seDioLeccion && numeroLeccion <= maxLeccionImpartida) {
             alert(`🛑 ALERTA: La lección ${numeroLeccion} ya fue impartida anteriormente.\n\nEl sistema es auto-incremental. Como ya diste hasta la lección ${maxLeccionImpartida}, la lección de hoy debería ser la ${maxLeccionImpartida + 1}.`);
-            setNumeroLeccion(maxLeccionImpartida + 1); // Auto-corrige el input
-            return; // Detiene el guardado para que el usuario confirme
+            setNumeroLeccion(maxLeccionImpartida + 1); 
+            return; 
         }
 
         try { 
@@ -169,7 +146,7 @@ export const useStudentsLogic = () => {
         numeroLeccion, setNumeroLeccion, seDioLeccion, setSeDioLeccion, isSubmitted, editarAsistencia, asistenciaRegistradaPor,
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
-        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, isEditingName, setIsEditingName, userNameDisplay, setUserNameDisplay, guardarNombrePerfil, cerrarSesionApp,
+        notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
         maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
     };
 };
