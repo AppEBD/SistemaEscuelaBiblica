@@ -55,7 +55,7 @@ export const useStudentsLogic = () => {
     }, [appTheme]);
 
     // ==========================================
-    // 2. REACCIONES WHATSAPP STYLE (CON USER_ID Y TOGGLE LIBRE)
+    // 2. REACCIONES WHATSAPP STYLE (LÓGICA PERFECTA)
     // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
@@ -70,7 +70,7 @@ export const useStudentsLogic = () => {
 
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
-        const userId = userData?.uid || userData?.id; // Volvemos a usar la cuenta de usuario real
+        const userId = userData?.uid || userData?.id; 
         if (!userId) return;
 
         try { navigator.vibrate(50); } catch(err){} 
@@ -80,46 +80,30 @@ export const useStudentsLogic = () => {
         try {
             await runTransaction(db, async (transaction) => {
                 const sfDoc = await transaction.get(docRef);
-                const actualData = sfDoc.exists() ? sfDoc.data() : { up: 0, down: 0, cake: 0, usuarios: {} };
-                
-                const misVotosActuales = actualData.usuarios || {};
-                const miVotoAnterior = misVotosActuales[userId];
+                const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
+                const usuarios = actualData.usuarios || {};
 
-                let nuevoUp = actualData.up || 0;
-                let nuevoDown = actualData.down || 0;
-                let nuevoCake = actualData.cake || 0;
-                let nuevoVotoMio: string | null = tipo;
-
-                // Lógica Toggle: Si toco la misma, me la quita. Si no la tenía, me la pone.
-                if (miVotoAnterior === tipo) {
-                    nuevoVotoMio = null; 
-                    if (tipo === 'up') nuevoUp--;
-                    if (tipo === 'down') nuevoDown--;
-                    if (tipo === 'cake') nuevoCake--;
+                // LÓGICA WHATSAPP:
+                // Si tocas el botón que ya tenías seleccionado, te arrepientes (se borra).
+                // Si tocas un botón nuevo, reemplaza tu voto anterior.
+                if (usuarios[userId] === tipo) {
+                    delete usuarios[userId];
                 } else {
-                    if (miVotoAnterior === 'up') nuevoUp--;
-                    if (miVotoAnterior === 'down') nuevoDown--;
-                    if (miVotoAnterior === 'cake') nuevoCake--;
-                    
-                    if (tipo === 'up') nuevoUp++;
-                    if (tipo === 'down') nuevoDown++;
-                    if (tipo === 'cake') nuevoCake++;
+                    usuarios[userId] = tipo;
                 }
 
-                // Blindaje anti-negativos
-                nuevoUp = Math.max(0, nuevoUp);
-                nuevoDown = Math.max(0, nuevoDown);
-                nuevoCake = Math.max(0, nuevoCake);
+                // RECUENTO TOTAL DESDE CERO: 
+                // Evitamos sumas/restas a ciegas. Contamos matemáticamente a todos.
+                let up = 0, down = 0, cake = 0;
+                Object.values(usuarios).forEach(voto => {
+                    if (voto === 'up') up++;
+                    if (voto === 'down') down++;
+                    if (voto === 'cake') cake++;
+                });
 
-                const nuevosUsuarios = { ...misVotosActuales };
-                if (nuevoVotoMio === null) {
-                    delete nuevosUsuarios[userId];
-                } else {
-                    nuevosUsuarios[userId] = nuevoVotoMio;
-                }
-
+                // Guardamos los totales exactos
                 transaction.set(docRef, {
-                    up: nuevoUp, down: nuevoDown, cake: nuevoCake, usuarios: nuevosUsuarios
+                    up, down, cake, usuarios
                 }, { merge: true });
             });
         } catch (error) {
@@ -128,7 +112,7 @@ export const useStudentsLogic = () => {
     };
 
     // ==========================================
-    // 3. BUSCAR AL STAFF GLOBAL (¡SIN FILTROS!)
+    // 3. BUSCAR AL STAFF GLOBAL (EN VIVO)
     // ==========================================
     useEffect(() => {
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
@@ -143,8 +127,6 @@ export const useStudentsLogic = () => {
 
         colecciones.forEach(nombreCol => {
             try {
-                // Si Firebase rechaza por seguridad, lanzará un error y lo ignoraremos.
-                // Si tienes permisos, traerá a todos los usuarios de la base de datos.
                 const unsub = onSnapshot(collection(db, nombreCol), (snapshot) => {
                     const listaCol: any[] = [];
                     snapshot.forEach(documento => {
@@ -154,9 +136,7 @@ export const useStudentsLogic = () => {
                     });
                     staffMap[nombreCol] = listaCol;
                     actualizarStaff();
-                }, (error) => {
-                    console.error(`Firebase bloqueó el acceso a la colección ${nombreCol}. Revisa las reglas de seguridad.`);
-                });
+                }, (error) => {});
                 unsubs.push(unsub);
             } catch (e) {}
         });
@@ -270,7 +250,7 @@ export const useStudentsLogic = () => {
         if (f === 'semana pasada') return 4;
         if (f === 'este mes') return 5;
         if (f === 'mes pasado') return 6;
-        return 99;
+        return 99; 
     };
 
     const notificaciones = useMemo(() => {
