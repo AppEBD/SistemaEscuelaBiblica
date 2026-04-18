@@ -16,7 +16,7 @@ export const StudentsView = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         notificaciones, marcarNotificacion, isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin, showBirthdayOverlay
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -27,7 +27,21 @@ export const StudentsView = () => {
     return (
         <div className={`students-dashboard theme-${appTheme}`}>
 
-            {/* ENCABEZADO GLOBAL VISIBLE */}
+            {/* OVERLAY DE CONFETI (SÓLO SI ES TU CUMPLEAÑOS HOY) */}
+            {showBirthdayOverlay && (
+                <div className="birthday-overlay">
+                    <div className="emoji-confetti" style={{left: '10%', animationDuration: '3s', animationDelay: '0s'}}>🎉</div>
+                    <div className="emoji-confetti" style={{left: '25%', animationDuration: '4.5s', animationDelay: '0.2s'}}>🎈</div>
+                    <div className="emoji-confetti" style={{left: '45%', animationDuration: '3.5s', animationDelay: '0.5s'}}>🎊</div>
+                    <div className="emoji-confetti" style={{left: '65%', animationDuration: '4s', animationDelay: '0.1s'}}>🎁</div>
+                    <div className="emoji-confetti" style={{left: '85%', animationDuration: '3.2s', animationDelay: '0.7s'}}>🎉</div>
+                    <div className="emoji-confetti" style={{left: '15%', animationDuration: '3.8s', animationDelay: '1.2s'}}>🎂</div>
+                    <div className="emoji-confetti" style={{left: '75%', animationDuration: '3.3s', animationDelay: '1.5s'}}>🎈</div>
+                    <h1>¡Feliz Cumpleaños!</h1>
+                    <p style={{color: 'white', fontSize: '18px', marginTop: '15px', fontWeight: 'bold', textAlign: 'center', padding: '0 20px'}}>Que Dios te bendiga grandemente hoy, {nombreUsuario.split(' ')[0]}.</p>
+                </div>
+            )}
+
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -38,7 +52,6 @@ export const StudentsView = () => {
                 </button>
             </div>
 
-            {/* PERFIL LATERAL (DRAWER) */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -79,7 +92,6 @@ export const StudentsView = () => {
                 </div>
             </div>
 
-            {/* PANTALLA DE INICIO (HOME) */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
@@ -116,15 +128,15 @@ export const StudentsView = () => {
                                     {notificaciones.map((n: any) => (
                                         <div key={n.id} className={`notif-item ${!n.leida ? 'unread' : ''}`} onClick={() => marcarNotificacion(n.id)}>
                                             <div className="notif-icon">
-                                                {n.isCumple 
-                                                    ? <i className="fa-solid fa-cake-candles" style={{color: '#ec4899'}}></i> 
-                                                    : (n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>)
+                                                {n.isCumplePersonal ? <i className="fa-solid fa-gift" style={{color: '#f59e0b'}}></i> :
+                                                 n.isCumpleEquipo ? <i className="fa-solid fa-cake-candles" style={{color: '#ec4899'}}></i> :
+                                                 (n.leida ? <i className="fa-regular fa-envelope-open"></i> : <i className="fa-solid fa-envelope"></i>)
                                                 }
                                             </div>
                                             <div className="notif-content">
                                                 <h4 className="notif-title">
                                                     {n.titulo} 
-                                                    {!n.leida && !n.isCumple && <span className="badge-new">NUEVO</span>}
+                                                    {!n.leida && !n.isCumplePersonal && !n.isCumpleEquipo && <span className="badge-new">NUEVO</span>}
                                                 </h4>
                                                 <p className="notif-desc">{n.mensaje}</p>
                                                 <span className="notif-date">{n.fecha}</span>
@@ -140,7 +152,6 @@ export const StudentsView = () => {
 
             {mainTab === 'reportes' && reportTab !== 'menu' && (<button className="btn-volver animate-fade-in" onClick={() => setReportTab('menu')}><i className="fa-solid fa-arrow-left"></i> Volver a Reportes</button>)}
 
-            {/* MÓDULO 1: ALUMNOS */}
             {mainTab === 'alumnos' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Alumnos</h1>
@@ -200,20 +211,19 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 2: ASISTENCIA */}
             {mainTab === 'asistencia' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Asistencia</h1>
                     <p className="st-header-subtitle">Registra la ofrenda y pasa lista.</p>
                     
-                    {/* MENSAJE VERDE DE ÉXITO */}
+                    {/* MENSAJE DE ÉXITO ARRIBA */}
                     {isSubmitted && (
-                        <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0 25px 0', border: '2px solid #10b981' }}>
+                        <div style={{ background: '#dcfce7', color: '#065f46', padding: '15px', borderRadius: '16px', fontWeight: '800', textAlign: 'center', margin: '15px 0', border: '2px solid #10b981' }}>
                             <i className="fa-solid fa-circle-check mr-2"></i> Asistencia guardada por {esElAutorDeAsistencia ? 'ti' : asistenciaRegistradaPor}
                         </div>
                     )}
 
-                    {/* NUEVO: BOTÓN DE EDITAR EN LA PARTE SUPERIOR */}
+                    {/* BOTÓN DE EDITAR ARRIBA PARA EVITAR SCROLL */}
                     {isSubmitted && alumnosParaAsistencia.length > 0 && !cargando && (
                         esElAutorDeAsistencia ? (
                             <button className="btn-editar-datos animate-fade-in" onClick={editarAsistencia} style={{ marginTop: 0, marginBottom: '25px' }}>
@@ -227,7 +237,6 @@ export const StudentsView = () => {
                     )}
 
                     <div className={isSubmitted ? 'locked-section' : ''}>
-                        
                         <div className="global-ofrenda-card">
                             <div className="global-ofrenda-title"><i className="fa-solid fa-sack-dollar mr-2"></i> Ofrenda Recaudada</div>
                             <div className="global-ofrenda-input-wrapper">
@@ -286,7 +295,6 @@ export const StudentsView = () => {
                 </div>
             )}
 
-            {/* MÓDULO 3: REPORTES */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     
