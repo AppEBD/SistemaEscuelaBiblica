@@ -3,7 +3,7 @@ import { db } from '../../../core/firebase/firebase.config';
 import { AuthUser, UserRole } from '../domain/auth.model';
 
 const CLAVES: Record<string, string> = {
-    ADMIN: "1111", MAESTRO: "2222", AUXILIAR: "3333",
+    ADMIN: "@Admin123", MAESTRO: "2222", AUXILIAR: "3333",
     LOGISTICA: "4444", SECRETARIA: "5555", TESORERO: "8888"
 };
 
