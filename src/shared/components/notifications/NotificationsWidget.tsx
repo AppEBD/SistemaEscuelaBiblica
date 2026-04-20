@@ -3,9 +3,10 @@ import { useNotifications } from './useNotifications';
 import './NotificationsWidget.css'; 
 
 export const NotificationsWidget = () => {
-    const { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData } = useNotifications();
+    const { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData, eliminarAviso } = useNotifications();
     const myUserId = userData?.uid || userData?.id; 
     const nombreUsuario = userData?.nombre || 'Miembro del Equipo';
+    const esAdmin = userData?.rol === 'ADMIN';
 
     return (
         <>
@@ -54,10 +55,18 @@ export const NotificationsWidget = () => {
                                     }
                                 </div>
                                 <div className="notif-content">
-                                    <h4 className="notif-title">
-                                        {n.titulo} 
-                                        {!n.leida && !esCumple && <span className="badge-new">NUEVO</span>}
-                                    </h4>
+                                    <div className="notif-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <h4 className="notif-title">
+                                            {n.titulo} 
+                                            {!n.leida && !esCumple && <span className="badge-new">NUEVO</span>}
+                                        </h4>
+                                        {/* BOTÓN DE ELIMINAR (SOLO ADMIN) */}
+                                        {esAdmin && !esCumple && n.id !== 'admin-1' && (
+                                            <button className="btn-delete-aviso" title="Eliminar aviso para todos" onClick={(e) => eliminarAviso(n.id, e)}>
+                                                <i className="fa-solid fa-trash"></i>
+                                            </button>
+                                        )}
+                                    </div>
                                     <p className="notif-desc">{n.mensaje}</p>
                                     <span className="notif-date">{n.fecha}</span>
                                     
