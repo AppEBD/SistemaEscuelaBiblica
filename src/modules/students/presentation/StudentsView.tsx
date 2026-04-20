@@ -5,7 +5,7 @@ import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, calcularEdadEsteAnio } from '../../../core/utils/date.utils'; 
 import { BadgesPanel } from './components/BadgesPanel';
-import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget'; // IMPORTA EL WIDGET
+import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget';
 import './StudentsView.css';
 
 export const StudentsView = () => {
@@ -101,7 +101,6 @@ export const StudentsView = () => {
                             <div className="widget-icon-bg"><i className="fa-solid fa-child-reaching"></i></div>
                         </div>
 
-                        {/* ACÁ CARGA TU WIDGET INDEPENDIENTE */}
                         <NotificationsWidget />
 
                     </div>
@@ -200,7 +199,7 @@ export const StudentsView = () => {
                                 <div className="global-ofrenda-input-group">
                                     <input 
                                         type="text" 
-                                        inputMode="decimal"
+                                        inputMode="numeric"
                                         className="global-ofrenda-input" 
                                         placeholder="0.00" 
                                         value={ofrendaDia} 
@@ -210,8 +209,12 @@ export const StudentsView = () => {
                                             textAlign: ofrendaDia ? 'right' : 'center'
                                         }}
                                     />
+                                    {/* MUESTRA GRISES INTELIGENTES (ATM) */}
                                     {ofrendaDia !== '' && !ofrendaDia.includes('.') && (
                                         <span className="global-ofrenda-decimals">.00</span>
+                                    )}
+                                    {ofrendaDia !== '' && ofrendaDia.includes('.') && ofrendaDia.split('.')[1].length === 1 && (
+                                        <span className="global-ofrenda-decimals">0</span>
                                     )}
                                 </div>
                             </div>
@@ -279,20 +282,22 @@ export const StudentsView = () => {
                             <h1 className="st-header-title" style={{ fontSize: '24px' }}>Ranking de Asistencia</h1>
                             
                             <div className="filter-box">
-                                <div className="filter-group">
-                                    <div className="filter-group-label">Filtrar Desde:</div>
-                                    <div className="filter-grid-3">
-                                        <select className="custom-select-report" value={desdeD} onChange={e => setDesdeD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
-                                        <select className="custom-select-report" value={desdeM} onChange={e => setDesdeM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
-                                        <select className="custom-select-report" value={desdeY} onChange={e => setDesdeY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                <div className="filter-row-mobile">
+                                    <div className="filter-group">
+                                        <div className="filter-group-label">Filtrar Desde:</div>
+                                        <div className="filter-grid-3">
+                                            <select className="custom-select-report" value={desdeD} onChange={e => setDesdeD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                            <select className="custom-select-report" value={desdeM} onChange={e => setDesdeM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
+                                            <select className="custom-select-report" value={desdeY} onChange={e => setDesdeY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="filter-group">
-                                    <div className="filter-group-label">Filtrar Hasta:</div>
-                                    <div className="filter-grid-3">
-                                        <select className="custom-select-report" value={hastaD} onChange={e => setHastaD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
-                                        <select className="custom-select-report" value={hastaM} onChange={e => setHastaM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
-                                        <select className="custom-select-report" value={hastaY} onChange={e => setHastaY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                    <div className="filter-group">
+                                        <div className="filter-group-label">Filtrar Hasta:</div>
+                                        <div className="filter-grid-3">
+                                            <select className="custom-select-report" value={hastaD} onChange={e => setHastaD(e.target.value)}><option value="">Día</option>{days.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                            <select className="custom-select-report" value={hastaM} onChange={e => setHastaM(e.target.value)}><option value="">Mes</option>{months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select>
+                                            <select className="custom-select-report" value={hastaY} onChange={e => setHastaY(e.target.value)}><option value="">Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                        </div>
                                     </div>
                                 </div>
                                 <button className="btn-limpiar-filtros" onClick={limpiarFiltrosRanking}><i className="fa-solid fa-eraser"></i> Limpiar Filtros</button>
