@@ -18,6 +18,7 @@ export const AdminDashboard = () => {
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
+    const totalPendientes = usuarios.filter(u => u.estado === 'Pendiente').length;
 
     const renderUserCard = (user: any) => (
         <div className="user-card" key={user.id}>
@@ -54,17 +55,61 @@ export const AdminDashboard = () => {
 
     return (
         <div className="admin-dashboard animate-fade-in">
+            
+            {/* CABECERA Y NAVEGACIÓN */}
             <div className="admin-header">
                 <h2>Centro de Comando</h2>
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
-                <div className="admin-tabs">
-                    <button className={`admin-tab-btn ${adminTab === 'directorio' ? 'active' : ''}`} onClick={() => setAdminTab('directorio')}><i className="fa-solid fa-address-book"></i> Directorio</button>
-                    <button className={`admin-tab-btn ${adminTab === 'campos' ? 'active' : ''}`} onClick={() => setAdminTab('campos')}><i className="fa-solid fa-church"></i> Campos Activos</button>
-                    <button className={`admin-tab-btn ${adminTab === 'avisos' ? 'active' : ''}`} onClick={() => setAdminTab('avisos')}><i className="fa-solid fa-bullhorn"></i> Avisos Globales</button>
+                
+                <div className="admin-nav-tabs">
+                    <button className={`admin-tab ${adminTab === 'home' ? 'active' : ''}`} onClick={() => setAdminTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
+                    <button className={`admin-tab ${adminTab === 'directorio' ? 'active' : ''}`} onClick={() => setAdminTab('directorio')}>
+                        <i className="fa-solid fa-address-book"></i> Directorio
+                        {totalPendientes > 0 && <span className="tab-badge">{totalPendientes}</span>}
+                    </button>
+                    <button className={`admin-tab ${adminTab === 'campos' ? 'active' : ''}`} onClick={() => setAdminTab('campos')}><i className="fa-solid fa-church"></i> Sedes Activas</button>
+                    <button className={`admin-tab ${adminTab === 'avisos' ? 'active' : ''}`} onClick={() => setAdminTab('avisos')}><i className="fa-solid fa-bullhorn"></i> Crear Aviso</button>
                 </div>
             </div>
 
-            {/* PESTAÑA: DIRECTORIO */}
+            {/* PESTAÑA 1: HOME MÁGICO (Tarjetas Dinámicas) */}
+            {adminTab === 'home' && (
+                <div className="admin-home-grid animate-fade-in">
+                    <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
+                        <div className="abc-content">
+                            <h3>Gestión de Personal</h3>
+                            <p>Administra accesos, aprueba solicitudes y edita perfiles.</p>
+                            <span className="abc-stat">{usuarios.length} Usuarios</span>
+                        </div>
+                        <i className="fa-solid fa-users abc-icon"></i>
+                    </div>
+
+                    <div className="admin-big-card card-emerald" onClick={() => setAdminTab('campos')}>
+                        <div className="abc-content">
+                            <h3>Monitoreo de Sedes</h3>
+                            <p>Verifica el progreso anual y la asistencia de cada campo.</p>
+                            <span className="abc-stat">{IGLESIAS_CAMPOS.length} Campos</span>
+                        </div>
+                        <i className="fa-solid fa-map-location-dot abc-icon"></i>
+                    </div>
+
+                    <div className="admin-big-card card-amber" onClick={() => setAdminTab('avisos')}>
+                        <div className="abc-content">
+                            <h3>Centro de Comunicaciones</h3>
+                            <p>Envía mensajes a roles específicos con reacciones en vivo.</p>
+                            <span className="abc-stat">Publicar Ahora</span>
+                        </div>
+                        <i className="fa-solid fa-tower-broadcast abc-icon"></i>
+                    </div>
+
+                    {/* Previsualización rápida de Notificaciones */}
+                    <div className="admin-quick-notif">
+                        <NotificationsWidget />
+                    </div>
+                </div>
+            )}
+
+            {/* PESTAÑA 2: DIRECTORIO */}
             {adminTab === 'directorio' && (
                 <div className="animate-fade-in">
                     <div className="admin-toolbar">
@@ -102,7 +147,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA: CAMPOS ACTIVOS */}
+            {/* PESTAÑA 3: CAMPOS ACTIVOS (Con Acordeones de Mes anidados) */}
             {adminTab === 'campos' && (
                 <div className="animate-fade-in">
                     <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-map-location-dot"></i> Resumen de Sedes</h3>
@@ -126,15 +171,13 @@ export const AdminDashboard = () => {
                                     </div>
                                     <p style={{fontSize: '11px', color: '#94a3b8', textAlign: 'right', margin: '5px 0 15px 0', fontWeight: 'bold'}}>Progreso Anual ({maxLeccion}/52)</p>
 
-                                    <h4 style={{fontSize: '16px', color: '#334155', marginBottom: '10px'}}><i className="fa-solid fa-clock-rotate-left"></i> Historial de Clases</h4>
+                                    <h4 style={{fontSize: '16px', color: '#334155', marginBottom: '10px', marginTop: '20px'}}><i className="fa-solid fa-clock-rotate-left"></i> Historial de Clases por Mes</h4>
+                                    
                                     {Object.entries(historialAgrupado).length === 0 ? <p style={{ color: '#94a3b8', fontSize: '13px' }}>Sin historial aún.</p> : (
                                         Object.entries(historialAgrupado).map(([mes, datosMes]) => (
-                                            <div className="history-month-card" key={mes}>
-                                                <div className="hmc-header">
-                                                    <h5>{mes}</h5>
-                                                    <span className="hmc-total-badge"><i className="fa-solid fa-users"></i> {datosMes.totalPresentes} Presentes en el mes</span>
-                                                </div>
-                                                <div className="hmc-body">
+                                            // NUEVO: El mes ahora es un Acordeón para ahorrar espacio
+                                            <Accordion key={mes} title={`${mes} - ${datosMes.totalPresentes} Presentes en el mes`}>
+                                                <div className="hmc-body" style={{paddingTop: '10px'}}>
                                                     {Object.entries(datosMes.semanas).map(([semana, asistencias]) => (
                                                         <div className="history-week-block" key={semana}>
                                                             <div className="hwb-title">{semana}</div>
@@ -156,7 +199,7 @@ export const AdminDashboard = () => {
                                                         </div>
                                                     ))}
                                                 </div>
-                                            </div>
+                                            </Accordion>
                                         ))
                                     )}
                                 </div>
@@ -166,28 +209,37 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA: AVISOS GLOBALES */}
+            {/* PESTAÑA 4: AVISOS GLOBALES (Con Segmentación) */}
             {adminTab === 'avisos' && (
                 <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
                     <div className="admin-aviso-form-card">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-bullhorn" style={{color: '#4f46e5'}}></i> Publicar Nuevo Aviso</h3>
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
                         <form onSubmit={publicarAviso}>
+                            
+                            <div className="admin-form-group">
+                                <label className="admin-label">Público Destinatario</label>
+                                <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
+                                    <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
+                                    {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
+                                </select>
+                            </div>
+
                             <div className="admin-form-group">
                                 <label className="admin-label">Título del Aviso</label>
-                                <input type="text" className="admin-input" placeholder="Ej: Reunión General de Maestros" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
+                                <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
                             </div>
                             <div className="admin-form-group">
                                 <label className="admin-label">Mensaje Detallado</label>
                                 <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
                             </div>
                             <Button type="submit" disabled={publicandoAviso} style={{ width: '100%', background: '#4f46e5', color: 'white' }}>
-                                {publicandoAviso ? 'Publicando...' : 'Enviar a todas las sedes'}
+                                {publicandoAviso ? 'Publicando...' : 'Enviar Aviso'}
                             </Button>
                         </form>
                     </div>
 
                     <div className="admin-preview-widget">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-mobile-screen"></i> Vista en Vivo</h3>
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-mobile-screen"></i> Simulador de Pantalla</h3>
                         <div style={{ pointerEvents: 'auto' }}>
                             <NotificationsWidget />
                         </div>
@@ -195,7 +247,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* MODALES REUTILIZADOS */}
+            {/* === MODALES === */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
