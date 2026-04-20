@@ -5,16 +5,15 @@ import { Button } from '../../../shared/components/Button';
 import { IGLESIAS_CAMPOS, ROLES_CONFIG } from '../../../core/constants/roles';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, formatearFechaLocal } from '../../../core/utils/date.utils'; 
-import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget';
 import './AdminDashboard.css';
 
 export const AdminDashboard = () => {
     const { 
         usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
-        days, months, years, adminTab, setAdminTab,
-        avisoForm, setAvisoForm, publicarAviso, publicandoAviso,
-        alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo
+        days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
+        avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -60,13 +59,6 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
-            {/* BOTÓN DE RETROCESO (Visible solo si no estamos en el Home) */}
-            {adminTab !== 'home' && (
-                <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
-                    <i className="fa-solid fa-circle-arrow-left"></i> Volver al Menú Principal
-                </button>
-            )}
-
             {/* PESTAÑA 1: HOME MÁGICO */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
@@ -92,15 +84,18 @@ export const AdminDashboard = () => {
                         <div className="abc-content">
                             <h3>Centro de Comunicaciones</h3>
                             <p>Envía mensajes y avisos oficiales a tu personal en vivo.</p>
-                            <span className="abc-stat">Crear Nuevo Aviso</span>
+                            <span className="abc-stat">{avisosGlobales.length} Avisos Activos</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
                     </div>
-
-                    <div className="admin-quick-notif">
-                        <NotificationsWidget />
-                    </div>
                 </div>
+            )}
+
+            {/* BOTÓN DE RETROCESO ESTÉTICO (Solo se muestra si salimos del Home) */}
+            {adminTab !== 'home' && (
+                <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
+                    <i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal
+                </button>
             )}
 
             {/* PESTAÑA 2: DIRECTORIO */}
@@ -173,7 +168,7 @@ export const AdminDashboard = () => {
                                             <Accordion key={mes} title={`${mes} (P: ${datosMes.totalPresentes})`}>
                                                 <div className="hmc-body" style={{paddingTop: '10px'}}>
                                                     {Object.entries(datosMes.semanas).map(([semana, asistencias]) => (
-                                                        // ACORDEÓN SEMANA (Oculta las tarjetas hasta hacer clic)
+                                                        // ACORDEÓN SEMANA 
                                                         <Accordion key={semana} title={semana}>
                                                             <div className="history-week-block">
                                                                 {asistencias.map(asis => (
@@ -205,43 +200,44 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 4: AVISOS GLOBALES */}
+            {/* PESTAÑA 4: GESTOR DE AVISOS (Vista de Tarjetas) */}
             {adminTab === 'avisos' && (
-                <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
-                    <div className="admin-aviso-form-card">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
-                        <form onSubmit={publicarAviso}>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Público Destinatario</label>
-                                <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
-                                    <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
-                                    {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
-                                </select>
-                            </div>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Título del Aviso</label>
-                                <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
-                            </div>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Mensaje Detallado</label>
-                                <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
-                            </div>
-                            <Button type="submit" disabled={publicandoAviso} style={{ width: '100%', background: '#4f46e5', color: 'white' }}>
-                                {publicandoAviso ? 'Publicando...' : 'Enviar Aviso'}
-                            </Button>
-                        </form>
+                <div className="animate-fade-in">
+                    <div className="admin-toolbar">
+                        <button className="btn-add-new-user" onClick={abrirModalNuevoAviso}>
+                            <i className="fa-solid fa-paper-plane"></i> Crear Nuevo Aviso
+                        </button>
                     </div>
 
-                    <div className="admin-preview-widget">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-mobile-screen"></i> Previsualización y Control</h3>
-                        <div style={{ pointerEvents: 'auto' }}>
-                            <NotificationsWidget />
-                        </div>
+                    <div className="avisos-grid">
+                        {avisosGlobales.length === 0 ? (
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px' }}>
+                                <i className="fa-solid fa-box-open fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i>
+                                No hay avisos publicados en este momento.
+                            </p>
+                        ) : (
+                            avisosGlobales.map(aviso => (
+                                <div className="aviso-admin-card" key={aviso.id} onClick={() => abrirModalEditarAviso(aviso)} title="Clic para editar o eliminar">
+                                    <div className="aac-header">
+                                        <h4>{aviso.titulo}</h4>
+                                        <span className="aac-target">{aviso.targetRole === 'TODOS' ? 'Todos' : aviso.targetRole}</span>
+                                    </div>
+                                    <p className="aac-mensaje">{aviso.mensaje}</p>
+                                    <div className="aac-footer">
+                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha}</span>
+                                        <div className="aac-stats">
+                                            <span>👍 {aviso.up || 0}</span>
+                                            <span>👎 {aviso.down || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* MODALES REUTILIZADOS */}
+            {/* === MODALES === */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
@@ -265,6 +261,42 @@ export const AdminDashboard = () => {
                     <div className="admin-actions" style={{ marginTop: '20px' }}><Button type="button" className="btn-denegar" onClick={() => setIsAddModalOpen(false)}>Cancelar</Button><Button type="submit" className="btn-aprobar">Crear Usuario</Button></div>
                 </form>
             </Modal>
+
+            {/* NUEVO: MODAL PARA CREAR / EDITAR / ELIMINAR AVISOS */}
+            <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
+                <form onSubmit={guardarAviso}>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Público Destinatario</label>
+                        <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
+                            <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
+                            {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
+                        </select>
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Título del Aviso</label>
+                        <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Mensaje Detallado</label>
+                        <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
+                    </div>
+                    
+                    <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
+                        {avisoForm.id && (
+                            <Button type="button" className="btn-denegar" onClick={eliminarAvisoAdmin} title="Eliminar definitivamente">
+                                <i className="fa-solid fa-trash"></i> Eliminar
+                            </Button>
+                        )}
+                        <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => setIsAvisoModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" className="btn-aprobar" disabled={guardandoAviso}>
+                            {guardandoAviso ? 'Procesando...' : (avisoForm.id ? 'Guardar Cambios' : 'Publicar Aviso')}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
         </div>
     );
 };
