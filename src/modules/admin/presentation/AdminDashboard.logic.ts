@@ -1,6 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
-// ¡AQUÍ ESTÁ LA CORRECCIÓN DEFINITIVA! (3 saltos)
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, addDoc } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config'; 
 import { AuthService } from '../../auth/infrastructure/auth.service';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -9,6 +8,20 @@ export const useAdminLogic = () => {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
+
+    // === NUEVO: BUSCADOR UNIVERSAL ===
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // === NUEVO: MODAL DE AGREGAR USUARIO EXACTO AL LOGIN ===
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const estadoAddInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
+    const [addForm, setAddForm] = useState(estadoAddInicial);
+
+    // Arrays para las fechas de nacimiento
+    const days = Array.from({ length: 31 }, (_, i) => i + 1);
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
 
     useEffect(() => {
         const roles = ['MAESTRO', 'AUXILIAR', 'LOGISTICA', 'SECRETARIA', 'TESORERO'];
@@ -37,6 +50,16 @@ export const useAdminLogic = () => {
 
         return () => unsubscribes.forEach(unsub => unsub());
     }, []);
+
+    // Lógica del buscador reactivo
+    const usuariosFiltrados = usuarios.filter(u => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            (u.nombre && u.nombre.toLowerCase().includes(term)) ||
+            (u.campo && u.campo.toLowerCase().includes(term))
+        );
+    });
 
     const aprobarUsuario = async (user: any) => {
         if(window.confirm(`¿Aprobar a ${user.nombre}?`)) {
@@ -84,8 +107,48 @@ export const useAdminLogic = () => {
         alert("Usuario actualizado correctamente");
     };
 
+    // === NUEVO: REGISTRO DIRECTO DESDE ADMIN ===
+    const guardarNuevoUsuario = async (e: FormEvent) => {
+        e.preventDefault();
+        try {
+            if (!addForm.rol) {
+                alert("Debes seleccionar un rol para el usuario.");
+                return;
+            }
+
+            const coleccion = AuthService.obtenerColeccion(addForm.rol);
+            const fechaNacimiento = `${addForm.birthYear}-${addForm.birthMonth.padStart(2, '0')}-${addForm.birthDay.padStart(2, '0')}`;
+            const edad = calcularEdadExacta(fechaNacimiento);
+
+            const nuevoUsuario = {
+                nombre: addForm.nombre,
+                nombreNormalizado: addForm.nombre.trim().toLowerCase(),
+                rol: addForm.rol,
+                campo: addForm.campo || '',
+                fechaNacimiento,
+                edad,
+                genero: addForm.genero,
+                clase: addForm.rol,
+                estado: 'Activo', // Se aprueba automáticamente por ser Director
+                createdAt: Date.now()
+            };
+
+            // Se guarda en la BD respetando tu estructura
+            await addDoc(collection(db, coleccion), nuevoUsuario);
+            
+            setIsAddModalOpen(false);
+            setAddForm(estadoAddInicial);
+            alert(`✅ Usuario ${addForm.nombre} registrado y activado exitosamente.`);
+        } catch (error) {
+            alert("❌ Error al crear el usuario.");
+        }
+    };
+
     return {
         usuarios, cargando, editandoUser, setEditandoUser,
-        aprobarUsuario, eliminarUsuario, guardarEdicion
+        aprobarUsuario, eliminarUsuario, guardarEdicion,
+        searchTerm, setSearchTerm, usuariosFiltrados,
+        isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
+        days, months, years
     };
 };
