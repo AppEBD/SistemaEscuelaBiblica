@@ -50,3 +50,8 @@
 .birthday-overlay h1 { color: #fcd34d; font-size: clamp(35px, 8vw, 60px); margin: 0; text-shadow: 0 4px 20px rgba(245,158,11,0.6); animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); line-height: 1.1; }
 .birthday-overlay p { color: white; font-size: clamp(16px, 4vw, 22px); margin-top: 20px; font-weight: 800; max-width: 600px; line-height: 1.5; }
 .emoji-confetti { position: absolute; font-size: clamp(25px, 5vw, 40px); animation: floatingEmoji linear infinite; }
+.btn-delete-aviso { 
+    background: transparent; border: none; color: #cbd5e1; cursor: pointer; 
+    transition: 0.2s; padding: 0; font-size: 15px; 
+}
+.btn-delete-aviso:hover { color: #ef4444; transform: scale(1.1); }
