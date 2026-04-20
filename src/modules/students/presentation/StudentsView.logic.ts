@@ -87,7 +87,32 @@ export const useStudentsLogic = () => {
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
-    const manejarCambioOfrenda = (valor: string) => { if (valor === '' || /^\d{0,2}(\.\d{0,2})?$/.test(valor)) { setOfrendaDia(valor); } };
+    // ==========================================
+    // NUEVA OFRENDA INTELIGENTE (COMO CAJERO ATM)
+    // ==========================================
+    const manejarCambioOfrenda = (valor: string) => {
+        // Quitamos cualquier cosa que no sea número (letras, puntos viejos)
+        const rawDigits = valor.replace(/\D/g, '');
+        
+        // Máximo 4 dígitos (lo que da 99.99)
+        const trimmed = rawDigits.substring(0, 4);
+
+        if (trimmed.length === 0) {
+            setOfrendaDia('');
+            return;
+        }
+
+        // Lógica de inyección de punto decimal automático
+        if (trimmed.length === 1) {
+            setOfrendaDia(trimmed); // "1"
+        } else if (trimmed.length === 2) {
+            setOfrendaDia(`${trimmed[0]}.${trimmed[1]}`); // "1.5"
+        } else if (trimmed.length === 3) {
+            setOfrendaDia(`${trimmed[0]}.${trimmed[1]}${trimmed[2]}`); // "1.55"
+        } else if (trimmed.length === 4) {
+            setOfrendaDia(`${trimmed.substring(0, 2)}.${trimmed.substring(2, 4)}`); // "15.55"
+        }
+    };
 
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
     const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
