@@ -5,6 +5,7 @@ import { Button } from '../../../shared/components/Button';
 import { IGLESIAS_CAMPOS, ROLES_CONFIG } from '../../../core/constants/roles';
 import Accordion from '../../../shared/components/Accordion'; 
 import { calcularEdadExacta, formatearFechaLocal } from '../../../core/utils/date.utils'; 
+import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget';
 import './AdminDashboard.css';
 
 export const AdminDashboard = () => {
@@ -91,7 +92,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* BOTÓN DE RETROCESO ESTÉTICO (Solo se muestra si salimos del Home) */}
+            {/* BOTÓN DE RETROCESO ESTÉTICO */}
             {adminTab !== 'home' && (
                 <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
                     <i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal
@@ -136,7 +137,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 3: CAMPOS ACTIVOS (Doble Acordeón Optimizado) */}
+            {/* PESTAÑA 3: CAMPOS ACTIVOS */}
             {adminTab === 'campos' && (
                 <div className="animate-fade-in">
                     <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-map-location-dot"></i> Resumen de Sedes</h3>
@@ -147,7 +148,8 @@ export const AdminDashboard = () => {
                         const historialAgrupado = agruparHistorialPorCampo(campo);
                         
                         return (
-                            <Accordion key={campo} title={`${campo} - ${ninosSede} Niños Registrados`}>
+                            /* CORRECCIÓN: Título limpio "La Isla - 15 registros" */
+                            <Accordion key={campo} title={`${campo} - ${ninosSede} registros`}>
                                 <div className="campo-details-container">
                                     <div className="campo-quick-stats">
                                         <div className="cqs-item"><i className="fa-solid fa-child-reaching" style={{color: '#38bdf8'}}></i> <span>{ninosSede} Niños</span></div>
@@ -164,11 +166,9 @@ export const AdminDashboard = () => {
                                     
                                     {Object.entries(historialAgrupado).length === 0 ? <p style={{ color: '#94a3b8', fontSize: '13px' }}>Sin historial aún.</p> : (
                                         Object.entries(historialAgrupado).map(([mes, datosMes]) => (
-                                            // ACORDEÓN MES (Solo muestra el número de presentes: P: 25)
                                             <Accordion key={mes} title={`${mes} (P: ${datosMes.totalPresentes})`}>
                                                 <div className="hmc-body" style={{paddingTop: '10px'}}>
                                                     {Object.entries(datosMes.semanas).map(([semana, asistencias]) => (
-                                                        // ACORDEÓN SEMANA 
                                                         <Accordion key={semana} title={semana}>
                                                             <div className="history-week-block">
                                                                 {asistencias.map(asis => (
@@ -200,7 +200,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 4: GESTOR DE AVISOS (Vista de Tarjetas) */}
+            {/* PESTAÑA 4: GESTOR DE AVISOS */}
             {adminTab === 'avisos' && (
                 <div className="animate-fade-in">
                     <div className="admin-toolbar">
@@ -237,7 +237,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* === MODALES === */}
+            {/* MODALES */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
@@ -262,7 +262,6 @@ export const AdminDashboard = () => {
                 </form>
             </Modal>
 
-            {/* NUEVO: MODAL PARA CREAR / EDITAR / ELIMINAR AVISOS */}
             <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
                 <form onSubmit={guardarAviso}>
                     <div className="admin-form-group">
