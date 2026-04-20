@@ -35,12 +35,14 @@ export const NotificationsWidget = () => {
                 ) : (
                     <div className="notif-list">
                         {notificaciones.map((n: any) => {
-                            const rData = reaccionesBD[String(n.id)] || { usuarios: {} };
-                            const miReaccion = myUserId ? rData.usuarios[myUserId] : null;
+                            // BLINDAJE CONTRA CRASH: Si no hay reacciones, crea un objeto vacío seguro
+                            const rData = reaccionesBD[String(n.id)] || {};
+                            const usuariosSeguro = rData.usuarios || {}; 
+                            const miReaccion = myUserId ? usuariosSeguro[myUserId] : null;
                             const esCumple = n.isCumplePersonal || n.isCumpleEquipo;
 
                             let up = 0, down = 0, cake = 0;
-                            Object.values(rData.usuarios).forEach(voto => {
+                            Object.values(usuariosSeguro).forEach((voto: any) => {
                                 if (voto === 'up') up++;
                                 if (voto === 'down') down++;
                                 if (voto === 'cake') cake++;
@@ -60,8 +62,7 @@ export const NotificationsWidget = () => {
                                             {n.titulo} 
                                             {!n.leida && !esCumple && <span className="badge-new">NUEVO</span>}
                                         </h4>
-                                        {/* BOTÓN DE ELIMINAR (SOLO ADMIN) */}
-                                        {esAdmin && !esCumple && n.id !== 'admin-1' && (
+                                        {esAdmin && !esCumple && n.id !== 'admin-1' && eliminarAviso && (
                                             <button className="btn-delete-aviso" title="Eliminar aviso para todos" onClick={(e) => eliminarAviso(n.id, e)}>
                                                 <i className="fa-solid fa-trash"></i>
                                             </button>
