@@ -18,7 +18,6 @@ export const AdminDashboard = () => {
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
-    const totalPendientes = usuarios.filter(u => u.estado === 'Pendiente').length;
 
     const renderUserCard = (user: any) => (
         <div className="user-card" key={user.id}>
@@ -56,23 +55,19 @@ export const AdminDashboard = () => {
     return (
         <div className="admin-dashboard animate-fade-in">
             
-            {/* CABECERA Y NAVEGACIÓN */}
             <div className="admin-header">
                 <h2>Centro de Comando</h2>
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
-                
-                <div className="admin-nav-tabs">
-                    <button className={`admin-tab ${adminTab === 'home' ? 'active' : ''}`} onClick={() => setAdminTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
-                    <button className={`admin-tab ${adminTab === 'directorio' ? 'active' : ''}`} onClick={() => setAdminTab('directorio')}>
-                        <i className="fa-solid fa-address-book"></i> Directorio
-                        {totalPendientes > 0 && <span className="tab-badge">{totalPendientes}</span>}
-                    </button>
-                    <button className={`admin-tab ${adminTab === 'campos' ? 'active' : ''}`} onClick={() => setAdminTab('campos')}><i className="fa-solid fa-church"></i> Sedes Activas</button>
-                    <button className={`admin-tab ${adminTab === 'avisos' ? 'active' : ''}`} onClick={() => setAdminTab('avisos')}><i className="fa-solid fa-bullhorn"></i> Crear Aviso</button>
-                </div>
             </div>
 
-            {/* PESTAÑA 1: HOME MÁGICO (Tarjetas Dinámicas) */}
+            {/* BOTÓN DE RETROCESO (Visible solo si no estamos en el Home) */}
+            {adminTab !== 'home' && (
+                <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
+                    <i className="fa-solid fa-circle-arrow-left"></i> Volver al Menú Principal
+                </button>
+            )}
+
+            {/* PESTAÑA 1: HOME MÁGICO */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
@@ -87,8 +82,8 @@ export const AdminDashboard = () => {
                     <div className="admin-big-card card-emerald" onClick={() => setAdminTab('campos')}>
                         <div className="abc-content">
                             <h3>Monitoreo de Sedes</h3>
-                            <p>Verifica el progreso anual y la asistencia de cada campo.</p>
-                            <span className="abc-stat">{IGLESIAS_CAMPOS.length} Campos</span>
+                            <p>Verifica el progreso y asistencia semanal de cada campo.</p>
+                            <span className="abc-stat">{IGLESIAS_CAMPOS.length} Campos Activos</span>
                         </div>
                         <i className="fa-solid fa-map-location-dot abc-icon"></i>
                     </div>
@@ -96,13 +91,12 @@ export const AdminDashboard = () => {
                     <div className="admin-big-card card-amber" onClick={() => setAdminTab('avisos')}>
                         <div className="abc-content">
                             <h3>Centro de Comunicaciones</h3>
-                            <p>Envía mensajes a roles específicos con reacciones en vivo.</p>
-                            <span className="abc-stat">Publicar Ahora</span>
+                            <p>Envía mensajes y avisos oficiales a tu personal en vivo.</p>
+                            <span className="abc-stat">Crear Nuevo Aviso</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
                     </div>
 
-                    {/* Previsualización rápida de Notificaciones */}
                     <div className="admin-quick-notif">
                         <NotificationsWidget />
                     </div>
@@ -147,7 +141,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 3: CAMPOS ACTIVOS (Con Acordeones de Mes anidados) */}
+            {/* PESTAÑA 3: CAMPOS ACTIVOS (Doble Acordeón Optimizado) */}
             {adminTab === 'campos' && (
                 <div className="animate-fade-in">
                     <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-map-location-dot"></i> Resumen de Sedes</h3>
@@ -175,28 +169,30 @@ export const AdminDashboard = () => {
                                     
                                     {Object.entries(historialAgrupado).length === 0 ? <p style={{ color: '#94a3b8', fontSize: '13px' }}>Sin historial aún.</p> : (
                                         Object.entries(historialAgrupado).map(([mes, datosMes]) => (
-                                            // NUEVO: El mes ahora es un Acordeón para ahorrar espacio
-                                            <Accordion key={mes} title={`${mes} - ${datosMes.totalPresentes} Presentes en el mes`}>
+                                            // ACORDEÓN MES (Solo muestra el número de presentes: P: 25)
+                                            <Accordion key={mes} title={`${mes} (P: ${datosMes.totalPresentes})`}>
                                                 <div className="hmc-body" style={{paddingTop: '10px'}}>
                                                     {Object.entries(datosMes.semanas).map(([semana, asistencias]) => (
-                                                        <div className="history-week-block" key={semana}>
-                                                            <div className="hwb-title">{semana}</div>
-                                                            {asistencias.map(asis => (
-                                                                <div className="hwb-class-card" key={asis.id}>
-                                                                    <div className="hwb-header">
-                                                                        <span className="hwb-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</span>
-                                                                        <span className="hwb-leccion">Lec. {asis.numeroLeccion} {asis.leccionDada && <i className="fa-solid fa-circle-check" style={{color:'#10b981'}}></i>}</span>
+                                                        // ACORDEÓN SEMANA (Oculta las tarjetas hasta hacer clic)
+                                                        <Accordion key={semana} title={semana}>
+                                                            <div className="history-week-block">
+                                                                {asistencias.map(asis => (
+                                                                    <div className="hwb-class-card" key={asis.id}>
+                                                                        <div className="hwb-header">
+                                                                            <span className="hwb-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</span>
+                                                                            <span className="hwb-leccion">Lec. {asis.numeroLeccion} {asis.leccionDada && <i className="fa-solid fa-circle-check" style={{color:'#10b981'}}></i>}</span>
+                                                                        </div>
+                                                                        <div className="hwb-info">Registrado por: <strong>{asis.registradoPor}</strong></div>
+                                                                        <div className="hwb-stats-row">
+                                                                            <span className="pill-p">P: {asis.resumen?.presentes || 0}</span>
+                                                                            <span className="pill-a">A: {asis.resumen?.ausentes || 0}</span>
+                                                                            <span className="pill-pe">Pe: {asis.resumen?.permisos || 0}</span>
+                                                                            <span className="pill-o">Ofrenda: ${parseFloat((asis.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="hwb-info">Registrado por: <strong>{asis.registradoPor}</strong></div>
-                                                                    <div className="hwb-stats-row">
-                                                                        <span className="pill-p">P: {asis.resumen?.presentes || 0}</span>
-                                                                        <span className="pill-a">A: {asis.resumen?.ausentes || 0}</span>
-                                                                        <span className="pill-pe">Pe: {asis.resumen?.permisos || 0}</span>
-                                                                        <span className="pill-o">Ofrenda: ${parseFloat((asis.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                                ))}
+                                                            </div>
+                                                        </Accordion>
                                                     ))}
                                                 </div>
                                             </Accordion>
@@ -209,13 +205,12 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 4: AVISOS GLOBALES (Con Segmentación) */}
+            {/* PESTAÑA 4: AVISOS GLOBALES */}
             {adminTab === 'avisos' && (
                 <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
                     <div className="admin-aviso-form-card">
                         <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
                         <form onSubmit={publicarAviso}>
-                            
                             <div className="admin-form-group">
                                 <label className="admin-label">Público Destinatario</label>
                                 <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
@@ -223,7 +218,6 @@ export const AdminDashboard = () => {
                                     {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
                                 </select>
                             </div>
-
                             <div className="admin-form-group">
                                 <label className="admin-label">Título del Aviso</label>
                                 <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
@@ -239,7 +233,7 @@ export const AdminDashboard = () => {
                     </div>
 
                     <div className="admin-preview-widget">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-mobile-screen"></i> Simulador de Pantalla</h3>
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-mobile-screen"></i> Previsualización y Control</h3>
                         <div style={{ pointerEvents: 'auto' }}>
                             <NotificationsWidget />
                         </div>
@@ -247,7 +241,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* === MODALES === */}
+            {/* MODALES REUTILIZADOS */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
