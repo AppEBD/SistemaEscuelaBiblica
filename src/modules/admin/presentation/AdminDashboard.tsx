@@ -12,13 +12,12 @@ export const AdminDashboard = () => {
     const { 
         usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
-        days, months, years, adminTab, setAdminTab,
-        avisoForm, setAvisoForm, publicarAviso, publicandoAviso,
-        alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo
+        days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
+        avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
-    const totalPendientes = usuarios.filter(u => u.estado === 'Pendiente').length;
 
     const renderUserCard = (user: any) => (
         <div className="user-card" key={user.id}>
@@ -56,23 +55,11 @@ export const AdminDashboard = () => {
     return (
         <div className="admin-dashboard animate-fade-in">
             
-            {/* CABECERA Y NAVEGACIÓN */}
             <div className="admin-header">
                 <h2>Centro de Comando</h2>
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
-                
-                <div className="admin-nav-tabs">
-                    <button className={`admin-tab ${adminTab === 'home' ? 'active' : ''}`} onClick={() => setAdminTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
-                    <button className={`admin-tab ${adminTab === 'directorio' ? 'active' : ''}`} onClick={() => setAdminTab('directorio')}>
-                        <i className="fa-solid fa-address-book"></i> Directorio
-                        {totalPendientes > 0 && <span className="tab-badge">{totalPendientes}</span>}
-                    </button>
-                    <button className={`admin-tab ${adminTab === 'campos' ? 'active' : ''}`} onClick={() => setAdminTab('campos')}><i className="fa-solid fa-church"></i> Sedes Activas</button>
-                    <button className={`admin-tab ${adminTab === 'avisos' ? 'active' : ''}`} onClick={() => setAdminTab('avisos')}><i className="fa-solid fa-bullhorn"></i> Crear Aviso</button>
-                </div>
             </div>
 
-            {/* PESTAÑA 1: HOME MÁGICO */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
@@ -97,25 +84,19 @@ export const AdminDashboard = () => {
                         <div className="abc-content">
                             <h3>Centro de Comunicaciones</h3>
                             <p>Envía mensajes y avisos oficiales a tu personal en vivo.</p>
-                            <span className="abc-stat">Crear Nuevo Aviso</span>
+                            <span className="abc-stat">{avisosGlobales.length} Avisos Activos</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
-                    </div>
-
-                    <div className="admin-quick-notif">
-                        <NotificationsWidget />
                     </div>
                 </div>
             )}
 
-            {/* BOTÓN DE RETROCESO ESTÉTICO */}
             {adminTab !== 'home' && (
                 <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
                     <i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal
                 </button>
             )}
 
-            {/* PESTAÑA 2: DIRECTORIO */}
             {adminTab === 'directorio' && (
                 <div className="animate-fade-in">
                     <div className="admin-toolbar">
@@ -153,12 +134,10 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 3: CAMPOS ACTIVOS */}
             {adminTab === 'campos' && (
                 <div className="animate-fade-in">
                     <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-map-location-dot"></i> Resumen de Sedes</h3>
                     {IGLESIAS_CAMPOS.map(campo => {
-                        // AQUÍ APLICAMOS TU MEJORA: Filtramos a los niños y niñas por separado
                         const alumnosSede = alumnosGlobal.filter(a => a.campo === campo);
                         const totalSede = alumnosSede.length;
                         const totalNinos = alumnosSede.filter(a => a.genero === 'Masculino').length;
@@ -194,7 +173,8 @@ export const AdminDashboard = () => {
                                                                 {asistencias.map(asis => (
                                                                     <div className="hwb-class-card" key={asis.id}>
                                                                         <div className="hwb-header">
-                                                                            <span className="hwb-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</span>
+                                                                            {/* BLINDAJE CONTRA FECHAS INEXISTENTES */}
+                                                                            <span className="hwb-date"><i className="fa-regular fa-calendar"></i> {asis.fecha ? asis.fecha.split('-').reverse().join('/') : 'Sin Fecha'}</span>
                                                                             <span className="hwb-leccion">Lec. {asis.numeroLeccion} {asis.leccionDada && <i className="fa-solid fa-circle-check" style={{color:'#10b981'}}></i>}</span>
                                                                         </div>
                                                                         <div className="hwb-info">Registrado por: <strong>{asis.registradoPor}</strong></div>
@@ -220,7 +200,6 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA 4: GESTOR DE AVISOS */}
             {adminTab === 'avisos' && (
                 <div className="animate-fade-in">
                     <div className="admin-toolbar">
@@ -244,7 +223,7 @@ export const AdminDashboard = () => {
                                     </div>
                                     <p className="aac-mensaje">{aviso.mensaje}</p>
                                     <div className="aac-footer">
-                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha}</span>
+                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha || 'Reciente'}</span>
                                         <div className="aac-stats">
                                             <span>👍 {aviso.up || 0}</span>
                                             <span>👎 {aviso.down || 0}</span>
