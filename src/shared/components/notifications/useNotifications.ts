@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { doc, collection, onSnapshot, runTransaction } from 'firebase/firestore';
+import { doc, collection, onSnapshot, runTransaction, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config'; 
 import { useAuth } from '../../../modules/auth/application/useAuth';
 
@@ -7,27 +7,24 @@ export const useNotifications = () => {
     const { userData } = useAuth();
     const [staffList, setStaffList] = useState<any[]>([]);
     
-    // Aquí guardaremos los avisos que vienen en vivo desde Firebase
     const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     // ==========================================
-    // 1. DESCARGAR AVISOS GLOBALES EN TIEMPO REAL Y FILTRARLOS
+    // DESCARGAR AVISOS GLOBALES EN TIEMPO REAL
     // ==========================================
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
             const avisosEnVivo: any[] = [];
-            
             const miRol = userData?.rol || '';
 
             snapshot.forEach(doc => {
                 const data = doc.data();
-                reacts[doc.id] = data; // Guardamos las reacciones para los botones
+                reacts[doc.id] = data; 
 
-                // LÓGICA DE SEGMENTACIÓN: ¿Este aviso es para mí?
                 const publicoObjetivo = data.targetRole || 'TODOS';
                 
                 if (publicoObjetivo === 'TODOS' || publicoObjetivo === miRol || miRol === 'ADMIN') {
@@ -45,18 +42,16 @@ export const useNotifications = () => {
             });
 
             setReaccionesBD(reacts);
-            
-            // Le agregamos el mensaje de bienvenida del sistema por defecto
             setNotificacionesAdmin([
                 { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva.", fecha: "Sistema", leida: false },
-                ...avisosEnVivo.sort((a, b) => b.createdAt - a.createdAt) // Ordenamos los más nuevos primero
+                ...avisosEnVivo.sort((a, b) => b.createdAt - a.createdAt) 
             ]);
         });
         return () => unsub();
     }, [userData?.rol]);
 
     // ==========================================
-    // 2. MANEJO DE REACCIONES (EXACTO)
+    // MANEJO DE REACCIONES
     // ==========================================
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
@@ -91,7 +86,21 @@ export const useNotifications = () => {
     };
 
     // ==========================================
-    // 3. DESCARGAR STAFF PARA CUMPLEAÑOS
+    // ELIMINAR AVISO (SOLO PARA DIRECTORES)
+    // ==========================================
+    const eliminarAviso = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm("¿Seguro que deseas eliminar este aviso permanentemente para todos?")) {
+            try {
+                await deleteDoc(doc(db, 'interacciones_avisos', id));
+            } catch (error) {
+                alert("Error al eliminar el aviso.");
+            }
+        }
+    };
+
+    // ==========================================
+    // DESCARGAR STAFF PARA CUMPLEAÑOS
     // ==========================================
     useEffect(() => {
         if (!userData || !userData.uid) return; 
@@ -126,9 +135,6 @@ export const useNotifications = () => {
 
     const currentYear = new Date().getFullYear();
 
-    // ==========================================
-    // 4. CÁLCULO DE CUMPLEAÑOS
-    // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
         const hoy = new Date();
@@ -211,5 +217,5 @@ export const useNotifications = () => {
         setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); 
     };
 
-    return { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData };
+    return { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData, eliminarAviso };
 };
