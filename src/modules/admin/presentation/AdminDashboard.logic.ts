@@ -8,9 +8,11 @@ export const useAdminLogic = () => {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [alumnosGlobal, setAlumnosGlobal] = useState<any[]>([]);
     const [asistenciasGlobal, setAsistenciasGlobal] = useState<any[]>([]);
+    
+    // NUEVO: Estado para almacenar los avisos publicados en la BD
+    const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // NUEVO: La vista principal arranca en 'home'
     const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
@@ -19,9 +21,11 @@ export const useAdminLogic = () => {
     const estadoAddInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
     const [addForm, setAddForm] = useState(estadoAddInicial);
 
-    // NUEVO: Formulario de avisos con el campo targetRole
-    const [avisoForm, setAvisoForm] = useState({ titulo: '', mensaje: '', targetRole: 'TODOS' });
-    const [publicandoAviso, setPublicandoAviso] = useState(false);
+    // NUEVO: Control del Modal de Avisos (Crear/Editar/Eliminar)
+    const [isAvisoModalOpen, setIsAvisoModalOpen] = useState(false);
+    const estadoAvisoInicial = { id: '', titulo: '', mensaje: '', targetRole: 'TODOS' };
+    const [avisoForm, setAvisoForm] = useState(estadoAvisoInicial);
+    const [guardandoAviso, setGuardandoAviso] = useState(false);
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -32,6 +36,7 @@ export const useAdminLogic = () => {
         const roles = ['MAESTRO', 'AUXILIAR', 'LOGISTICA', 'SECRETARIA', 'TESORERO'];
         const unsubscribes: any[] = [];
 
+        // 1. Descargar Usuarios
         roles.forEach(rol => {
             const coleccion = AuthService.obtenerColeccion(rol);
             const q = query(collection(db, coleccion));
@@ -50,18 +55,28 @@ export const useAdminLogic = () => {
             unsubscribes.push(unsub);
         });
 
+        // 2. Descargar Alumnos
         const unsubAlumnos = onSnapshot(collection(db, 'alumnos'), (snap) => {
             setAlumnosGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
 
+        // 3. Descargar Asistencias
         const unsubAsistencias = onSnapshot(collection(db, 'asistencias'), (snap) => {
             setAsistenciasGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+        // 4. Descargar Avisos
+        const unsubAvisos = onSnapshot(collection(db, 'interacciones_avisos'), (snap) => {
+            // Se ordenan para que los más nuevos salgan de primero
+            const avisos = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a: any, b: any) => b.createdAt - a.createdAt);
+            setAvisosGlobales(avisos);
         });
 
         return () => {
             unsubscribes.forEach(unsub => unsub());
             unsubAlumnos();
             unsubAsistencias();
+            unsubAvisos();
         };
     }, []);
 
@@ -126,36 +141,71 @@ export const useAdminLogic = () => {
     };
 
     // ==========================================
-    // PUBLICAR AVISOS CON SEGMENTACIÓN
+    // LOGICA DE AVISOS (CREAR, EDITAR, ELIMINAR)
     // ==========================================
-    const publicarAviso = async (e: FormEvent) => {
+    const abrirModalNuevoAviso = () => {
+        setAvisoForm(estadoAvisoInicial);
+        setIsAvisoModalOpen(true);
+    };
+
+    const abrirModalEditarAviso = (aviso: any) => {
+        setAvisoForm({
+            id: aviso.id,
+            titulo: aviso.titulo,
+            mensaje: aviso.mensaje,
+            targetRole: aviso.targetRole || 'TODOS'
+        });
+        setIsAvisoModalOpen(true);
+    };
+
+    const guardarAviso = async (e: FormEvent) => {
         e.preventDefault();
-        setPublicandoAviso(true);
+        setGuardandoAviso(true);
         try {
-            await addDoc(collection(db, 'interacciones_avisos'), {
-                titulo: avisoForm.titulo,
-                mensaje: avisoForm.mensaje,
-                targetRole: avisoForm.targetRole, // Guardamos para quién es
-                fecha: 'Hoy',
-                up: 0, down: 0, cake: 0,
-                usuarios: {},
-                leida: false,
-                isCumplePersonal: false,
-                isCumpleEquipo: false,
-                createdAt: Date.now()
-            });
-            setAvisoForm({ titulo: '', mensaje: '', targetRole: 'TODOS' });
-            alert("Aviso publicado y enviado a los usuarios.");
+            if (avisoForm.id) {
+                // EDITAR AVISO EXISTENTE
+                await updateDoc(doc(db, 'interacciones_avisos', avisoForm.id), {
+                    titulo: avisoForm.titulo,
+                    mensaje: avisoForm.mensaje,
+                    targetRole: avisoForm.targetRole
+                });
+                alert("Aviso actualizado exitosamente.");
+            } else {
+                // CREAR AVISO NUEVO
+                await addDoc(collection(db, 'interacciones_avisos'), {
+                    titulo: avisoForm.titulo,
+                    mensaje: avisoForm.mensaje,
+                    targetRole: avisoForm.targetRole,
+                    fecha: new Date().toLocaleDateString('es-SV'), 
+                    up: 0, down: 0, cake: 0,
+                    usuarios: {},
+                    leida: false,
+                    isCumplePersonal: false,
+                    isCumpleEquipo: false,
+                    createdAt: Date.now()
+                });
+                alert("Aviso publicado a todas las sedes.");
+            }
+            setIsAvisoModalOpen(false);
         } catch (error) {
-            alert("Error al publicar el aviso.");
+            alert("Error al procesar el aviso.");
         } finally {
-            setPublicandoAviso(false);
+            setGuardandoAviso(false);
         }
     };
 
-    // ==========================================
-    // MOTOR DE AGRUPACIÓN (MES > SEMANA)
-    // ==========================================
+    const eliminarAvisoAdmin = async () => {
+        if (!avisoForm.id) return;
+        if (window.confirm("¿Estás seguro de que deseas ELIMINAR este aviso permanentemente?")) {
+            try {
+                await deleteDoc(doc(db, 'interacciones_avisos', avisoForm.id));
+                setIsAvisoModalOpen(false);
+            } catch (error) {
+                alert("Error al eliminar el aviso.");
+            }
+        }
+    };
+
     const agruparHistorialPorCampo = (campo: string) => {
         const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
@@ -170,20 +220,18 @@ export const useAdminLogic = () => {
             if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
 
             grupos[mesStr].semanas[semanaStr].push(asis);
-            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0); // Solo suma los presentes
+            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
         });
 
         return grupos;
     };
 
     return {
-        usuarios, cargando, editandoUser, setEditandoUser,
-        aprobarUsuario, eliminarUsuario, guardarEdicion,
-        searchTerm, setSearchTerm, usuariosFiltrados,
-        isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
-        days, months, years,
-        adminTab, setAdminTab,
-        avisoForm, setAvisoForm, publicarAviso, publicandoAviso,
-        alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo
+        usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
+        searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
+        days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
+        // Variables para Avisos
+        avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
     };
 };
