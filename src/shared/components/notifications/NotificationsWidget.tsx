@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNotifications } from './useNotifications';
-import './NotificationsWidget.css'; // Archivo CSS que crearemos ahora
+import './NotificationsWidget.css'; 
 
 export const NotificationsWidget = () => {
     const { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData } = useNotifications();
@@ -9,7 +9,6 @@ export const NotificationsWidget = () => {
 
     return (
         <>
-            {/* EL CONFETI */}
             {showBirthdayOverlay && (
                 <div className="birthday-overlay">
                     <div className="emoji-confetti" style={{left: '10%', animationDuration: '3s', animationDelay: '0s'}}>🎉</div>
@@ -20,18 +19,17 @@ export const NotificationsWidget = () => {
                     <div className="emoji-confetti" style={{left: '15%', animationDuration: '3.8s', animationDelay: '1.2s'}}>🎂</div>
                     <div className="emoji-confetti" style={{left: '75%', animationDuration: '3.3s', animationDelay: '1.5s'}}>🎈</div>
                     <h1>¡Feliz Cumpleaños!</h1>
-                    <p style={{color: 'white', fontSize: '18px', marginTop: '15px', fontWeight: 'bold', textAlign: 'center', padding: '0 20px'}}>Que Dios te bendiga grandemente hoy, {nombreUsuario.split(' ')[0]}.</p>
+                    <p>Que Dios te bendiga grandemente hoy, {nombreUsuario.split(' ')[0]}.</p>
                 </div>
             )}
 
-            {/* EL WIDGET DE AVISOS */}
             <div className="home-widget">
                 <div className="home-widget-title"><i className="fa-solid fa-bell" style={{color: '#f59e0b'}}></i> Avisos y Cumpleaños</div>
                 
                 {notificaciones.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8' }}>
-                        <i className="fa-regular fa-bell-slash" style={{ fontSize: '30px', marginBottom: '10px', opacity: 0.5 }}></i>
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: '600' }}>No hay avisos ni cumpleañeros esta semana.</p>
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8' }}>
+                        <i className="fa-regular fa-bell-slash" style={{ fontSize: '35px', marginBottom: '15px', opacity: 0.5 }}></i>
+                        <p style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>No hay avisos ni cumpleañeros esta semana.</p>
                     </div>
                 ) : (
                     <div className="notif-list">
