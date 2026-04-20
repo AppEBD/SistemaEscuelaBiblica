@@ -7,28 +7,57 @@ export const useNotifications = () => {
     const { userData } = useAuth();
     const [staffList, setStaffList] = useState<any[]>([]);
     
-    // Avisos generales
-    const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([
-        { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva para todos los maestros y auxiliares.", fecha: "Sistema", leida: false }
-    ]);
-
+    // Aquí guardaremos los avisos que vienen en vivo desde Firebase
+    const [notificacionesAdmin, setNotificacionesAdmin] = useState<any[]>([]);
     const [showBirthdayOverlay, setShowBirthdayOverlay] = useState(false);
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
-
-    // ==========================================
-    // REACCIONES WHATSAPP STYLE (SIN ERRORES DE SUMA/RESTA)
-    // ==========================================
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
+    // ==========================================
+    // 1. DESCARGAR AVISOS GLOBALES EN TIEMPO REAL Y FILTRARLOS
+    // ==========================================
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
-            snapshot.forEach(doc => { reacts[doc.id] = doc.data(); });
+            const avisosEnVivo: any[] = [];
+            
+            const miRol = userData?.rol || '';
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                reacts[doc.id] = data; // Guardamos las reacciones para los botones
+
+                // LÓGICA DE SEGMENTACIÓN: ¿Este aviso es para mí?
+                const publicoObjetivo = data.targetRole || 'TODOS';
+                
+                if (publicoObjetivo === 'TODOS' || publicoObjetivo === miRol || miRol === 'ADMIN') {
+                    avisosEnVivo.push({
+                        id: doc.id,
+                        titulo: data.titulo,
+                        mensaje: data.mensaje,
+                        fecha: data.fecha || 'Reciente',
+                        leida: false,
+                        isCumplePersonal: false,
+                        isCumpleEquipo: false,
+                        createdAt: data.createdAt || 0
+                    });
+                }
+            });
+
             setReaccionesBD(reacts);
+            
+            // Le agregamos el mensaje de bienvenida del sistema por defecto
+            setNotificacionesAdmin([
+                { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva.", fecha: "Sistema", leida: false },
+                ...avisosEnVivo.sort((a, b) => b.createdAt - a.createdAt) // Ordenamos los más nuevos primero
+            ]);
         });
         return () => unsub();
-    }, []);
+    }, [userData?.rol]);
 
+    // ==========================================
+    // 2. MANEJO DE REACCIONES (EXACTO)
+    // ==========================================
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
         const userId = userData?.uid || userData?.id; 
@@ -43,14 +72,12 @@ export const useNotifications = () => {
                 const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
                 const usuarios = actualData.usuarios || {};
 
-                // Lógica de WhatsApp: Si tocas el mismo, se quita. Si tocas otro, se reemplaza.
                 if (usuarios[userId] === tipo) {
                     delete usuarios[userId];
                 } else {
                     usuarios[userId] = tipo;
                 }
 
-                // Recuento matemático desde cero (nunca falla, nunca da negativos)
                 let up = 0, down = 0, cake = 0;
                 Object.values(usuarios).forEach(voto => {
                     if (voto === 'up') up++;
@@ -60,15 +87,14 @@ export const useNotifications = () => {
 
                 transaction.set(docRef, { up, down, cake, usuarios }, { merge: true });
             });
-        } catch (error) {
-            console.error("Error guardando reacción:", error);
-        }
+        } catch (error) { console.error("Error guardando reacción:", error); }
     };
 
     // ==========================================
-    // DESCARGAR A TODO EL STAFF (EN VIVO)
+    // 3. DESCARGAR STAFF PARA CUMPLEAÑOS
     // ==========================================
     useEffect(() => {
+        if (!userData || !userData.uid) return; 
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
         const unsubs: any[] = [];
         const staffMap: Record<string, any[]> = {};
@@ -90,59 +116,47 @@ export const useNotifications = () => {
                     });
                     staffMap[nombreCol] = listaCol;
                     actualizarStaff();
-                }, (error) => {
-                    console.warn(`Aviso: No se pudo leer la colección ${nombreCol}.`);
-                });
+                }, () => {});
                 unsubs.push(unsub);
             } catch (e) {}
         });
 
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, []);
+    }, [userData]);
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // CÁLCULO DE CUMPLEAÑOS
+    // 4. CÁLCULO DE CUMPLEAÑOS
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
-        
         const hoy = new Date();
         const mmddHoy = `${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-        
-        const ayer = new Date(hoy);
-        ayer.setDate(hoy.getDate() - 1);
+        const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
         const mmddAyer = `${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
         
         const diasDeEstaSemana = new Set<string>();
-        const domingo = new Date(hoy);
-        domingo.setDate(hoy.getDate() - hoy.getDay());
-        
+        const domingo = new Date(hoy); domingo.setDate(hoy.getDate() - hoy.getDay());
         for (let i = 0; i < 7; i++) {
-            const dia = new Date(domingo);
-            dia.setDate(domingo.getDate() + i);
-            const mesFormat = String(dia.getMonth() + 1).padStart(2, '0');
-            const diaFormat = String(dia.getDate()).padStart(2, '0');
-            diasDeEstaSemana.add(`${mesFormat}-${diaFormat}`);
+            const dia = new Date(domingo); dia.setDate(domingo.getDate() + i);
+            diasDeEstaSemana.add(`${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`);
         }
 
         const userId = userData?.uid || userData?.id;
-        const nombreUsuario = userData?.nombre || 'Miembro del Equipo';
+        const nombreUsuario = userData?.nombre || 'Equipo';
         let miCumpleFlag = false;
 
         const cumpleaneros = staffList.filter(user => {
             if (!user || typeof user.fechaNacimiento !== 'string') return false;
             const partes = user.fechaNacimiento.split('-');
             if (partes.length !== 3) return false;
-            const mmdd = `${partes[1]}-${partes[2]}`;
-            return diasDeEstaSemana.has(mmdd);
+            return diasDeEstaSemana.has(`${partes[1]}-${partes[2]}`);
         }).sort((a, b) => parseInt(a.fechaNacimiento.split('-')[2] || '0', 10) - parseInt(b.fechaNacimiento.split('-')[2] || '0', 10));
 
         const cards = cumpleaneros.map(c => {
             const esMio = c.id === userId;
             const mmddCumple = c.fechaNacimiento.substring(5);
-            
             const esHoy = mmddCumple === mmddHoy;
             const esAyer = mmddCumple === mmddAyer;
             const yaPaso = mmddCumple < mmddHoy; 
@@ -155,23 +169,15 @@ export const useNotifications = () => {
             if (esMio) {
                 if (esHoy) miCumpleFlag = true;
                 return {
-                    id: notifId,
-                    titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : (yaPaso ? "🎉 ¡Esperamos que la hayas pasado genial!" : "🎉 ¡Tu cumpleaños se acerca!"),
-                    mensaje: esHoy 
-                        ? `¡Felicidades en tu día especial, ${nombreUsuario.split(' ')[0]}! Que Dios te bendiga grandemente hoy.`
-                        : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}. ¡Deseamos que hayas tenido un día muy bendecido!` : `Tu cumpleaños es esta semana (Día ${diaNum}). ¡Ya casi celebramos!`),
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
-                    leida: true, isCumplePersonal: true
+                    id: notifId, titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : (yaPaso ? "🎉 ¡Esperamos que la hayas pasado genial!" : "🎉 ¡Tu cumpleaños se acerca!"),
+                    mensaje: esHoy ? `¡Felicidades, ${nombreUsuario.split(' ')[0]}!` : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}.` : `Tu cumpleaños es esta semana (Día ${diaNum}).`),
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumplePersonal: true
                 };
             } else {
                 return {
-                    id: notifId,
-                    titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : (yaPaso ? `🎂 Cumpleaños reciente de ${c.nombre.split(' ')[0]}` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`),
-                    mensaje: esHoy
-                        ? `¡Hoy celebramos la vida de ${c.nombre} (${rolCapitalizado}${sedeDisplay})! No olvides enviarle una felicitación.`
-                        : (yaPaso ? `El día ${diaNum} fue el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Aún estás a tiempo de felicitarle!` : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}). ¡Prepárate para felicitarle!`),
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"),
-                    leida: true, isCumpleEquipo: true
+                    id: notifId, titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : (yaPaso ? `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`),
+                    mensaje: esHoy ? `¡Felicítale! (${rolCapitalizado}${sedeDisplay})` : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}).`,
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumpleEquipo: true
                 };
             }
         });
@@ -181,25 +187,17 @@ export const useNotifications = () => {
 
     useEffect(() => {
         if (esMiCumpleHoy && !hasShownOverlay) {
-            setShowBirthdayOverlay(true);
-            setHasShownOverlay(true);
+            setShowBirthdayOverlay(true); setHasShownOverlay(true);
             const timer = setTimeout(() => setShowBirthdayOverlay(false), 5500);
             return () => clearTimeout(timer);
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
-    // ==========================================
-    // MOTOR DE PRIORIDAD Y ORDENAMIENTO
-    // ==========================================
     const getPesoFecha = (fechaStr: string) => {
         const f = (fechaStr || '').toLowerCase().trim();
-        if (f === 'hoy') return 1;
-        if (f === 'ayer') return 2;
-        if (f === 'esta semana') return 3;
-        if (f === 'semana pasada') return 4;
-        if (f === 'este mes') return 5;
-        if (f === 'mes pasado') return 6;
-        return 99; // Sistema
+        if (f === 'hoy') return 1; if (f === 'ayer') return 2; if (f === 'esta semana') return 3;
+        if (f === 'semana pasada') return 4; if (f === 'este mes') return 5; if (f === 'mes pasado') return 6;
+        return 99; 
     };
 
     const notificaciones = useMemo(() => {
@@ -213,8 +211,5 @@ export const useNotifications = () => {
         setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); 
     };
 
-    return { 
-        notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, 
-        showBirthdayOverlay, userData 
-    };
+    return { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData };
 };
