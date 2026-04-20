@@ -12,12 +12,13 @@ export const AdminDashboard = () => {
     const { 
         usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
-        days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
-        avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
-        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
+        days, months, years, adminTab, setAdminTab,
+        avisoForm, setAvisoForm, publicarAviso, publicandoAviso,
+        alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
+    const totalPendientes = usuarios.filter(u => u.estado === 'Pendiente').length;
 
     const renderUserCard = (user: any) => (
         <div className="user-card" key={user.id}>
@@ -55,9 +56,20 @@ export const AdminDashboard = () => {
     return (
         <div className="admin-dashboard animate-fade-in">
             
+            {/* CABECERA Y NAVEGACIÓN */}
             <div className="admin-header">
                 <h2>Centro de Comando</h2>
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
+                
+                <div className="admin-nav-tabs">
+                    <button className={`admin-tab ${adminTab === 'home' ? 'active' : ''}`} onClick={() => setAdminTab('home')}><i className="fa-solid fa-house"></i> Inicio</button>
+                    <button className={`admin-tab ${adminTab === 'directorio' ? 'active' : ''}`} onClick={() => setAdminTab('directorio')}>
+                        <i className="fa-solid fa-address-book"></i> Directorio
+                        {totalPendientes > 0 && <span className="tab-badge">{totalPendientes}</span>}
+                    </button>
+                    <button className={`admin-tab ${adminTab === 'campos' ? 'active' : ''}`} onClick={() => setAdminTab('campos')}><i className="fa-solid fa-church"></i> Sedes Activas</button>
+                    <button className={`admin-tab ${adminTab === 'avisos' ? 'active' : ''}`} onClick={() => setAdminTab('avisos')}><i className="fa-solid fa-bullhorn"></i> Crear Aviso</button>
+                </div>
             </div>
 
             {/* PESTAÑA 1: HOME MÁGICO */}
@@ -85,9 +97,13 @@ export const AdminDashboard = () => {
                         <div className="abc-content">
                             <h3>Centro de Comunicaciones</h3>
                             <p>Envía mensajes y avisos oficiales a tu personal en vivo.</p>
-                            <span className="abc-stat">{avisosGlobales.length} Avisos Activos</span>
+                            <span className="abc-stat">Crear Nuevo Aviso</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
+                    </div>
+
+                    <div className="admin-quick-notif">
+                        <NotificationsWidget />
                     </div>
                 </div>
             )}
@@ -142,19 +158,23 @@ export const AdminDashboard = () => {
                 <div className="animate-fade-in">
                     <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-map-location-dot"></i> Resumen de Sedes</h3>
                     {IGLESIAS_CAMPOS.map(campo => {
-                        const ninosSede = alumnosGlobal.filter(a => a.campo === campo).length;
+                        // AQUÍ APLICAMOS TU MEJORA: Filtramos a los niños y niñas por separado
+                        const alumnosSede = alumnosGlobal.filter(a => a.campo === campo);
+                        const totalSede = alumnosSede.length;
+                        const totalNinos = alumnosSede.filter(a => a.genero === 'Masculino').length;
+                        const totalNinas = alumnosSede.filter(a => a.genero === 'Femenino').length;
+
                         const historialSede = asistenciasGlobal.filter(a => a.campo === campo);
                         const maxLeccion = historialSede.length > 0 ? Math.max(0, ...historialSede.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
                         const historialAgrupado = agruparHistorialPorCampo(campo);
                         
                         return (
-                            /* CORRECCIÓN: Título limpio "La Isla - 15 registros" */
-                            <Accordion key={campo} title={`${campo} - ${ninosSede} registros`}>
+                            <Accordion key={campo} title={`${campo} - ${totalSede} registros`}>
                                 <div className="campo-details-container">
                                     <div className="campo-quick-stats">
-                                        <div className="cqs-item"><i className="fa-solid fa-child-reaching" style={{color: '#38bdf8'}}></i> <span>{ninosSede} Niños</span></div>
+                                        <div className="cqs-item"><i className="fa-solid fa-child" style={{color: '#38bdf8'}}></i> <span>{totalNinos} Niños</span></div>
+                                        <div className="cqs-item"><i className="fa-solid fa-child-dress" style={{color: '#f472b6'}}></i> <span>{totalNinas} Niñas</span></div>
                                         <div className="cqs-item"><i className="fa-solid fa-book-open" style={{color: '#10b981'}}></i> <span>Lección {maxLeccion}</span></div>
-                                        <div className="cqs-item"><i className="fa-solid fa-layer-group" style={{color: '#f59e0b'}}></i> <span>Material Básico</span></div>
                                     </div>
                                     
                                     <div className="campo-progress-bar">
