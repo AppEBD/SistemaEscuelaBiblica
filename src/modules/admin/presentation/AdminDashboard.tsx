@@ -18,6 +18,45 @@ export const AdminDashboard = () => {
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
 
+    // Extraemos la tarjeta a una constante para no repetir código y que se vea igual siempre
+    const renderUserCard = (user: any) => (
+        <div className="user-card" key={user.id}>
+            <div className="user-card-header">
+                <div>
+                    <h3 className="user-name">{user.nombre}</h3>
+                    <span className="user-role">{user.rol}</span>
+                </div>
+                <span className={`user-status ${user.estado === 'Activo' ? 'status-activo' : 'status-pendiente'}`}>
+                    {user.estado === 'Activo' ? 'Activo' : 'Pendiente'}
+                </span>
+            </div>
+            
+            <div className="user-details">
+                {user.campo && <div><i className="fa-solid fa-map-location-dot"></i> <strong>Campo:</strong> {user.campo}</div>}
+                <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
+                <div>
+                    <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
+                    <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
+                </div>
+                <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
+            </div>
+
+            <div className="admin-actions">
+                {user.estado === 'Pendiente' ? (
+                    <>
+                        <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}><i className="fa-solid fa-check"></i> Aprobar</Button>
+                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}><i className="fa-solid fa-xmark"></i> Denegar</Button>
+                    </>
+                ) : (
+                    <>
+                        <Button className="btn-editar" onClick={() => setEditandoUser(user)}><i className="fa-solid fa-pen"></i> Editar</Button>
+                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}><i className="fa-solid fa-trash"></i> Eliminar</Button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <div className="admin-dashboard animate-fade-in">
             <div className="admin-header">
@@ -36,14 +75,12 @@ export const AdminDashboard = () => {
                         </div>
                     )}
                     
-                    {/* BOTÓN PARA ABRIR MODAL DE REGISTRO */}
                     <button className="btn-add-new-user animate-fade-in" onClick={() => setIsAddModalOpen(true)}>
                         <i className="fa-solid fa-user-plus"></i> Agregar Personal
                     </button>
                 </div>
             </div>
 
-            {/* BARRA DE BÚSQUEDA UNIVERSAL */}
             <div className="admin-search-bar animate-fade-in">
                 <i className="fa-solid fa-magnifying-glass"></i>
                 <input 
@@ -60,74 +97,42 @@ export const AdminDashboard = () => {
                 </p>
             ) : (
                 <div className="directory-container">
-                    {rolesParaDirectorio.map(rolDef => {
-                        // Filtramos respetando la barra de búsqueda
-                        const usuariosDeEsteRol = usuariosFiltrados.filter(u => u.rol === rolDef.id);
-                        
-                        // Si estás buscando algo y en este rol no hay nadie que coincida, no muestra el acordeón vacío
-                        if (searchTerm && usuariosDeEsteRol.length === 0) return null;
-
-                        return (
-                            <Accordion key={rolDef.id} title={`${rolDef.name}s (${usuariosDeEsteRol.length})`}>
-                                {usuariosDeEsteRol.length === 0 ? (
-                                    <p style={{ padding: '15px', color: '#64748b', fontStyle: 'italic' }}>
-                                        No hay {rolDef.name.toLowerCase()}s registrados aún.
-                                    </p>
-                                ) : (
-                                    <div className="users-grid" style={{ padding: '15px 0' }}>
-                                        {usuariosDeEsteRol.map(user => (
-                                            <div className="user-card" key={user.id}>
-                                                <div className="user-card-header">
-                                                    <div>
-                                                        <h3 className="user-name">{user.nombre}</h3>
-                                                        <span className="user-role">{user.rol}</span>
-                                                    </div>
-                                                    <span className={`user-status ${user.estado === 'Activo' ? 'status-activo' : 'status-pendiente'}`}>
-                                                        {user.estado === 'Activo' ? 'Activo' : 'Pendiente'}
-                                                    </span>
-                                                </div>
-                                                
-                                                <div className="user-details">
-                                                    {user.campo && <div><i className="fa-solid fa-map-location-dot"></i> <strong>Campo:</strong> {user.campo}</div>}
-                                                    <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
-                                                    <div>
-                                                        <i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} 
-                                                        <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span>
-                                                    </div>
-                                                    <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
-                                                </div>
-
-                                                <div className="admin-actions">
-                                                    {user.estado === 'Pendiente' ? (
-                                                        <>
-                                                            <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}><i className="fa-solid fa-check"></i> Aprobar</Button>
-                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}><i className="fa-solid fa-xmark"></i> Denegar</Button>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Button className="btn-editar" onClick={() => setEditandoUser(user)}><i className="fa-solid fa-pen"></i> Editar</Button>
-                                                            <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}><i className="fa-solid fa-trash"></i> Eliminar</Button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </Accordion>
-                        );
-                    })}
-                    
-                    {searchTerm && usuariosFiltrados.length === 0 && (
-                        <p style={{ textAlign: 'center', color: '#64748b', padding: '30px', fontWeight: 'bold' }}>
-                            <i className="fa-solid fa-folder-open fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i>
-                            No se encontró nadie con ese nombre o sede.
-                        </p>
+                    {/* SI ESTÁ BUSCANDO, MUESTRA LOS RESULTADOS DIRECTOS Y ROMPE LOS ACORDEONES */}
+                    {searchTerm ? (
+                        <div className="users-grid animate-fade-in" style={{ paddingTop: '10px' }}>
+                            {usuariosFiltrados.length === 0 ? (
+                                <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px', fontWeight: 'bold' }}>
+                                    <i className="fa-solid fa-folder-open fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i>
+                                    No se encontró nadie con ese nombre o sede.
+                                </p>
+                            ) : (
+                                usuariosFiltrados.map(user => renderUserCard(user))
+                            )}
+                        </div>
+                    ) : (
+                        /* SI NO ESTÁ BUSCANDO, MUESTRA EL DIRECTORIO ORDENADO NORMALMENTE */
+                        rolesParaDirectorio.map(rolDef => {
+                            const usuariosDeEsteRol = usuarios.filter(u => u.rol === rolDef.id);
+                            
+                            return (
+                                <Accordion key={rolDef.id} title={`${rolDef.name}s (${usuariosDeEsteRol.length})`}>
+                                    {usuariosDeEsteRol.length === 0 ? (
+                                        <p style={{ padding: '15px', color: '#64748b', fontStyle: 'italic' }}>
+                                            No hay {rolDef.name.toLowerCase()}s registrados aún.
+                                        </p>
+                                    ) : (
+                                        <div className="users-grid" style={{ padding: '15px 0' }}>
+                                            {usuariosDeEsteRol.map(user => renderUserCard(user))}
+                                        </div>
+                                    )}
+                                </Accordion>
+                            );
+                        })
                     )}
                 </div>
             )}
 
-            {/* === MODAL EXISTENTE: EDITAR USUARIO === */}
+            {/* MODAL EXISTENTE: EDITAR USUARIO */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
@@ -168,7 +173,7 @@ export const AdminDashboard = () => {
                 )}
             </Modal>
 
-            {/* === NUEVO MODAL: AGREGAR USUARIO EXACTO AL LOGIN === */}
+            {/* NUEVO MODAL: AGREGAR USUARIO EXACTO AL LOGIN */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Registrar Nuevo Personal">
                 <form onSubmit={guardarNuevoUsuario}>
                     
