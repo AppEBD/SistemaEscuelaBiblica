@@ -10,18 +10,17 @@ export const useAdminLogic = () => {
     const [asistenciasGlobal, setAsistenciasGlobal] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // Navegación interna del Admin
-    const [adminTab, setAdminTab] = useState<'directorio' | 'campos' | 'avisos'>('directorio');
+    // NUEVO: La vista principal arranca en 'home'
+    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos'>('home');
 
-    // Directorio de Usuarios
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const estadoAddInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
     const [addForm, setAddForm] = useState(estadoAddInicial);
 
-    // Avisos
-    const [avisoForm, setAvisoForm] = useState({ titulo: '', mensaje: '' });
+    // NUEVO: Formulario de avisos con el campo targetRole
+    const [avisoForm, setAvisoForm] = useState({ titulo: '', mensaje: '', targetRole: 'TODOS' });
     const [publicandoAviso, setPublicandoAviso] = useState(false);
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -29,9 +28,6 @@ export const useAdminLogic = () => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
 
-    // ==========================================
-    // CARGA DE DATOS GLOBALES (DIRECTORIO, ALUMNOS Y ASISTENCIAS)
-    // ==========================================
     useEffect(() => {
         const roles = ['MAESTRO', 'AUXILIAR', 'LOGISTICA', 'SECRETARIA', 'TESORERO'];
         const unsubscribes: any[] = [];
@@ -130,7 +126,7 @@ export const useAdminLogic = () => {
     };
 
     // ==========================================
-    // PUBLICAR AVISOS GLOBALES
+    // PUBLICAR AVISOS CON SEGMENTACIÓN
     // ==========================================
     const publicarAviso = async (e: FormEvent) => {
         e.preventDefault();
@@ -139,6 +135,7 @@ export const useAdminLogic = () => {
             await addDoc(collection(db, 'interacciones_avisos'), {
                 titulo: avisoForm.titulo,
                 mensaje: avisoForm.mensaje,
+                targetRole: avisoForm.targetRole, // Guardamos para quién es
                 fecha: 'Hoy',
                 up: 0, down: 0, cake: 0,
                 usuarios: {},
@@ -147,8 +144,8 @@ export const useAdminLogic = () => {
                 isCumpleEquipo: false,
                 createdAt: Date.now()
             });
-            setAvisoForm({ titulo: '', mensaje: '' });
-            alert("Aviso publicado en todas las sedes.");
+            setAvisoForm({ titulo: '', mensaje: '', targetRole: 'TODOS' });
+            alert("Aviso publicado y enviado a los usuarios.");
         } catch (error) {
             alert("Error al publicar el aviso.");
         } finally {
@@ -157,14 +154,13 @@ export const useAdminLogic = () => {
     };
 
     // ==========================================
-    // MOTOR DE AGRUPACIÓN DE HISTORIAL (Mes > Semana)
+    // MOTOR DE AGRUPACIÓN (MES > SEMANA)
     // ==========================================
     const agruparHistorialPorCampo = (campo: string) => {
         const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
 
         asistenciasCampo.forEach(asis => {
-            // Se usa T12:00:00 para evitar desajustes de zona horaria al convertir la fecha
             const dateObj = new Date(asis.fecha + 'T12:00:00');
             const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
             const semanaNum = Math.ceil(dateObj.getDate() / 7);
@@ -174,7 +170,7 @@ export const useAdminLogic = () => {
             if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
 
             grupos[mesStr].semanas[semanaStr].push(asis);
-            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
+            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0); // Solo suma los presentes
         });
 
         return grupos;
