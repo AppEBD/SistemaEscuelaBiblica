@@ -31,7 +31,7 @@ export const StudentsView = () => {
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
-                    <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo}</p>
+                    <p className="app-brand-subtitle">{userData?.rol || 'Maestro'} • {userData?.campo || 'Sin Campo'}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
                     <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
@@ -50,7 +50,7 @@ export const StudentsView = () => {
                         <div className="pd-user-avatar">{inicial}</div>
                         <div className="pd-name-group">
                             <h3 className="pd-name-display">{nombreUsuario}</h3>
-                            <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo}</p>
+                            <p className="pd-role">{userData?.rol === 'AUXILIAR' ? 'Auxiliar' : 'Maestro'} en {userData?.campo || 'Sin campo'}</p>
                         </div>
                     </div>
 
@@ -145,15 +145,15 @@ export const StudentsView = () => {
                                 <div className="birthdays-container animate-fade-in">
                                     {months.map((nombreMes, index) => {
                                         const numeroMes = index + 1;
-                                        const ninosDelMes = cumpleanerosPorMes[numeroMes];
+                                        const ninosDelMes = cumpleanerosPorMes[numeroMes] || [];
                                         return (
                                             <Accordion key={numeroMes} title={`${nombreMes} (${ninosDelMes.length})`}>
                                                 {ninosDelMes.length === 0 ? <p style={{ padding: '15px', color: '#94a3b8', margin: 0 }}>No hay cumpleañeros este mes.</p> : 
                                                     <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '10px' }}>
                                                         {ninosDelMes.map(nino => (
                                                             <div className="bday-item" key={nino.id}>
-                                                                <div className="bday-date-badge"><span className="bday-date-label">Día</span><span className="bday-date-number">{nino.fechaNacimiento.split('-')[2]}</span></div>
-                                                                <div className="bday-info"><div className="bday-name">{nino.nombre}</div><div className="bday-age"><i className="fa-solid fa-gift mr-1"></i> Cumplirá {calcularEdadEsteAnio(nino.fechaNacimiento)} años</div></div>
+                                                                <div className="bday-date-badge"><span className="bday-date-label">Día</span><span className="bday-date-number">{nino.fechaNacimiento ? nino.fechaNacimiento.split('-')[2] : '--'}</span></div>
+                                                                <div className="bday-info"><div className="bday-name">{nino.nombre}</div><div className="bday-age"><i className="fa-solid fa-gift mr-1"></i> Cumplirá {nino.fechaNacimiento ? calcularEdadEsteAnio(nino.fechaNacimiento) : '--'} años</div></div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -209,7 +209,6 @@ export const StudentsView = () => {
                                             textAlign: ofrendaDia ? 'right' : 'center'
                                         }}
                                     />
-                                    {/* MUESTRA GRISES INTELIGENTES (ATM) */}
                                     {ofrendaDia !== '' && !ofrendaDia.includes('.') && (
                                         <span className="global-ofrenda-decimals">.00</span>
                                     )}
@@ -331,7 +330,7 @@ export const StudentsView = () => {
                                             <div className="history-card" key={asis.id}>
                                                 <div className="history-header">
                                                     <div>
-                                                        <div className="history-date"><i className="fa-regular fa-calendar"></i> {asis.fecha.split('-').reverse().join('/')}</div>
+                                                        <div className="history-date"><i className="fa-regular fa-calendar"></i> {asis.fecha ? asis.fecha.split('-').reverse().join('/') : '--'}</div>
                                                         <div className="history-user"><i className="fa-solid fa-user-pen"></i> {asis.registradoPor}</div>
                                                     </div>
                                                     <div style={{ textAlign: 'right' }}>
