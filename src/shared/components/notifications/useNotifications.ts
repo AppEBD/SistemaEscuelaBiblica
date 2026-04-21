@@ -33,18 +33,19 @@ export const useNotifications = () => {
                         titulo: data.titulo,
                         mensaje: data.mensaje,
                         fecha: data.fecha || 'Reciente',
+                        hora: data.hora || '', // Extraemos la hora
                         leida: false,
                         isCumplePersonal: false,
                         isCumpleEquipo: false,
-                        createdAt: data.createdAt || 0
+                        createdAt: data.createdAt || 0 // Usaremos esto para el orden perfecto
                     });
                 }
             });
 
             setReaccionesBD(reacts);
             setNotificacionesAdmin([
-                { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva.", fecha: "Sistema", leida: false },
-                ...avisosEnVivo.sort((a, b) => b.createdAt - a.createdAt) 
+                { id: "admin-1", titulo: "Bienvenida al Sistema", mensaje: "¡Bienvenido a EBD 2.0! Aquí aparecerán los avisos de la directiva.", fecha: "Sistema", hora: "", leida: false, createdAt: 0 },
+                ...avisosEnVivo
             ]);
         });
         return () => unsub();
@@ -103,7 +104,6 @@ export const useNotifications = () => {
     // 4. DESCARGAR STAFF PARA CUMPLEAÑOS
     // ==========================================
     useEffect(() => {
-        // AQUÍ ESTABA EL ERROR: Tu base de datos usa "userData" a secas, y yo pedía un "uid" que no existía.
         if (!userData) return; 
         
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
@@ -133,12 +133,12 @@ export const useNotifications = () => {
         });
 
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, [userData]); // <-- Dependencia corregida
+    }, [userData]); 
 
     const currentYear = new Date().getFullYear();
 
     // ==========================================
-    // 5. CÁLCULO DE CUMPLEAÑOS
+    // 5. CÁLCULO DE CUMPLEAÑOS (NOMBRES COMPLETOS)
     // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
@@ -180,15 +180,19 @@ export const useNotifications = () => {
             if (esMio) {
                 if (esHoy) miCumpleFlag = true;
                 return {
+                    // AHORA USA EL NOMBRE COMPLETO
                     id: notifId, titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : (yaPaso ? "🎉 ¡Esperamos que la hayas pasado genial!" : "🎉 ¡Tu cumpleaños se acerca!"),
-                    mensaje: esHoy ? `¡Felicidades, ${nombreUsuario.split(' ')[0]}!` : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}.` : `Tu cumpleaños es esta semana (Día ${diaNum}).`),
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumplePersonal: true
+                    mensaje: esHoy ? `¡Felicidades, ${nombreUsuario}!` : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}.` : `Tu cumpleaños es esta semana (Día ${diaNum}).`),
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), hora: "", leida: true, isCumplePersonal: true,
+                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 // Le damos prioridad para que quede arriba si es hoy
                 };
             } else {
                 return {
-                    id: notifId, titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre.split(' ')[0]}!` : (yaPaso ? `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}` : `🎂 Cumpleaños de ${c.nombre.split(' ')[0]}`),
+                    // AHORA USA EL NOMBRE COMPLETO
+                    id: notifId, titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre}!` : (yaPaso ? `🎂 Cumpleaños de ${c.nombre}` : `🎂 Cumpleaños de ${c.nombre}`),
                     mensaje: esHoy ? `¡Felicítale! (${rolCapitalizado}${sedeDisplay})` : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}).`,
-                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), leida: true, isCumpleEquipo: true
+                    fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), hora: "", leida: true, isCumpleEquipo: true,
+                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 // Le damos prioridad
                 };
             }
         });
@@ -204,16 +208,13 @@ export const useNotifications = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
-    const getPesoFecha = (fechaStr: string) => {
-        const f = (fechaStr || '').toLowerCase().trim();
-        if (f === 'hoy') return 1; if (f === 'ayer') return 2; if (f === 'esta semana') return 3;
-        if (f === 'semana pasada') return 4; if (f === 'este mes') return 5; if (f === 'mes pasado') return 6;
-        return 99; 
-    };
-
+    // ==========================================
+    // 6. MOTOR DE ORDENAMIENTO (ESTRICTAMENTE POR MILISEGUNDOS)
+    // ==========================================
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
-        return todas.sort((a, b) => getPesoFecha(a.fecha) - getPesoFecha(b.fecha));
+        // Ahora simplemente ordena desde el milisegundo más nuevo al más viejo
+        return todas.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }, [notificacionesAdmin, notificacionesCumple]);
 
     const reproducirSonido = () => { try { const audio = new Audio('https://actions.google.com/sounds/v1/water/droplet_reverb.ogg'); audio.volume = 0.5; audio.play(); } catch (e) {} };
