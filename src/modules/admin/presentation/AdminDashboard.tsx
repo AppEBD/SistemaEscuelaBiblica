@@ -10,12 +10,12 @@ import './AdminDashboard.css';
 
 export const AdminDashboard = () => {
     const { 
-        usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
+        usuarios, cargando, editandoUser, setEditandoUser, solicitarAprobacion, solicitarEliminacion, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
-        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin,
-        limpiarSede
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
+        confirmState, setConfirmState, confirmInputText, setConfirmInputText
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -40,13 +40,13 @@ export const AdminDashboard = () => {
             <div className="admin-actions">
                 {user.estado === 'Pendiente' ? (
                     <>
-                        <Button className="btn-aprobar" onClick={() => aprobarUsuario(user)}><i className="fa-solid fa-check"></i></Button>
-                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, true)}><i className="fa-solid fa-xmark"></i></Button>
+                        <Button className="btn-aprobar" onClick={() => solicitarAprobacion(user)}><i className="fa-solid fa-check"></i></Button>
+                        <Button className="btn-denegar" onClick={() => solicitarEliminacion(user, true)}><i className="fa-solid fa-xmark"></i></Button>
                     </>
                 ) : (
                     <>
                         <Button className="btn-editar" onClick={() => setEditandoUser(user)}><i className="fa-solid fa-pen"></i></Button>
-                        <Button className="btn-denegar" onClick={() => eliminarUsuario(user, false)}><i className="fa-solid fa-trash"></i></Button>
+                        <Button className="btn-denegar" onClick={() => solicitarEliminacion(user, false)}><i className="fa-solid fa-trash"></i></Button>
                     </>
                 )}
             </div>
@@ -194,9 +194,8 @@ export const AdminDashboard = () => {
                                         ))
                                     )}
 
-                                    {/* BOTÓN RESTAURAR SEDE CON NUEVO TEXTO */}
                                     <div className="danger-zone">
-                                        <button className="btn-reset-sede" onClick={() => limpiarSede(campo)}>
+                                        <button className="btn-reset-sede" onClick={() => solicitarLimpiarSede(campo)}>
                                             <i className="fa-solid fa-rotate-left"></i> Vaciar Registros (Restaurar Sede)
                                         </button>
                                     </div>
@@ -243,7 +242,36 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* MODALES */}
+            {/* ==========================================
+                SISTEMA MODAL DE CONFIRMACIÓN UNIVERSAL
+                ========================================== */}
+            <Modal isOpen={confirmState.isOpen} onClose={() => { setConfirmState(prev => ({...prev, isOpen: false})); setConfirmInputText(''); }} title={confirmState.title}>
+                <div style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                    {confirmState.message}
+                </div>
+                {confirmState.requireInput && (
+                    <div className="admin-form-group">
+                        <label className="admin-label">
+                            Escribe <strong style={{color: '#ef4444'}}>{confirmState.requireInput}</strong> para confirmar:
+                        </label>
+                        <input type="text" className="admin-input" value={confirmInputText} onChange={e => setConfirmInputText(e.target.value)} placeholder={`Escribe ${confirmState.requireInput} aquí`} style={{borderColor: confirmInputText === confirmState.requireInput ? '#10b981' : '#e2e8f0'}} />
+                    </div>
+                )}
+                <div className="admin-actions">
+                    {/* Si es tipo "success" o "info", a veces no queremos el botón de cancelar, pero lo dejamos por seguridad salvo que sea un mensaje de éxito simple */}
+                    {confirmState.type !== 'success' || confirmState.title.includes('Aprobar') ? (
+                        <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => { setConfirmState(prev => ({...prev, isOpen: false})); setConfirmInputText(''); }}>
+                            Cancelar
+                        </Button>
+                    ) : null}
+                    
+                    <Button type="button" className={confirmState.type === 'danger' ? 'btn-denegar' : 'btn-aprobar'} disabled={confirmState.requireInput ? confirmInputText !== confirmState.requireInput : false} onClick={() => { confirmState.onConfirm(); setConfirmInputText(''); }}>
+                        {confirmState.confirmText}
+                    </Button>
+                </div>
+            </Modal>
+
+            {/* MODALES DE FORMULARIOS */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
@@ -288,7 +316,7 @@ export const AdminDashboard = () => {
                     
                     <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
                         {avisoForm.id && (
-                            <Button type="button" className="btn-denegar" onClick={eliminarAvisoAdmin} title="Eliminar definitivamente">
+                            <Button type="button" className="btn-denegar" onClick={solicitarEliminarAviso} title="Eliminar definitivamente">
                                 <i className="fa-solid fa-trash"></i> Eliminar
                             </Button>
                         )}
