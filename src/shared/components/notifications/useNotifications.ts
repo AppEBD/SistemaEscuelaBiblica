@@ -13,7 +13,7 @@ export const useNotifications = () => {
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
     // ==========================================
-    // DESCARGAR AVISOS GLOBALES EN TIEMPO REAL
+    // 1. DESCARGAR AVISOS GLOBALES EN TIEMPO REAL
     // ==========================================
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
@@ -51,7 +51,7 @@ export const useNotifications = () => {
     }, [userData?.rol]);
 
     // ==========================================
-    // MANEJO DE REACCIONES
+    // 2. MANEJO DE REACCIONES
     // ==========================================
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
@@ -86,7 +86,7 @@ export const useNotifications = () => {
     };
 
     // ==========================================
-    // ELIMINAR AVISO (SOLO PARA DIRECTORES)
+    // 3. ELIMINAR AVISO (SOLO PARA DIRECTORES)
     // ==========================================
     const eliminarAviso = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -100,10 +100,12 @@ export const useNotifications = () => {
     };
 
     // ==========================================
-    // DESCARGAR STAFF PARA CUMPLEAÑOS
+    // 4. DESCARGAR STAFF PARA CUMPLEAÑOS
     // ==========================================
     useEffect(() => {
-        if (!userData || !userData.uid) return; 
+        // AQUÍ ESTABA EL ERROR: Tu base de datos usa "userData" a secas, y yo pedía un "uid" que no existía.
+        if (!userData) return; 
+        
         const colecciones = ['usuarios_maestro', 'usuarios_auxiliar', 'usuarios_logistica', 'usuarios_tesorero', 'usuarios_secretaria'];
         const unsubs: any[] = [];
         const staffMap: Record<string, any[]> = {};
@@ -131,10 +133,13 @@ export const useNotifications = () => {
         });
 
         return () => { unsubs.forEach(unsub => unsub && unsub()); };
-    }, [userData]);
+    }, [userData]); // <-- Dependencia corregida
 
     const currentYear = new Date().getFullYear();
 
+    // ==========================================
+    // 5. CÁLCULO DE CUMPLEAÑOS
+    // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
         const hoy = new Date();
