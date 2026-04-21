@@ -1,12 +1,17 @@
 import React from 'react';
 import { useNotifications } from './useNotifications';
+import Modal from '../Modal'; 
+import { Button } from '../Button';
 import './NotificationsWidget.css'; 
 
 export const NotificationsWidget = () => {
-    const { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData, eliminarAviso } = useNotifications();
-    const myUserId = userData?.uid || userData?.id; 
+    const { 
+        notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, 
+        showBirthdayOverlay, userData, 
+        notifConfirm, setNotifConfirm, solicitarEliminarAviso, confirmarEliminarAviso 
+    } = useNotifications();
     
-    // CONFETI CON NOMBRE COMPLETO
+    const myUserId = userData?.uid || userData?.id; 
     const nombreUsuario = userData?.nombre || 'Miembro del Equipo';
     const esAdmin = userData?.rol === 'ADMIN';
 
@@ -63,15 +68,14 @@ export const NotificationsWidget = () => {
                                             {n.titulo} 
                                             {!n.leida && !esCumple && <span className="badge-new">NUEVO</span>}
                                         </h4>
-                                        {esAdmin && !esCumple && n.id !== 'admin-1' && eliminarAviso && (
-                                            <button className="btn-delete-aviso" title="Eliminar aviso para todos" onClick={(e) => eliminarAviso(n.id, e)}>
+                                        {esAdmin && !esCumple && n.id !== 'admin-1' && (
+                                            <button className="btn-delete-aviso" title="Eliminar aviso para todos" onClick={(e) => solicitarEliminarAviso(n.id, e)}>
                                                 <i className="fa-solid fa-trash"></i>
                                             </button>
                                         )}
                                     </div>
                                     <p className="notif-desc">{n.mensaje}</p>
                                     
-                                    {/* AHORA TIENE FECHA A LA IZQUIERDA Y HORA A LA DERECHA */}
                                     <div className="notif-footer-time">
                                         <span className="notif-date-left"><i className="fa-regular fa-calendar-days"></i> {n.fecha}</span>
                                         {n.hora && <span className="notif-time-right"><i className="fa-regular fa-clock"></i> {n.hora}</span>}
@@ -98,6 +102,22 @@ export const NotificationsWidget = () => {
                     </div>
                 )}
             </div>
+
+            {/* MODAL ESTÉTICO PARA EL WIDGET */}
+            <Modal isOpen={notifConfirm.isOpen} onClose={() => setNotifConfirm({ isOpen: false, id: '' })} title="Eliminar Aviso">
+                <div style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', lineHeight: '1.5' }}>
+                    ¿Estás seguro de que deseas eliminar este aviso permanentemente?<br/><br/>
+                    Desaparecerá de las pantallas de todos los usuarios de forma inmediata.
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+                    <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => setNotifConfirm({ isOpen: false, id: '' })}>
+                        Cancelar
+                    </Button>
+                    <Button type="button" style={{ background: '#ef4444', color: 'white', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={confirmarEliminarAviso}>
+                        Sí, Eliminar
+                    </Button>
+                </div>
+            </Modal>
         </>
     );
 };
