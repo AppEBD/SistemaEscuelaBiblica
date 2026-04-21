@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, addDoc, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config'; 
 import { AuthService } from '../../auth/infrastructure/auth.service';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
@@ -8,7 +8,6 @@ export const useAdminLogic = () => {
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [alumnosGlobal, setAlumnosGlobal] = useState<any[]>([]);
     const [asistenciasGlobal, setAsistenciasGlobal] = useState<any[]>([]);
-    
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
@@ -88,9 +87,52 @@ export const useAdminLogic = () => {
 
     const eliminarUsuario = async (user: any, esDenegado: boolean) => {
         const accion = esDenegado ? "DENEGAR" : "ELIMINAR";
-        if(window.confirm(`¿Seguro que deseas ${accion} a ${user.nombre}? Se borrará de la base de datos.`)) {
+        if(window.confirm(`¿Seguro que deseas ${accion} a ${user.nombre}?\n\nTranquilo: Se borrará su acceso, pero los niños y registros que ingresó seguirán intactos en la sede.`)) {
             const coleccion = AuthService.obtenerColeccion(user.rol);
             await deleteDoc(doc(db, coleccion, user.id));
+        }
+    };
+
+    // ==========================================
+    // REGLA: VACIAR SEDE (RESTAURAR DE FÁBRICA)
+    // ==========================================
+    const limpiarSede = async (campoNombre: string) => {
+        // Primera advertencia aclarando que el nombre NO se borra
+        const confirmacion1 = window.confirm(`⚠️ ADVERTENCIA ⚠️\n\nEstás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede seguirá existiendo, pero se borrarán para siempre:\n- Todos los niños inscritos\n- El historial de clases\n- El personal (Maestros/Auxiliares) asignado a este campo\n\n¿Deseas vaciar la sede para que quede como nueva?`);
+        if (!confirmacion1) return;
+
+        // Segunda advertencia (Seguridad anti-accidentes)
+        const confirmacion2 = window.prompt(`Para confirmar el vaciado de datos, escribe el nombre de la sede exactamente así: ${campoNombre}`);
+        if (confirmacion2 !== campoNombre) {
+            alert("El nombre no coincide. Vaciado cancelado por seguridad.");
+            return;
+        }
+
+        try {
+            setCargando(true);
+            
+            // 1. Destruir Niños (Alumnos)
+            const qAlumnos = query(collection(db, 'alumnos'), where('campo', '==', campoNombre));
+            const snapAlumnos = await getDocs(qAlumnos);
+            snapAlumnos.forEach(async (d) => await deleteDoc(doc(db, 'alumnos', d.id)));
+
+            // 2. Destruir Historial (Asistencias)
+            const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
+            const snapAsistencias = await getDocs(qAsistencias);
+            snapAsistencias.forEach(async (d) => await deleteDoc(doc(db, 'asistencias', d.id)));
+
+            // 3. Destruir Personal de la Sede
+            const usuariosDeSede = usuarios.filter(u => u.campo === campoNombre);
+            for (const u of usuariosDeSede) {
+                const col = AuthService.obtenerColeccion(u.rol);
+                await deleteDoc(doc(db, col, u.id));
+            }
+
+            alert(`✅ La sede "${campoNombre}" ha sido vaciada exitosamente y está lista para nuevos registros.`);
+        } catch (error) {
+            alert("❌ Ocurrió un error al intentar vaciar la sede.");
+        } finally {
+            setCargando(false);
         }
     };
 
@@ -194,7 +236,6 @@ export const useAdminLogic = () => {
 
     const agruparHistorialPorCampo = (campo: string) => {
         const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => {
-            // Blindaje en caso de fechas nulas para que no rompa el Sort
             const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
             const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
             return dateB - dateA;
@@ -203,7 +244,6 @@ export const useAdminLogic = () => {
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
 
         asistenciasCampo.forEach(asis => {
-            // BLINDAJE CONTRA CRASH: Si no hay fecha, ignoramos este registro para que no rompa
             if (!asis.fecha) return; 
 
             const dateObj = new Date(asis.fecha + 'T12:00:00');
@@ -226,6 +266,7 @@ export const useAdminLogic = () => {
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
-        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin,
+        limpiarSede // Exportamos la función con su nuevo nombre
     };
 };
