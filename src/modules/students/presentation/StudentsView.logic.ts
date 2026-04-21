@@ -53,7 +53,9 @@ export const useStudentsLogic = () => {
 
     useEffect(() => {
         if (!userData?.campo) return;
-        const unsub = StudentUseCases.obtenerAlumnosActivos(userData.campo, (data) => {
+        
+        // 1. Suscripción en Tiempo Real a ALUMNOS
+        const unsubAlumnos = StudentUseCases.obtenerAlumnosActivos(userData.campo, (data) => {
             setAlumnos(data); setCargando(false);
             setAsistencia(prev => {
                 if (Object.keys(prev).length === 0 && data.length > 0) {
@@ -65,53 +67,67 @@ export const useStudentsLogic = () => {
             });
         });
 
-        StudentUseCases.obtenerUltimaAsistencia(userData.campo).then(ultima => {
-            if (ultima) {
+        // 2. NUEVO: Suscripción en Tiempo Real a ASISTENCIAS
+        const unsubAsistencias = StudentUseCases.suscribirAsistenciasActivas(userData.campo, (asistencias) => {
+            
+            // Llenar el historial (pestaña reportes)
+            const historialOrdenado = [...asistencias].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+            setHistorialAsistencias(historialOrdenado);
+
+            // Buscar la última asistencia guardada
+            const asistenciasPorCreacion = [...asistencias].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            
+            if (asistenciasPorCreacion.length > 0) {
+                const ultima = asistenciasPorCreacion[0];
                 const fechaHoy = new Date().toISOString().split('T')[0];
+                
                 if (ultima.fecha === fechaHoy) {
-                    setAsistenciaDocId(ultima.id || null); if (ultima.registros) setAsistencia(ultima.registros as any);
-                    setOfrendaDia(ultima.resumen?.ofrendaTotal?.toString() || ''); setNumeroLeccion(ultima.numeroLeccion || 1);
-                    setSeDioLeccion(ultima.leccionDada); setAsistenciaRegistradaPor(ultima.registradoPor || null); setIsSubmitted(true);
+                    setAsistenciaDocId(ultima.id || null); 
+                    if (ultima.registros) setAsistencia(ultima.registros as any);
+                    setOfrendaDia(ultima.resumen?.ofrendaTotal?.toString() || ''); 
+                    setNumeroLeccion(ultima.numeroLeccion || 1);
+                    setSeDioLeccion(ultima.leccionDada); 
+                    setAsistenciaRegistradaPor(ultima.registradoPor || null); 
+                    setIsSubmitted(true);
                 } else {
                     const proxLeccion = ultima.leccionDada ? (ultima.numeroLeccion || 0) + 1 : (ultima.numeroLeccion || 1);
-                    setNumeroLeccion(proxLeccion); setSeDioLeccion(true); setIsSubmitted(false); setAsistenciaDocId(null); setAsistenciaRegistradaPor(null);
+                    setNumeroLeccion(proxLeccion); 
+                    setSeDioLeccion(true); 
+                    setIsSubmitted(false); 
+                    setAsistenciaDocId(null); 
+                    setAsistenciaRegistradaPor(null);
                 }
+            } else {
+                // ESTA ES LA MAGIA: Si el Admin borra todo (length === 0), la pantalla del maestro se RESETEA EN VIVO.
+                setNumeroLeccion(1);
+                setSeDioLeccion(true);
+                setIsSubmitted(false);
+                setAsistenciaDocId(null);
+                setAsistenciaRegistradaPor(null);
+                setOfrendaDia('');
+                setAsistencia({});
             }
         });
 
-        StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial));
-        return () => unsub();
+        return () => { 
+            unsubAlumnos(); 
+            unsubAsistencias(); 
+        };
     }, [userData]);
 
     const metaLeccionesAdmin = 0; 
     const maxLeccionImpartida = historialAsistencias.length > 0 ? Math.max(0, ...historialAsistencias.filter(a => a.leccionDada).map(a => a.numeroLeccion || 0)) : 0;
     const porcentajeLecciones = metaLeccionesAdmin > 0 ? Math.min(100, Math.round((maxLeccionImpartida / metaLeccionesAdmin) * 100)) : 0;
 
-    // ==========================================
-    // NUEVA OFRENDA INTELIGENTE (COMO CAJERO ATM)
-    // ==========================================
     const manejarCambioOfrenda = (valor: string) => {
-        // Quitamos cualquier cosa que no sea número (letras, puntos viejos)
         const rawDigits = valor.replace(/\D/g, '');
-        
-        // Máximo 4 dígitos (lo que da 99.99)
         const trimmed = rawDigits.substring(0, 4);
 
-        if (trimmed.length === 0) {
-            setOfrendaDia('');
-            return;
-        }
-
-        // Lógica de inyección de punto decimal automático
-        if (trimmed.length === 1) {
-            setOfrendaDia(trimmed); // "1"
-        } else if (trimmed.length === 2) {
-            setOfrendaDia(`${trimmed[0]}.${trimmed[1]}`); // "1.5"
-        } else if (trimmed.length === 3) {
-            setOfrendaDia(`${trimmed[0]}.${trimmed[1]}${trimmed[2]}`); // "1.55"
-        } else if (trimmed.length === 4) {
-            setOfrendaDia(`${trimmed.substring(0, 2)}.${trimmed.substring(2, 4)}`); // "15.55"
-        }
+        if (trimmed.length === 0) { setOfrendaDia(''); return; }
+        if (trimmed.length === 1) { setOfrendaDia(trimmed); } 
+        else if (trimmed.length === 2) { setOfrendaDia(`${trimmed[0]}.${trimmed[1]}`); } 
+        else if (trimmed.length === 3) { setOfrendaDia(`${trimmed[0]}.${trimmed[1]}${trimmed[2]}`); } 
+        else if (trimmed.length === 4) { setOfrendaDia(`${trimmed.substring(0, 2)}.${trimmed.substring(2, 4)}`); }
     };
 
     const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
@@ -126,7 +142,7 @@ export const useStudentsLogic = () => {
         if (!userData?.campo || !userData?.nombre) return; 
 
         if (!asistenciaDocId && seDioLeccion && numeroLeccion <= maxLeccionImpartida) {
-            alert(`🛑 ALERTA: La lección ${numeroLeccion} ya fue impartida anteriormente.\n\nEl sistema es auto-incremental. Como ya diste hasta la lección ${maxLeccionImpartida}, la lección de hoy debería ser la ${maxLeccionImpartida + 1}.`);
+            alert(`🛑 ALERTA: La lección ${numeroLeccion} ya fue impartida.\n\nEl sistema es auto-incremental. Como ya diste hasta la ${maxLeccionImpartida}, hoy debería ser la ${maxLeccionImpartida + 1}.`);
             setNumeroLeccion(maxLeccionImpartida + 1); 
             return; 
         }
@@ -151,9 +167,8 @@ export const useStudentsLogic = () => {
 
             const docId = await StudentUseCases.registrarAsistenciaDiaria(payload); 
             setAsistenciaDocId(docId); setAsistenciaRegistradaPor(userData.nombre); setIsSubmitted(true); 
-            StudentUseCases.obtenerHistorialCompleto(userData.campo).then(historial => setHistorialAsistencias(historial)); 
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        } catch (error: any) { console.error("Detalle técnico del error:", error); alert(`Error de Firebase: ${error.message}`); } 
+        } catch (error: any) { alert(`Error de Firebase: ${error.message}`); } 
     };
 
     const editarAsistencia = () => { setIsSubmitted(false); };
