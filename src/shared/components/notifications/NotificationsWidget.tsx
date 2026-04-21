@@ -5,6 +5,8 @@ import './NotificationsWidget.css';
 export const NotificationsWidget = () => {
     const { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData, eliminarAviso } = useNotifications();
     const myUserId = userData?.uid || userData?.id; 
+    
+    // CONFETI CON NOMBRE COMPLETO
     const nombreUsuario = userData?.nombre || 'Miembro del Equipo';
     const esAdmin = userData?.rol === 'ADMIN';
 
@@ -20,7 +22,7 @@ export const NotificationsWidget = () => {
                     <div className="emoji-confetti" style={{left: '15%', animationDuration: '3.8s', animationDelay: '1.2s'}}>🎂</div>
                     <div className="emoji-confetti" style={{left: '75%', animationDuration: '3.3s', animationDelay: '1.5s'}}>🎈</div>
                     <h1>¡Feliz Cumpleaños!</h1>
-                    <p>Que Dios te bendiga grandemente hoy, {nombreUsuario.split(' ')[0]}.</p>
+                    <p>Que Dios te bendiga grandemente hoy, {nombreUsuario}.</p>
                 </div>
             )}
 
@@ -35,7 +37,6 @@ export const NotificationsWidget = () => {
                 ) : (
                     <div className="notif-list">
                         {notificaciones.map((n: any) => {
-                            // BLINDAJE CONTRA CRASH: Si no hay reacciones, crea un objeto vacío seguro
                             const rData = reaccionesBD[String(n.id)] || {};
                             const usuariosSeguro = rData.usuarios || {}; 
                             const miReaccion = myUserId ? usuariosSeguro[myUserId] : null;
@@ -69,7 +70,12 @@ export const NotificationsWidget = () => {
                                         )}
                                     </div>
                                     <p className="notif-desc">{n.mensaje}</p>
-                                    <span className="notif-date">{n.fecha}</span>
+                                    
+                                    {/* AHORA TIENE FECHA A LA IZQUIERDA Y HORA A LA DERECHA */}
+                                    <div className="notif-footer-time">
+                                        <span className="notif-date-left"><i className="fa-regular fa-calendar-days"></i> {n.fecha}</span>
+                                        {n.hora && <span className="notif-time-right"><i className="fa-regular fa-clock"></i> {n.hora}</span>}
+                                    </div>
                                     
                                     <div className="notif-reactions">
                                         <button className={`reaction-btn ${miReaccion === 'up' ? 'active' : ''}`} onClick={(e) => manejarReaccion(String(n.id), 'up', e)}>
