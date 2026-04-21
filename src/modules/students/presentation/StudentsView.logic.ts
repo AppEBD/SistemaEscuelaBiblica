@@ -54,7 +54,6 @@ export const useStudentsLogic = () => {
     useEffect(() => {
         if (!userData?.campo) return;
         
-        // 1. Suscripción en Tiempo Real a ALUMNOS
         const unsubAlumnos = StudentUseCases.obtenerAlumnosActivos(userData.campo, (data) => {
             setAlumnos(data); setCargando(false);
             setAsistencia(prev => {
@@ -67,14 +66,17 @@ export const useStudentsLogic = () => {
             });
         });
 
-        // 2. NUEVO: Suscripción en Tiempo Real a ASISTENCIAS
         const unsubAsistencias = StudentUseCases.suscribirAsistenciasActivas(userData.campo, (asistencias) => {
             
-            // Llenar el historial (pestaña reportes)
-            const historialOrdenado = [...asistencias].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+            // BLINDAJE CONTRA FECHAS VACÍAS
+            const historialOrdenado = [...asistencias].sort((a, b) => {
+                const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
+                const timeB = b.fecha ? new Date(b.fecha).getTime() : 0;
+                return timeB - timeA;
+            });
+            
             setHistorialAsistencias(historialOrdenado);
 
-            // Buscar la última asistencia guardada
             const asistenciasPorCreacion = [...asistencias].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             
             if (asistenciasPorCreacion.length > 0) {
@@ -98,7 +100,6 @@ export const useStudentsLogic = () => {
                     setAsistenciaRegistradaPor(null);
                 }
             } else {
-                // ESTA ES LA MAGIA: Si el Admin borra todo (length === 0), la pantalla del maestro se RESETEA EN VIVO.
                 setNumeroLeccion(1);
                 setSeDioLeccion(true);
                 setIsSubmitted(false);
@@ -130,9 +131,49 @@ export const useStudentsLogic = () => {
         else if (trimmed.length === 4) { setOfrendaDia(`${trimmed.substring(0, 2)}.${trimmed.substring(2, 4)}`); }
     };
 
-    const obtenerRanking = () => { let validas = historialAsistencias; if (desdeD && desdeM && desdeY) { const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); validas = validas.filter(a => a.fecha >= `${desdeY}-${m}-${d}`); } if (hastaD && hastaM && hastaY) { const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); validas = validas.filter(a => a.fecha <= `${hastaY}-${m}-${d}`); } const conteo: Record<string, number> = {}; alumnos.forEach(a => conteo[a.id!] = 0); validas.forEach(asis => { if (asis.registros) { Object.entries(asis.registros).forEach(([id, estado]) => { if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; }); } }); return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); };
+    const obtenerRanking = () => { 
+        let validas = historialAsistencias; 
+        if (desdeD && desdeM && desdeY) { 
+            const d = desdeD.padStart(2, '0'); const m = desdeM.padStart(2, '0'); 
+            validas = validas.filter(a => a.fecha && a.fecha >= `${desdeY}-${m}-${d}`); 
+        } 
+        if (hastaD && hastaM && hastaY) { 
+            const d = hastaD.padStart(2, '0'); const m = hastaM.padStart(2, '0'); 
+            validas = validas.filter(a => a.fecha && a.fecha <= `${hastaY}-${m}-${d}`); 
+        } 
+        const conteo: Record<string, number> = {}; 
+        alumnos.forEach(a => conteo[a.id!] = 0); 
+        validas.forEach(asis => { 
+            if (asis.registros) { 
+                Object.entries(asis.registros).forEach(([id, estado]) => { 
+                    if (estado === 'Presente') conteo[id] = (conteo[id] || 0) + 1; 
+                }); 
+            } 
+        }); 
+        return alumnos.map(a => ({ ...a, totalAsistencias: conteo[a.id!] || 0 })).sort((a, b) => b.totalAsistencias - a.totalAsistencias); 
+    };
+
     const limpiarFiltrosRanking = () => { setDesdeD(''); setDesdeM(''); setDesdeY(''); setHastaD(''); setHastaM(''); setHastaY(''); };
-    const obtenerHistorialPorMes = () => { const agrupado: Record<string, AsistenciaDia[]> = {}; historialAsistencias.forEach(asis => { const [year, month] = asis.fecha.split('-'); const nombreMes = months[parseInt(month) - 1]; const key = `${nombreMes} ${year}`; if (!agrupado[key]) agrupado[key] = []; agrupado[key].push(asis); }); return agrupado; };
+    
+    const obtenerHistorialPorMes = () => { 
+        const agrupado: Record<string, AsistenciaDia[]> = {}; 
+        historialAsistencias.forEach(asis => { 
+            // BLINDAJE CONTRA FECHAS CORRUPTAS
+            if (!asis.fecha) return; 
+            const partes = asis.fecha.split('-');
+            if (partes.length < 2) return;
+
+            const year = partes[0];
+            const month = partes[1]; 
+            const nombreMes = months[parseInt(month) - 1]; 
+            const key = `${nombreMes} ${year}`; 
+            
+            if (!agrupado[key]) agrupado[key] = []; 
+            agrupado[key].push(asis); 
+        }); 
+        return agrupado; 
+    };
+
     const obtenerAlumnosPorEdad = () => { return alumnos.filter(a => { const edadStr = calcularEdadExacta(a.fechaNacimiento, a.edad as number); const edadNum = typeof edadStr === 'number' ? edadStr : parseInt(edadStr as string); if (isNaN(edadNum)) return false; if (edadMin !== '' && edadNum < edadMin) return false; if (edadMax !== '' && edadNum > edadMax) return false; return true; }); };
     const actualizarAsistencia = (id: string, estado: string) => { setAsistencia(prev => ({ ...prev, [id]: estado })); };
     const alumnosParaAsistencia = alumnos.filter(alumno => { if (asistenciaDocId) return asistencia.hasOwnProperty(alumno.id!); return true; });
