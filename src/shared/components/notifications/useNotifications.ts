@@ -12,9 +12,9 @@ export const useNotifications = () => {
     const [hasShownOverlay, setHasShownOverlay] = useState(false);
     const [reaccionesBD, setReaccionesBD] = useState<Record<string, any>>({});
 
-    // ==========================================
-    // 1. DESCARGAR AVISOS GLOBALES EN TIEMPO REAL
-    // ==========================================
+    // MODAL DE CONFIRMACIÓN PARA EL WIDGET
+    const [notifConfirm, setNotifConfirm] = useState({ isOpen: false, id: '' });
+
     useEffect(() => {
         const unsub = onSnapshot(collection(db, 'interacciones_avisos'), (snapshot) => {
             const reacts: Record<string, any> = {};
@@ -33,11 +33,11 @@ export const useNotifications = () => {
                         titulo: data.titulo,
                         mensaje: data.mensaje,
                         fecha: data.fecha || 'Reciente',
-                        hora: data.hora || '', // Extraemos la hora
+                        hora: data.hora || '',
                         leida: false,
                         isCumplePersonal: false,
                         isCumpleEquipo: false,
-                        createdAt: data.createdAt || 0 // Usaremos esto para el orden perfecto
+                        createdAt: data.createdAt || 0
                     });
                 }
             });
@@ -51,9 +51,6 @@ export const useNotifications = () => {
         return () => unsub();
     }, [userData?.rol]);
 
-    // ==========================================
-    // 2. MANEJO DE REACCIONES
-    // ==========================================
     const manejarReaccion = async (notifId: string, tipo: 'up' | 'down' | 'cake', e: React.MouseEvent) => {
         e.stopPropagation(); 
         const userId = userData?.uid || userData?.id; 
@@ -68,41 +65,33 @@ export const useNotifications = () => {
                 const actualData = sfDoc.exists() ? sfDoc.data() : { usuarios: {} };
                 const usuarios = actualData.usuarios || {};
 
-                if (usuarios[userId] === tipo) {
-                    delete usuarios[userId];
-                } else {
-                    usuarios[userId] = tipo;
-                }
+                if (usuarios[userId] === tipo) { delete usuarios[userId]; } 
+                else { usuarios[userId] = tipo; }
 
                 let up = 0, down = 0, cake = 0;
                 Object.values(usuarios).forEach(voto => {
-                    if (voto === 'up') up++;
-                    if (voto === 'down') down++;
-                    if (voto === 'cake') cake++;
+                    if (voto === 'up') up++; if (voto === 'down') down++; if (voto === 'cake') cake++;
                 });
 
                 transaction.set(docRef, { up, down, cake, usuarios }, { merge: true });
             });
-        } catch (error) { console.error("Error guardando reacción:", error); }
+        } catch (error) { console.error(error); }
     };
 
-    // ==========================================
-    // 3. ELIMINAR AVISO (SOLO PARA DIRECTORES)
-    // ==========================================
-    const eliminarAviso = async (id: string, e: React.MouseEvent) => {
+    // SOLICITUD ESTÉTICA EN EL WIDGET
+    const solicitarEliminarAviso = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm("¿Seguro que deseas eliminar este aviso permanentemente para todos?")) {
-            try {
-                await deleteDoc(doc(db, 'interacciones_avisos', id));
-            } catch (error) {
-                alert("Error al eliminar el aviso.");
-            }
-        }
+        setNotifConfirm({ isOpen: true, id });
     };
 
-    // ==========================================
-    // 4. DESCARGAR STAFF PARA CUMPLEAÑOS
-    // ==========================================
+    const confirmarEliminarAviso = async () => {
+        if (!notifConfirm.id) return;
+        try {
+            await deleteDoc(doc(db, 'interacciones_avisos', notifConfirm.id));
+        } catch (error) {}
+        setNotifConfirm({ isOpen: false, id: '' });
+    };
+
     useEffect(() => {
         if (!userData) return; 
         
@@ -137,9 +126,6 @@ export const useNotifications = () => {
 
     const currentYear = new Date().getFullYear();
 
-    // ==========================================
-    // 5. CÁLCULO DE CUMPLEAÑOS (NOMBRES COMPLETOS)
-    // ==========================================
     const { notificacionesCumple, esMiCumpleHoy } = useMemo(() => {
         if (staffList.length === 0) return { notificacionesCumple: [], esMiCumpleHoy: false };
         const hoy = new Date();
@@ -180,19 +166,17 @@ export const useNotifications = () => {
             if (esMio) {
                 if (esHoy) miCumpleFlag = true;
                 return {
-                    // AHORA USA EL NOMBRE COMPLETO
                     id: notifId, titulo: esHoy ? "🎉 ¡Feliz Cumpleaños a ti!" : (yaPaso ? "🎉 ¡Esperamos que la hayas pasado genial!" : "🎉 ¡Tu cumpleaños se acerca!"),
                     mensaje: esHoy ? `¡Felicidades, ${nombreUsuario}!` : (yaPaso ? `Tu cumpleaños fue el día ${diaNum}.` : `Tu cumpleaños es esta semana (Día ${diaNum}).`),
                     fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), hora: "", leida: true, isCumplePersonal: true,
-                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 // Le damos prioridad para que quede arriba si es hoy
+                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 
                 };
             } else {
                 return {
-                    // AHORA USA EL NOMBRE COMPLETO
                     id: notifId, titulo: esHoy ? `🎂 ¡Hoy es el cumpleaños de ${c.nombre}!` : (yaPaso ? `🎂 Cumpleaños de ${c.nombre}` : `🎂 Cumpleaños de ${c.nombre}`),
                     mensaje: esHoy ? `¡Felicítale! (${rolCapitalizado}${sedeDisplay})` : `El día ${diaNum} es el cumpleaños de ${c.nombre} (${rolCapitalizado}${sedeDisplay}).`,
                     fecha: esHoy ? "Hoy" : (esAyer ? "Ayer" : "Esta semana"), hora: "", leida: true, isCumpleEquipo: true,
-                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 // Le damos prioridad
+                    createdAt: esHoy ? Date.now() + 100000 : Date.now() - 86400000 
                 };
             }
         });
@@ -208,12 +192,8 @@ export const useNotifications = () => {
         }
     }, [esMiCumpleHoy, hasShownOverlay]);
 
-    // ==========================================
-    // 6. MOTOR DE ORDENAMIENTO (ESTRICTAMENTE POR MILISEGUNDOS)
-    // ==========================================
     const notificaciones = useMemo(() => {
         const todas = [...notificacionesCumple, ...notificacionesAdmin];
-        // Ahora simplemente ordena desde el milisegundo más nuevo al más viejo
         return todas.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }, [notificacionesAdmin, notificacionesCumple]);
 
@@ -223,5 +203,9 @@ export const useNotifications = () => {
         setNotificacionesAdmin(prev => prev.map(n => { if (n.id === id && !n.leida) { reproducirSonido(); return { ...n, leida: true }; } return n; })); 
     };
 
-    return { notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, showBirthdayOverlay, userData, eliminarAviso };
+    return { 
+        notificaciones, reaccionesBD, manejarReaccion, marcarNotificacion, 
+        showBirthdayOverlay, userData, 
+        notifConfirm, setNotifConfirm, solicitarEliminarAviso, confirmarEliminarAviso 
+    };
 };
