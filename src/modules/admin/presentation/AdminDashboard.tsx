@@ -14,7 +14,8 @@ export const AdminDashboard = () => {
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
-        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin,
+        limpiarSede
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -173,7 +174,6 @@ export const AdminDashboard = () => {
                                                                 {asistencias.map(asis => (
                                                                     <div className="hwb-class-card" key={asis.id}>
                                                                         <div className="hwb-header">
-                                                                            {/* BLINDAJE CONTRA FECHAS INEXISTENTES */}
                                                                             <span className="hwb-date"><i className="fa-regular fa-calendar"></i> {asis.fecha ? asis.fecha.split('-').reverse().join('/') : 'Sin Fecha'}</span>
                                                                             <span className="hwb-leccion">Lec. {asis.numeroLeccion} {asis.leccionDada && <i className="fa-solid fa-circle-check" style={{color:'#10b981'}}></i>}</span>
                                                                         </div>
@@ -193,6 +193,13 @@ export const AdminDashboard = () => {
                                             </Accordion>
                                         ))
                                     )}
+
+                                    {/* BOTÓN RESTAURAR SEDE CON NUEVO TEXTO */}
+                                    <div className="danger-zone">
+                                        <button className="btn-reset-sede" onClick={() => limpiarSede(campo)}>
+                                            <i className="fa-solid fa-rotate-left"></i> Vaciar Registros (Restaurar Sede)
+                                        </button>
+                                    </div>
                                 </div>
                             </Accordion>
                         );
