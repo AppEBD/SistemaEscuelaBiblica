@@ -24,6 +24,28 @@ export const useAdminLogic = () => {
     const [avisoForm, setAvisoForm] = useState(estadoAvisoInicial);
     const [guardandoAviso, setGuardandoAviso] = useState(false);
 
+    // ==========================================
+    // SISTEMA DE ALERTAS PREMIUM (REEMPLAZA A WINDOW.CONFIRM Y ALERT)
+    // ==========================================
+    const [confirmState, setConfirmState] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        type: 'danger' as 'danger' | 'warning' | 'success',
+        requireInput: '',
+        onConfirm: async () => {}
+    });
+    const [confirmInputText, setConfirmInputText] = useState('');
+
+    const mostrarExito = (mensaje: string) => {
+        setConfirmState({
+            isOpen: true, title: '✅ Operación Exitosa', message: mensaje,
+            type: 'success', confirmText: 'Aceptar', requireInput: '',
+            onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false}))
+        });
+    };
+
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const currentYear = new Date().getFullYear();
@@ -51,74 +73,76 @@ export const useAdminLogic = () => {
             unsubscribes.push(unsub);
         });
 
-        const unsubAlumnos = onSnapshot(collection(db, 'alumnos'), (snap) => {
-            setAlumnosGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
+        const unsubAlumnos = onSnapshot(collection(db, 'alumnos'), (snap) => setAlumnosGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        const unsubAsistencias = onSnapshot(collection(db, 'asistencias'), (snap) => setAsistenciasGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        const unsubAvisos = onSnapshot(collection(db, 'interacciones_avisos'), (snap) => setAvisosGlobales(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a: any, b: any) => b.createdAt - a.createdAt)));
 
-        const unsubAsistencias = onSnapshot(collection(db, 'asistencias'), (snap) => {
-            setAsistenciasGlobal(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-
-        const unsubAvisos = onSnapshot(collection(db, 'interacciones_avisos'), (snap) => {
-            const avisos = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a: any, b: any) => b.createdAt - a.createdAt);
-            setAvisosGlobales(avisos);
-        });
-
-        return () => {
-            unsubscribes.forEach(unsub => unsub());
-            unsubAlumnos();
-            unsubAsistencias();
-            unsubAvisos();
-        };
+        return () => { unsubscribes.forEach(u => u()); unsubAlumnos(); unsubAsistencias(); unsubAvisos(); };
     }, []);
 
     const usuariosFiltrados = usuarios.filter(u => {
         if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return (u.nombre && u.nombre.toLowerCase().includes(term)) || (u.campo && u.campo.toLowerCase().includes(term));
+        return (u.nombre && u.nombre.toLowerCase().includes(searchTerm.toLowerCase())) || (u.campo && u.campo.toLowerCase().includes(searchTerm.toLowerCase()));
     });
 
-    const aprobarUsuario = async (user: any) => {
-        if(window.confirm(`¿Aprobar a ${user.nombre}?`)) {
-            const coleccion = AuthService.obtenerColeccion(user.rol);
-            await updateDoc(doc(db, coleccion, user.id), { estado: 'Activo' });
-        }
+    const solicitarAprobacion = (user: any) => {
+        setConfirmState({
+            isOpen: true, title: 'Aprobar Acceso',
+            message: `¿Estás seguro de que deseas dar acceso al sistema a ${user.nombre}?`,
+            type: 'success', confirmText: 'Sí, Aprobar Usuario', requireInput: '',
+            onConfirm: async () => {
+                const coleccion = AuthService.obtenerColeccion(user.rol);
+                await updateDoc(doc(db, coleccion, user.id), { estado: 'Activo' });
+                setConfirmState(prev => ({...prev, isOpen: false}));
+            }
+        });
     };
 
-    const eliminarUsuario = async (user: any, esDenegado: boolean) => {
-        const accion = esDenegado ? "DENEGAR" : "ELIMINAR";
-        if(window.confirm(`¿Seguro que deseas ${accion} a ${user.nombre}?\n\nTranquilo: Se borrará su acceso, pero los niños y registros que ingresó seguirán intactos en la sede.`)) {
-            const coleccion = AuthService.obtenerColeccion(user.rol);
-            await deleteDoc(doc(db, coleccion, user.id));
-        }
+    const solicitarEliminacion = (user: any, esDenegado: boolean) => {
+        const accion = esDenegado ? "Denegar" : "Eliminar";
+        setConfirmState({
+            isOpen: true, title: `¿${accion} Usuario?`,
+            message: `Vas a ${accion.toLowerCase()} a ${user.nombre}.\n\nTranquilo: Solo se borrará su acceso. Los niños, ofrendas y registros que este usuario ingresó seguirán INTACTOS en la sede.`,
+            type: 'danger', confirmText: `Sí, ${accion}`, requireInput: '',
+            onConfirm: async () => {
+                const coleccion = AuthService.obtenerColeccion(user.rol);
+                await deleteDoc(doc(db, coleccion, user.id));
+                setConfirmState(prev => ({...prev, isOpen: false}));
+            }
+        });
     };
 
-    const limpiarSede = async (campoNombre: string) => {
-        const confirmacion1 = window.confirm(`⚠️ ADVERTENCIA ⚠️\n\nEstás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal (Maestros/Auxiliares) seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- El historial de clases (asistencias y ofrendas)\n\n¿Deseas vaciar los datos de la sede para comenzar de nuevo?`);
-        if (!confirmacion1) return;
+    // ==========================================
+    // DESTRUCCIÓN BLINDADA DE SEDE (For...of Loop)
+    // ==========================================
+    const solicitarLimpiarSede = (campoNombre: string) => {
+        setConfirmState({
+            isOpen: true, title: `⚠️ Vaciar Registros de Sede`,
+            message: `Estás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- Todo el historial de clases, ofrendas y asistencias\n\n¿Deseas dejar la sede como nueva?`,
+            type: 'danger', confirmText: 'Destruir Registros Permanentemente', requireInput: campoNombre,
+            onConfirm: async () => {
+                try {
+                    setCargando(true);
+                    
+                    // BLINDAJE 1: Borrar Alumnos 1 por 1 garantizando su destrucción
+                    const qAlumnos = query(collection(db, 'alumnos'), where('campo', '==', campoNombre));
+                    const snapAlumnos = await getDocs(qAlumnos);
+                    for (const d of snapAlumnos.docs) { await deleteDoc(doc(db, 'alumnos', d.id)); }
 
-        const confirmacion2 = window.prompt(`Para confirmar el vaciado de datos, escribe el nombre de la sede exactamente así: ${campoNombre}`);
-        if (confirmacion2 !== campoNombre) {
-            alert("El nombre no coincide. Vaciado cancelado por seguridad.");
-            return;
-        }
+                    // BLINDAJE 2: Borrar Asistencias/Ofrendas 1 por 1 garantizando su destrucción
+                    const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
+                    const snapAsistencias = await getDocs(qAsistencias);
+                    for (const d of snapAsistencias.docs) { await deleteDoc(doc(db, 'asistencias', d.id)); }
 
-        try {
-            setCargando(true);
-            const qAlumnos = query(collection(db, 'alumnos'), where('campo', '==', campoNombre));
-            const snapAlumnos = await getDocs(qAlumnos);
-            snapAlumnos.forEach(async (d) => await deleteDoc(doc(db, 'alumnos', d.id)));
-
-            const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
-            const snapAsistencias = await getDocs(qAsistencias);
-            snapAsistencias.forEach(async (d) => await deleteDoc(doc(db, 'asistencias', d.id)));
-
-            alert(`✅ Los datos de la sede "${campoNombre}" han sido vaciados exitosamente.\n\nLos maestros y auxiliares asignados siguen teniendo acceso.`);
-        } catch (error) {
-            alert("❌ Ocurrió un error al intentar vaciar la sede.");
-        } finally {
-            setCargando(false);
-        }
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                    mostrarExito(`Los datos de "${campoNombre}" han sido vaciados exitosamente.\n\nLa sede está completamente limpia y lista para nuevos registros.`);
+                } catch (error) {
+                    alert("❌ Ocurrió un error al intentar vaciar la sede.");
+                } finally {
+                    setCargando(false);
+                }
+            }
+        });
     };
 
     const guardarEdicion = async (e: FormEvent) => {
@@ -139,6 +163,7 @@ export const useAdminLogic = () => {
 
         await updateDoc(doc(db, coleccion, editandoUser.id), datosActualizados);
         setEditandoUser(null);
+        mostrarExito("Perfil del usuario actualizado correctamente.");
     };
 
     const guardarNuevoUsuario = async (e: FormEvent) => {
@@ -156,55 +181,29 @@ export const useAdminLogic = () => {
             });
             
             setIsAddModalOpen(false); setAddForm(estadoAddInicial);
-            alert(`✅ Usuario ${addForm.nombre} registrado.`);
+            mostrarExito(`Usuario ${addForm.nombre} registrado y activado con éxito.`);
         } catch (error) { alert("❌ Error al crear el usuario."); }
     };
 
-    const abrirModalNuevoAviso = () => {
-        setAvisoForm(estadoAvisoInicial);
-        setIsAvisoModalOpen(true);
-    };
+    const abrirModalNuevoAviso = () => { setAvisoForm(estadoAvisoInicial); setIsAvisoModalOpen(true); };
+    const abrirModalEditarAviso = (aviso: any) => { setAvisoForm({ id: aviso.id, titulo: aviso.titulo, mensaje: aviso.mensaje, targetRole: aviso.targetRole || 'TODOS' }); setIsAvisoModalOpen(true); };
 
-    const abrirModalEditarAviso = (aviso: any) => {
-        setAvisoForm({
-            id: aviso.id,
-            titulo: aviso.titulo,
-            mensaje: aviso.mensaje,
-            targetRole: aviso.targetRole || 'TODOS'
-        });
-        setIsAvisoModalOpen(true);
-    };
-
-    // ==========================================
-    // GUARDAR AVISO CON FECHA Y HORA ESTRICTA
-    // ==========================================
     const guardarAviso = async (e: FormEvent) => {
         e.preventDefault();
         setGuardandoAviso(true);
         try {
             if (avisoForm.id) {
-                await updateDoc(doc(db, 'interacciones_avisos', avisoForm.id), {
-                    titulo: avisoForm.titulo,
-                    mensaje: avisoForm.mensaje,
-                    targetRole: avisoForm.targetRole
-                });
+                await updateDoc(doc(db, 'interacciones_avisos', avisoForm.id), { titulo: avisoForm.titulo, mensaje: avisoForm.mensaje, targetRole: avisoForm.targetRole });
             } else {
                 const ahora = new Date();
                 await addDoc(collection(db, 'interacciones_avisos'), {
-                    titulo: avisoForm.titulo,
-                    mensaje: avisoForm.mensaje,
-                    targetRole: avisoForm.targetRole,
-                    fecha: ahora.toLocaleDateString('es-SV'), 
-                    hora: ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true }),
-                    up: 0, down: 0, cake: 0,
-                    usuarios: {},
-                    leida: false,
-                    isCumplePersonal: false,
-                    isCumpleEquipo: false,
-                    createdAt: ahora.getTime() // Milisegundos exactos para ordenar
+                    titulo: avisoForm.titulo, mensaje: avisoForm.mensaje, targetRole: avisoForm.targetRole,
+                    fecha: ahora.toLocaleDateString('es-SV'), hora: ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true }),
+                    up: 0, down: 0, cake: 0, usuarios: {}, leida: false, isCumplePersonal: false, isCumpleEquipo: false, createdAt: ahora.getTime()
                 });
             }
             setIsAvisoModalOpen(false);
+            mostrarExito(avisoForm.id ? "Aviso modificado exitosamente." : "Aviso oficial publicado y enviado.");
         } catch (error) {
             alert("Error al procesar el aviso.");
         } finally {
@@ -212,16 +211,18 @@ export const useAdminLogic = () => {
         }
     };
 
-    const eliminarAvisoAdmin = async () => {
+    const solicitarEliminarAviso = () => {
         if (!avisoForm.id) return;
-        if (window.confirm("¿Estás seguro de que deseas ELIMINAR este aviso permanentemente?")) {
-            try {
+        setConfirmState({
+            isOpen: true, title: 'Eliminar Aviso Oficial',
+            message: '¿Estás seguro de que deseas ELIMINAR este aviso permanentemente?\n\nDesaparecerá de las pantallas de todos los usuarios inmediatamente.',
+            type: 'danger', confirmText: 'Sí, Eliminar Aviso', requireInput: '',
+            onConfirm: async () => {
                 await deleteDoc(doc(db, 'interacciones_avisos', avisoForm.id));
                 setIsAvisoModalOpen(false);
-            } catch (error) {
-                alert("Error al eliminar el aviso.");
+                setConfirmState(prev => ({...prev, isOpen: false}));
             }
-        }
+        });
     };
 
     const agruparHistorialPorCampo = (campo: string) => {
@@ -232,10 +233,8 @@ export const useAdminLogic = () => {
         });
 
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
-
         asistenciasCampo.forEach(asis => {
             if (!asis.fecha) return; 
-
             const dateObj = new Date(asis.fecha + 'T12:00:00');
             const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
             const semanaNum = Math.ceil(dateObj.getDate() / 7);
@@ -252,11 +251,11 @@ export const useAdminLogic = () => {
     };
 
     return {
-        usuarios, cargando, editandoUser, setEditandoUser, aprobarUsuario, eliminarUsuario, guardarEdicion,
+        usuarios, cargando, editandoUser, setEditandoUser, solicitarAprobacion, solicitarEliminacion, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
-        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin,
-        limpiarSede
+        guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
+        confirmState, setConfirmState, confirmInputText, setConfirmInputText
     };
 };
