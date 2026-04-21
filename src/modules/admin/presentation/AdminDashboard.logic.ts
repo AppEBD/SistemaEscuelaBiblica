@@ -93,9 +93,6 @@ export const useAdminLogic = () => {
         }
     };
 
-    // ==========================================
-    // REGLA ACTUALIZADA: VACIAR SEDE SIN TOCAR MAESTROS
-    // ==========================================
     const limpiarSede = async (campoNombre: string) => {
         const confirmacion1 = window.confirm(`⚠️ ADVERTENCIA ⚠️\n\nEstás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal (Maestros/Auxiliares) seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- El historial de clases (asistencias y ofrendas)\n\n¿Deseas vaciar los datos de la sede para comenzar de nuevo?`);
         if (!confirmacion1) return;
@@ -108,18 +105,13 @@ export const useAdminLogic = () => {
 
         try {
             setCargando(true);
-            
-            // 1. Destruir Niños (Alumnos)
             const qAlumnos = query(collection(db, 'alumnos'), where('campo', '==', campoNombre));
             const snapAlumnos = await getDocs(qAlumnos);
             snapAlumnos.forEach(async (d) => await deleteDoc(doc(db, 'alumnos', d.id)));
 
-            // 2. Destruir Historial (Asistencias y Ofrendas)
             const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
             const snapAsistencias = await getDocs(qAsistencias);
             snapAsistencias.forEach(async (d) => await deleteDoc(doc(db, 'asistencias', d.id)));
-
-            // 3. AHORA NO TOCAMOS A LOS MAESTROS NI AUXILIARES (Quedan intactos)
 
             alert(`✅ Los datos de la sede "${campoNombre}" han sido vaciados exitosamente.\n\nLos maestros y auxiliares asignados siguen teniendo acceso.`);
         } catch (error) {
@@ -183,6 +175,9 @@ export const useAdminLogic = () => {
         setIsAvisoModalOpen(true);
     };
 
+    // ==========================================
+    // GUARDAR AVISO CON FECHA Y HORA ESTRICTA
+    // ==========================================
     const guardarAviso = async (e: FormEvent) => {
         e.preventDefault();
         setGuardandoAviso(true);
@@ -194,17 +189,19 @@ export const useAdminLogic = () => {
                     targetRole: avisoForm.targetRole
                 });
             } else {
+                const ahora = new Date();
                 await addDoc(collection(db, 'interacciones_avisos'), {
                     titulo: avisoForm.titulo,
                     mensaje: avisoForm.mensaje,
                     targetRole: avisoForm.targetRole,
-                    fecha: new Date().toLocaleDateString('es-SV'), 
+                    fecha: ahora.toLocaleDateString('es-SV'), 
+                    hora: ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true }),
                     up: 0, down: 0, cake: 0,
                     usuarios: {},
                     leida: false,
                     isCumplePersonal: false,
                     isCumpleEquipo: false,
-                    createdAt: Date.now()
+                    createdAt: ahora.getTime() // Milisegundos exactos para ordenar
                 });
             }
             setIsAvisoModalOpen(false);
