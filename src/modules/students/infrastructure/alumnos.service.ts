@@ -4,6 +4,7 @@ import { Alumno, AsistenciaDia } from '../domain/student.model';
 
 export const AlumnosService = {
     suscribirAlumnosPorCampo: (campo: string, callback: (alumnos: Alumno[]) => void) => {
+        if (!campo) return () => {};
         const q = query(collection(db, 'alumnos'), where('campo', '==', campo));
         return onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alumno));
@@ -11,8 +12,8 @@ export const AlumnosService = {
         });
     },
 
-    // === NUEVO: SUSCRIPCIÓN EN TIEMPO REAL A LAS ASISTENCIAS ===
     suscribirAsistenciasPorCampo: (campo: string, callback: (asistencias: AsistenciaDia[]) => void) => {
+        if (!campo) return () => {};
         const q = query(collection(db, 'asistencias'), where('campo', '==', campo));
         return onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsistenciaDia));
@@ -27,8 +28,8 @@ export const AlumnosService = {
     guardarAsistencia: async (asistencia: AsistenciaDia) => await addDoc(collection(db, 'asistencias'), asistencia),
     actualizarAsistenciaDoc: async (id: string, asistencia: Partial<AsistenciaDia>) => await updateDoc(doc(db, 'asistencias', id), asistencia),
 
-    // Se conservan por si algún reporte antiguo las necesita
     obtenerUltimaAsistencia: async (campo: string) => {
+        if (!campo) return null;
         const q = query(collection(db, 'asistencias'), where('campo', '==', campo));
         const snapshot = await getDocs(q);
         if (snapshot.empty) return null;
@@ -38,6 +39,7 @@ export const AlumnosService = {
     },
 
     obtenerHistorialAsistencias: async (campo: string) => {
+        if (!campo) return [];
         const q = query(collection(db, 'asistencias'), where('campo', '==', campo));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsistenciaDia));
