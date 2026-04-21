@@ -94,14 +94,12 @@ export const useAdminLogic = () => {
     };
 
     // ==========================================
-    // REGLA: VACIAR SEDE (RESTAURAR DE FÁBRICA)
+    // REGLA ACTUALIZADA: VACIAR SEDE SIN TOCAR MAESTROS
     // ==========================================
     const limpiarSede = async (campoNombre: string) => {
-        // Primera advertencia aclarando que el nombre NO se borra
-        const confirmacion1 = window.confirm(`⚠️ ADVERTENCIA ⚠️\n\nEstás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede seguirá existiendo, pero se borrarán para siempre:\n- Todos los niños inscritos\n- El historial de clases\n- El personal (Maestros/Auxiliares) asignado a este campo\n\n¿Deseas vaciar la sede para que quede como nueva?`);
+        const confirmacion1 = window.confirm(`⚠️ ADVERTENCIA ⚠️\n\nEstás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal (Maestros/Auxiliares) seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- El historial de clases (asistencias y ofrendas)\n\n¿Deseas vaciar los datos de la sede para comenzar de nuevo?`);
         if (!confirmacion1) return;
 
-        // Segunda advertencia (Seguridad anti-accidentes)
         const confirmacion2 = window.prompt(`Para confirmar el vaciado de datos, escribe el nombre de la sede exactamente así: ${campoNombre}`);
         if (confirmacion2 !== campoNombre) {
             alert("El nombre no coincide. Vaciado cancelado por seguridad.");
@@ -116,19 +114,14 @@ export const useAdminLogic = () => {
             const snapAlumnos = await getDocs(qAlumnos);
             snapAlumnos.forEach(async (d) => await deleteDoc(doc(db, 'alumnos', d.id)));
 
-            // 2. Destruir Historial (Asistencias)
+            // 2. Destruir Historial (Asistencias y Ofrendas)
             const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
             const snapAsistencias = await getDocs(qAsistencias);
             snapAsistencias.forEach(async (d) => await deleteDoc(doc(db, 'asistencias', d.id)));
 
-            // 3. Destruir Personal de la Sede
-            const usuariosDeSede = usuarios.filter(u => u.campo === campoNombre);
-            for (const u of usuariosDeSede) {
-                const col = AuthService.obtenerColeccion(u.rol);
-                await deleteDoc(doc(db, col, u.id));
-            }
+            // 3. AHORA NO TOCAMOS A LOS MAESTROS NI AUXILIARES (Quedan intactos)
 
-            alert(`✅ La sede "${campoNombre}" ha sido vaciada exitosamente y está lista para nuevos registros.`);
+            alert(`✅ Los datos de la sede "${campoNombre}" han sido vaciados exitosamente.\n\nLos maestros y auxiliares asignados siguen teniendo acceso.`);
         } catch (error) {
             alert("❌ Ocurrió un error al intentar vaciar la sede.");
         } finally {
@@ -267,6 +260,6 @@ export const useAdminLogic = () => {
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, eliminarAvisoAdmin,
-        limpiarSede // Exportamos la función con su nuevo nombre
+        limpiarSede
     };
 };
