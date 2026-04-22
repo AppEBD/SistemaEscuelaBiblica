@@ -61,7 +61,6 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
-            {/* === PESTAÑA HOME MÁGICO (4 Tarjetas, sin la de reportes extra) === */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     
@@ -119,36 +118,41 @@ export const AdminDashboard = () => {
                         <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
                     </div>
 
-                    {/* DISEÑO ULTRA-COMPACTO */}
-                    <div className="unified-monitor-panel">
-                        <div className="ump-box">
-                            <div className="ump-title">Presentes</div>
-                            <div className="ump-number text-emerald">{metricasHoy.presentes}</div>
-                            <div className="ump-breakdown">
-                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
-                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
+                    {/* MEGA-TARJETA: TODO EN UNA SOLA FILA */}
+                    <div className="monitor-overview-row">
+                        <div className="mega-demographic-card">
+                            <div className="mdc-col">
+                                <span className="mdc-title text-emerald"><i className="fa-solid fa-user-check"></i> Presentes</span>
+                                <span className="mdc-total">{metricasHoy.presentes}</span>
+                                <div className="mdc-badges">
+                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
+                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
+                                </div>
+                            </div>
+                            <div className="mdc-divider"></div>
+                            <div className="mdc-col">
+                                <span className="mdc-title text-rose"><i className="fa-solid fa-user-xmark"></i> Ausentes</span>
+                                <span className="mdc-total">{metricasHoy.ausentes}</span>
+                                <div className="mdc-badges">
+                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
+                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
+                                </div>
+                            </div>
+                            <div className="mdc-divider"></div>
+                            <div className="mdc-col">
+                                <span className="mdc-title text-amber"><i className="fa-solid fa-user-clock"></i> Permisos</span>
+                                <span className="mdc-total">{metricasHoy.permisos}</span>
+                                <div className="mdc-badges">
+                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
+                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="ump-box">
-                            <div className="ump-title">Ausentes</div>
-                            <div className="ump-number text-rose">{metricasHoy.ausentes}</div>
-                            <div className="ump-breakdown">
-                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
-                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
-                            </div>
-                        </div>
-                        <div className="ump-box">
-                            <div className="ump-title">Permisos</div>
-                            <div className="ump-number text-amber">{metricasHoy.permisos}</div>
-                            <div className="ump-breakdown">
-                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
-                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
-                            </div>
-                        </div>
-                        <div className="ump-box highlight">
-                            <div className="ump-title">Ofrenda Total</div>
-                            <div className="ump-number text-blue">${metricasHoy.ofrenda.toFixed(2)}</div>
-                            <div className="ump-footer">{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length} Sedes</div>
+
+                        <div className="mega-ofrenda-card">
+                            <div className="moc-title">Ofrenda Total</div>
+                            <div className="moc-total">${metricasHoy.ofrenda.toFixed(2)}</div>
+                            <div className="moc-footer">{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length} Sedes</div>
                         </div>
                     </div>
 
@@ -186,7 +190,7 @@ export const AdminDashboard = () => {
                         </div>
                     </Accordion>
 
-                    {/* SECCIÓN 2: HISTORIAL GLOBAL INCORPORADO AQUÍ ABAJO */}
+                    {/* SECCIÓN 2: HISTORIAL GLOBAL CON MEGA-TARJETAS */}
                     <div style={{ marginTop: '35px', borderTop: '2px dashed #f1f5f9', paddingTop: '25px' }}>
                         <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '20px'}}>
                             <i className="fa-solid fa-chart-column" style={{color: '#8b5cf6'}}></i> Reportes Globales Anteriores
@@ -200,37 +204,44 @@ export const AdminDashboard = () => {
                                     <div style={{paddingTop: '10px'}}>
                                         {Object.entries(datosMes.semanas).map(([semana, datosSemana]) => (
                                             <Accordion key={semana} title={semana}>
-                                                <div className="unified-monitor-panel" style={{marginBottom: '10px'}}>
-                                                    <div className="ump-box">
-                                                        <div className="ump-title">Presentes</div>
-                                                        <div className="ump-number text-emerald">{datosSemana.presentes}</div>
-                                                        <div className="ump-breakdown">
-                                                            <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosPresentes}</span>
-                                                            <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPresentes}</span>
+                                                
+                                                <div className="monitor-overview-row" style={{marginBottom: '10px'}}>
+                                                    <div className="mega-demographic-card">
+                                                        <div className="mdc-col">
+                                                            <span className="mdc-title text-emerald"><i className="fa-solid fa-user-check"></i> Presentes</span>
+                                                            <span className="mdc-total">{datosSemana.presentes}</span>
+                                                            <div className="mdc-badges">
+                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosPresentes}</span>
+                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPresentes}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mdc-divider"></div>
+                                                        <div className="mdc-col">
+                                                            <span className="mdc-title text-rose"><i className="fa-solid fa-user-xmark"></i> Ausentes</span>
+                                                            <span className="mdc-total">{datosSemana.ausentes}</span>
+                                                            <div className="mdc-badges">
+                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosAusentes}</span>
+                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasAusentes}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mdc-divider"></div>
+                                                        <div className="mdc-col">
+                                                            <span className="mdc-title text-amber"><i className="fa-solid fa-user-clock"></i> Permisos</span>
+                                                            <span className="mdc-total">{datosSemana.permisos}</span>
+                                                            <div className="mdc-badges">
+                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosPermisos}</span>
+                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPermisos}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="ump-box">
-                                                        <div className="ump-title">Ausentes</div>
-                                                        <div className="ump-number text-rose">{datosSemana.ausentes}</div>
-                                                        <div className="ump-breakdown">
-                                                            <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosAusentes}</span>
-                                                            <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasAusentes}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="ump-box">
-                                                        <div className="ump-title">Permisos</div>
-                                                        <div className="ump-number text-amber">{datosSemana.permisos}</div>
-                                                        <div className="ump-breakdown">
-                                                            <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosPermisos}</span>
-                                                            <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPermisos}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="ump-box highlight">
-                                                        <div className="ump-title">Ofrenda Total</div>
-                                                        <div className="ump-number text-blue">${datosSemana.ofrenda.toFixed(2)}</div>
-                                                        <div className="ump-footer">{datosSemana.reportes} Reportes enviaron</div>
+
+                                                    <div className="mega-ofrenda-card">
+                                                        <div className="moc-title">Ofrenda Total</div>
+                                                        <div className="moc-total">${datosSemana.ofrenda.toFixed(2)}</div>
+                                                        <div className="moc-footer">{datosSemana.reportes} Reportes recibidos</div>
                                                     </div>
                                                 </div>
+
                                             </Accordion>
                                         ))}
                                     </div>
@@ -456,16 +467,15 @@ export const AdminDashboard = () => {
                 </form>
             </Modal>
 
-            {/* MODAL DE EDICIÓN DE AVISO (AHORA CON BOTÓN ELIMINAR COMPLETAMENTE VISIBLE E INDEPENDIENTE) */}
+            {/* MODAL DE AVISOS CON BOTÓN ELIMINAR PREMIUM */}
             <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
                 
-                {/* BOTÓN ELIMINAR EXCLUSIVO Y SEPARADO DE LA ACCIÓN "GUARDAR" */}
                 {avisoForm.id && (
-                    <div style={{ marginBottom: '20px', background: '#fee2e2', padding: '15px', borderRadius: '12px', border: '1px solid #fecaca', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '800' }}>¿Ya no necesitas este aviso?</span>
-                        <Button type="button" style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={solicitarEliminarAviso}>
+                    <div className="aviso-delete-zone animate-fade-in">
+                        <span>¿Ya no necesitas este aviso?</span>
+                        <button type="button" className="btn-eliminar-aviso-premium" onClick={solicitarEliminarAviso}>
                             <i className="fa-solid fa-trash"></i> Eliminar Aviso
-                        </Button>
+                        </button>
                     </div>
                 )}
 
