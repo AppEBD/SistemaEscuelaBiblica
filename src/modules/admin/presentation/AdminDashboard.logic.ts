@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useMemo } from 'react';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, addDoc, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase.config'; 
 import { AuthService } from '../../auth/infrastructure/auth.service';
@@ -11,7 +11,8 @@ export const useAdminLogic = () => {
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos'>('home');
+    // NUEVO: Agregamos 'monitor' a las pestañas disponibles
+    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -74,19 +75,35 @@ export const useAdminLogic = () => {
     }, []);
 
     // ==========================================
-    // NUEVO: MOTOR DEL MONITOR EN VIVO (HOY)
+    // MOTOR INTELIGENTE DEL MONITOR EN VIVO
     // ==========================================
     const fechaHoy = new Date().toISOString().split('T')[0];
     const asistenciasHoy = asistenciasGlobal.filter(a => a.fecha === fechaHoy);
     
-    const metricasHoy = asistenciasHoy.reduce((acc, asis) => {
-        acc.presentes += (asis.resumen?.presentes || 0);
-        acc.ausentes += (asis.resumen?.ausentes || 0);
-        acc.permisos += (asis.resumen?.permisos || 0);
-        acc.ofrenda += (asis.resumen?.ofrendaTotal || 0);
-        acc.sedesEnviadas++;
-        return acc;
-    }, { presentes: 0, ausentes: 0, permisos: 0, ofrenda: 0, sedesEnviadas: 0 });
+    // Calculamos las métricas en vivo cruzando datos con los perfiles de los niños
+    const metricasHoy = useMemo(() => {
+        return asistenciasHoy.reduce((acc, asis) => {
+            acc.presentes += (asis.resumen?.presentes || 0);
+            acc.ausentes += (asis.resumen?.ausentes || 0);
+            acc.permisos += (asis.resumen?.permisos || 0);
+            acc.ofrenda += (asis.resumen?.ofrendaTotal || 0);
+            acc.sedesEnviadas++;
+
+            // Extraemos género de los presentes
+            if (asis.registros) {
+                Object.entries(asis.registros).forEach(([alumnoId, estado]) => {
+                    if (estado === 'Presente') {
+                        const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
+                        if (alumnoInfo) {
+                            if (alumnoInfo.genero === 'Masculino') acc.ninosPresentes++;
+                            else if (alumnoInfo.genero === 'Femenino') acc.ninasPresentes++;
+                        }
+                    }
+                });
+            }
+            return acc;
+        }, { presentes: 0, ausentes: 0, permisos: 0, ofrenda: 0, sedesEnviadas: 0, ninosPresentes: 0, ninasPresentes: 0 });
+    }, [asistenciasHoy, alumnosGlobal]);
 
     const usuariosFiltrados = usuarios.filter(u => {
         if (!searchTerm) return true;
@@ -249,6 +266,6 @@ export const useAdminLogic = () => {
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
-        asistenciasHoy, metricasHoy // EXPORTAMOS LA DATA EN VIVO
+        asistenciasHoy, metricasHoy
     };
 };
