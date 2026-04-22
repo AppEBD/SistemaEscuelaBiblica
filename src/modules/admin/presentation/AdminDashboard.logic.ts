@@ -11,8 +11,8 @@ export const useAdminLogic = () => {
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // NUEVO: Agregamos 'reportes' a las pestañas
-    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor' | 'reportes'>('home');
+    // Eliminamos 'reportes' porque ahora vive dentro de 'monitor'
+    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -69,9 +69,6 @@ export const useAdminLogic = () => {
         return () => { unsubscribes.forEach(u => u()); unsubAlumnos(); unsubAsistencias(); unsubAvisos(); };
     }, []);
 
-    // ==========================================
-    // CÁLCULO EN VIVO (HOY): DEMOGRAFÍA PRECISA
-    // ==========================================
     const fechaHoy = new Date().toISOString().split('T')[0];
     const asistenciasHoy = asistenciasGlobal.filter(a => a.fecha === fechaHoy);
     
@@ -109,12 +106,8 @@ export const useAdminLogic = () => {
         });
     }, [asistenciasHoy, alumnosGlobal]);
 
-    // ==========================================
-    // NUEVO: MOTOR PARA EL HISTORIAL GLOBAL (TODAS LAS SEDES SUMADAS)
-    // ==========================================
     const agruparMonitorGlobal = () => {
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any> }> = {};
-        
         const asistenciasValidas = asistenciasGlobal.filter(a => a.fecha).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
         asistenciasValidas.forEach(asis => {
@@ -260,7 +253,9 @@ export const useAdminLogic = () => {
                     up: 0, down: 0, cake: 0, usuarios: {}, leida: false, isCumplePersonal: false, isCumpleEquipo: false, createdAt: ahora.getTime()
                 });
             }
+            // Aquí cerramos el modal y reseteamos el formulario al terminar exitosamente
             setIsAvisoModalOpen(false);
+            setAvisoForm(estadoAvisoInicial);
             mostrarExito(avisoForm.id ? "Aviso modificado exitosamente." : "Aviso oficial publicado y enviado.");
         } catch (error) { mostrarError("Error al procesar el aviso."); } 
         finally { setGuardandoAviso(false); }
