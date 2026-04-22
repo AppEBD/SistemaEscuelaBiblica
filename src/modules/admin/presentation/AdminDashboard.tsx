@@ -61,10 +61,11 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
+            {/* === PESTAÑA HOME MÁGICO === */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     
-                    <div className="admin-big-card card-rose" onClick={() => setAdminTab('monitor')}>
+                    <div className="admin-big-card card-emerald" onClick={() => setAdminTab('monitor')}>
                         <div className="abc-content">
                             <h3>Monitor en Vivo</h3>
                             <p>Asistencia consolidada de hoy e historial global.</p>
@@ -82,7 +83,7 @@ export const AdminDashboard = () => {
                         <i className="fa-solid fa-users abc-icon"></i>
                     </div>
 
-                    <div className="admin-big-card card-emerald" onClick={() => setAdminTab('campos')}>
+                    <div className="admin-big-card card-purple" onClick={() => setAdminTab('campos')}>
                         <div className="abc-content">
                             <h3>Historial de Sedes</h3>
                             <p>Verifica el progreso y asistencia de cada campo individual.</p>
@@ -112,47 +113,56 @@ export const AdminDashboard = () => {
             {adminTab === 'monitor' && (
                 <div className="live-monitor-section animate-fade-in">
                     
-                    {/* SECCIÓN 1: HOY */}
-                    <div className="live-monitor-header">
-                        <h3><i className="fa-solid fa-satellite-dish fa-beat" style={{color: '#ef4444'}}></i> Monitor Global de Hoy</h3>
-                        <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
-                    </div>
-
-                    {/* MEGA-TARJETA: TODO EN UNA SOLA FILA */}
-                    <div className="monitor-overview-row">
-                        <div className="mega-demographic-card">
-                            <div className="mdc-col">
-                                <span className="mdc-title text-emerald"><i className="fa-solid fa-user-check"></i> Presentes</span>
-                                <span className="mdc-total">{metricasHoy.presentes}</span>
-                                <div className="mdc-badges">
-                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
-                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
+                    {/* MEGA TARJETA VERDE TIPO RESUMEN */}
+                    <div className="premium-summary-card">
+                        <div className="psc-header">
+                            <div className="psc-title"><i className="fa-solid fa-chart-line"></i> Resumen de Hoy</div>
+                            <div className="psc-date">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                        </div>
+                        <div className="psc-body">
+                            <div className="psc-col">
+                                <div className="psc-num text-white">{metricasHoy.presentes}</div>
+                                <div className="psc-label">PRESENTES</div>
+                                <div className="psc-breakdown">
+                                    <span><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
+                                    <span><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
                                 </div>
                             </div>
-                            <div className="mdc-divider"></div>
-                            <div className="mdc-col">
-                                <span className="mdc-title text-rose"><i className="fa-solid fa-user-xmark"></i> Ausentes</span>
-                                <span className="mdc-total">{metricasHoy.ausentes}</span>
-                                <div className="mdc-badges">
-                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
-                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
+                            <div className="psc-divider"></div>
+                            <div className="psc-col">
+                                <div className="psc-num text-pink">{metricasHoy.ausentes}</div>
+                                <div className="psc-label">AUSENTES</div>
+                                <div className="psc-breakdown">
+                                    <span><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
+                                    <span><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
                                 </div>
                             </div>
-                            <div className="mdc-divider"></div>
-                            <div className="mdc-col">
-                                <span className="mdc-title text-amber"><i className="fa-solid fa-user-clock"></i> Permisos</span>
-                                <span className="mdc-total">{metricasHoy.permisos}</span>
-                                <div className="mdc-badges">
-                                    <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
-                                    <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
+                            <div className="psc-divider"></div>
+                            <div className="psc-col">
+                                <div className="psc-num text-yellow">{metricasHoy.permisos}</div>
+                                <div className="psc-label">PERMISOS</div>
+                                <div className="psc-breakdown">
+                                    <span><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
+                                    <span><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="mega-ofrenda-card">
-                            <div className="moc-title">Ofrenda Total</div>
-                            <div className="moc-total">${metricasHoy.ofrenda.toFixed(2)}</div>
-                            <div className="moc-footer">{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length} Sedes</div>
+                    <div className="secondary-stats-grid">
+                        <div className="ssc-card">
+                            <i className="fa-solid fa-sack-dollar text-blue"></i>
+                            <div>
+                                <h4>${metricasHoy.ofrenda.toFixed(2)}</h4>
+                                <span>Ofrenda Global</span>
+                            </div>
+                        </div>
+                        <div className="ssc-card">
+                            <i className="fa-solid fa-church text-purple"></i>
+                            <div>
+                                <h4>{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length}</h4>
+                                <span>Sedes Reportadas</span>
+                            </div>
                         </div>
                     </div>
 
@@ -190,7 +200,7 @@ export const AdminDashboard = () => {
                         </div>
                     </Accordion>
 
-                    {/* SECCIÓN 2: HISTORIAL GLOBAL CON MEGA-TARJETAS */}
+                    {/* SECCIÓN 2: HISTORIAL GLOBAL CON LA MISMA TARJETA VERDE */}
                     <div style={{ marginTop: '35px', borderTop: '2px dashed #f1f5f9', paddingTop: '25px' }}>
                         <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '20px'}}>
                             <i className="fa-solid fa-chart-column" style={{color: '#8b5cf6'}}></i> Reportes Globales Anteriores
@@ -205,40 +215,54 @@ export const AdminDashboard = () => {
                                         {Object.entries(datosMes.semanas).map(([semana, datosSemana]) => (
                                             <Accordion key={semana} title={semana}>
                                                 
-                                                <div className="monitor-overview-row" style={{marginBottom: '10px'}}>
-                                                    <div className="mega-demographic-card">
-                                                        <div className="mdc-col">
-                                                            <span className="mdc-title text-emerald"><i className="fa-solid fa-user-check"></i> Presentes</span>
-                                                            <span className="mdc-total">{datosSemana.presentes}</span>
-                                                            <div className="mdc-badges">
-                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosPresentes}</span>
-                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPresentes}</span>
+                                                <div className="premium-summary-card" style={{ marginBottom: '15px' }}>
+                                                    <div className="psc-header">
+                                                        <div className="psc-title"><i className="fa-solid fa-calendar-week"></i> Resumen de la {semana}</div>
+                                                    </div>
+                                                    <div className="psc-body">
+                                                        <div className="psc-col">
+                                                            <div className="psc-num text-white">{datosSemana.presentes}</div>
+                                                            <div className="psc-label">PRESENTES</div>
+                                                            <div className="psc-breakdown">
+                                                                <span><i className="fa-solid fa-child"></i> {datosSemana.ninosPresentes}</span>
+                                                                <span><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPresentes}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="mdc-divider"></div>
-                                                        <div className="mdc-col">
-                                                            <span className="mdc-title text-rose"><i className="fa-solid fa-user-xmark"></i> Ausentes</span>
-                                                            <span className="mdc-total">{datosSemana.ausentes}</span>
-                                                            <div className="mdc-badges">
-                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosAusentes}</span>
-                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasAusentes}</span>
+                                                        <div className="psc-divider"></div>
+                                                        <div className="psc-col">
+                                                            <div className="psc-num text-pink">{datosSemana.ausentes}</div>
+                                                            <div className="psc-label">AUSENTES</div>
+                                                            <div className="psc-breakdown">
+                                                                <span><i className="fa-solid fa-child"></i> {datosSemana.ninosAusentes}</span>
+                                                                <span><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasAusentes}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="mdc-divider"></div>
-                                                        <div className="mdc-col">
-                                                            <span className="mdc-title text-amber"><i className="fa-solid fa-user-clock"></i> Permisos</span>
-                                                            <span className="mdc-total">{datosSemana.permisos}</span>
-                                                            <div className="mdc-badges">
-                                                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {datosSemana.ninosPermisos}</span>
-                                                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPermisos}</span>
+                                                        <div className="psc-divider"></div>
+                                                        <div className="psc-col">
+                                                            <div className="psc-num text-yellow">{datosSemana.permisos}</div>
+                                                            <div className="psc-label">PERMISOS</div>
+                                                            <div className="psc-breakdown">
+                                                                <span><i className="fa-solid fa-child"></i> {datosSemana.ninosPermisos}</span>
+                                                                <span><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPermisos}</span>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </div>
 
-                                                    <div className="mega-ofrenda-card">
-                                                        <div className="moc-title">Ofrenda Total</div>
-                                                        <div className="moc-total">${datosSemana.ofrenda.toFixed(2)}</div>
-                                                        <div className="moc-footer">{datosSemana.reportes} Reportes recibidos</div>
+                                                <div className="secondary-stats-grid">
+                                                    <div className="ssc-card">
+                                                        <i className="fa-solid fa-sack-dollar text-blue"></i>
+                                                        <div>
+                                                            <h4>${datosSemana.ofrenda.toFixed(2)}</h4>
+                                                            <span>Ofrenda Semanal</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="ssc-card">
+                                                        <i className="fa-solid fa-file-contract text-purple"></i>
+                                                        <div>
+                                                            <h4>{datosSemana.reportes}</h4>
+                                                            <span>Reportes Recibidos</span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -472,9 +496,9 @@ export const AdminDashboard = () => {
                 
                 {avisoForm.id && (
                     <div className="aviso-delete-zone animate-fade-in">
-                        <span>¿Ya no necesitas este aviso?</span>
+                        <span><i className="fa-solid fa-triangle-exclamation"></i> ¿Ya no necesitas este aviso?</span>
                         <button type="button" className="btn-eliminar-aviso-premium" onClick={solicitarEliminarAviso}>
-                            <i className="fa-solid fa-trash"></i> Eliminar Aviso
+                            <i className="fa-solid fa-trash"></i> Eliminar Aviso Permanentemente
                         </button>
                     </div>
                 )}
