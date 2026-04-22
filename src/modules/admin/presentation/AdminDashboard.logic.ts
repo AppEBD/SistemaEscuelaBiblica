@@ -24,26 +24,19 @@ export const useAdminLogic = () => {
     const [avisoForm, setAvisoForm] = useState(estadoAvisoInicial);
     const [guardandoAviso, setGuardandoAviso] = useState(false);
 
-    // ==========================================
-    // SISTEMA DE ALERTAS PREMIUM (REEMPLAZA A WINDOW.CONFIRM Y ALERT)
-    // ==========================================
     const [confirmState, setConfirmState] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        confirmText: '',
+        isOpen: false, title: '', message: '', confirmText: '',
         type: 'danger' as 'danger' | 'warning' | 'success',
-        requireInput: '',
-        onConfirm: async () => {}
+        requireInput: '', onConfirm: async () => {}
     });
     const [confirmInputText, setConfirmInputText] = useState('');
 
     const mostrarExito = (mensaje: string) => {
-        setConfirmState({
-            isOpen: true, title: '✅ Operación Exitosa', message: mensaje,
-            type: 'success', confirmText: 'Aceptar', requireInput: '',
-            onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false}))
-        });
+        setConfirmState({ isOpen: true, title: '✅ Operación Exitosa', message: mensaje, type: 'success', confirmText: 'Aceptar', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) });
+    };
+
+    const mostrarError = (mensaje: string) => {
+        setConfirmState({ isOpen: true, title: '❌ Error en la Operación', message: mensaje, type: 'danger', confirmText: 'Entendido', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) });
     };
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -80,6 +73,21 @@ export const useAdminLogic = () => {
         return () => { unsubscribes.forEach(u => u()); unsubAlumnos(); unsubAsistencias(); unsubAvisos(); };
     }, []);
 
+    // ==========================================
+    // NUEVO: MOTOR DEL MONITOR EN VIVO (HOY)
+    // ==========================================
+    const fechaHoy = new Date().toISOString().split('T')[0];
+    const asistenciasHoy = asistenciasGlobal.filter(a => a.fecha === fechaHoy);
+    
+    const metricasHoy = asistenciasHoy.reduce((acc, asis) => {
+        acc.presentes += (asis.resumen?.presentes || 0);
+        acc.ausentes += (asis.resumen?.ausentes || 0);
+        acc.permisos += (asis.resumen?.permisos || 0);
+        acc.ofrenda += (asis.resumen?.ofrendaTotal || 0);
+        acc.sedesEnviadas++;
+        return acc;
+    }, { presentes: 0, ausentes: 0, permisos: 0, ofrenda: 0, sedesEnviadas: 0 });
+
     const usuariosFiltrados = usuarios.filter(u => {
         if (!searchTerm) return true;
         return (u.nombre && u.nombre.toLowerCase().includes(searchTerm.toLowerCase())) || (u.campo && u.campo.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -87,13 +95,14 @@ export const useAdminLogic = () => {
 
     const solicitarAprobacion = (user: any) => {
         setConfirmState({
-            isOpen: true, title: 'Aprobar Acceso',
-            message: `¿Estás seguro de que deseas dar acceso al sistema a ${user.nombre}?`,
-            type: 'success', confirmText: 'Sí, Aprobar Usuario', requireInput: '',
+            isOpen: true, title: 'Aprobar Acceso', message: `¿Estás seguro de que deseas dar acceso al sistema a ${user.nombre}?`, type: 'success', confirmText: 'Sí, Aprobar Usuario', requireInput: '',
             onConfirm: async () => {
-                const coleccion = AuthService.obtenerColeccion(user.rol);
-                await updateDoc(doc(db, coleccion, user.id), { estado: 'Activo' });
-                setConfirmState(prev => ({...prev, isOpen: false}));
+                try {
+                    const coleccion = AuthService.obtenerColeccion(user.rol);
+                    await updateDoc(doc(db, coleccion, user.id), { estado: 'Activo' });
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                    setTimeout(() => mostrarExito(`Se ha concedido acceso a ${user.nombre}.`), 300);
+                } catch (error) { mostrarError("No se pudo aprobar al usuario."); }
             }
         });
     };
@@ -101,46 +110,37 @@ export const useAdminLogic = () => {
     const solicitarEliminacion = (user: any, esDenegado: boolean) => {
         const accion = esDenegado ? "Denegar" : "Eliminar";
         setConfirmState({
-            isOpen: true, title: `¿${accion} Usuario?`,
-            message: `Vas a ${accion.toLowerCase()} a ${user.nombre}.\n\nTranquilo: Solo se borrará su acceso. Los niños, ofrendas y registros que este usuario ingresó seguirán INTACTOS en la sede.`,
-            type: 'danger', confirmText: `Sí, ${accion}`, requireInput: '',
+            isOpen: true, title: `¿${accion} Usuario?`, message: `Vas a ${accion.toLowerCase()} a ${user.nombre}.\n\nTranquilo: Solo se borrará su acceso. Los niños, ofrendas y registros que este usuario ingresó seguirán INTACTOS en la sede.`, type: 'danger', confirmText: `Sí, ${accion}`, requireInput: '',
             onConfirm: async () => {
-                const coleccion = AuthService.obtenerColeccion(user.rol);
-                await deleteDoc(doc(db, coleccion, user.id));
-                setConfirmState(prev => ({...prev, isOpen: false}));
+                try {
+                    const coleccion = AuthService.obtenerColeccion(user.rol);
+                    await deleteDoc(doc(db, coleccion, user.id));
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                    setTimeout(() => mostrarExito(`El usuario ${user.nombre} ha sido eliminado del sistema.`), 300);
+                } catch (error) { mostrarError("No se pudo eliminar al usuario."); }
             }
         });
     };
 
-    // ==========================================
-    // DESTRUCCIÓN BLINDADA DE SEDE (For...of Loop)
-    // ==========================================
     const solicitarLimpiarSede = (campoNombre: string) => {
         setConfirmState({
-            isOpen: true, title: `⚠️ Vaciar Registros de Sede`,
-            message: `Estás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- Todo el historial de clases, ofrendas y asistencias\n\n¿Deseas dejar la sede como nueva?`,
-            type: 'danger', confirmText: 'Destruir Registros Permanentemente', requireInput: campoNombre,
+            isOpen: true, title: `⚠️ Vaciar Registros de Sede`, message: `Estás a punto de VACIAR LA SEDE: "${campoNombre}".\n\nEl nombre de la sede y su personal (Maestros) seguirán INTACTOS, pero se borrarán para siempre:\n- Todos los niños inscritos\n- Todo el historial de clases, ofrendas y asistencias\n\n¿Deseas dejar la sede como nueva?`, type: 'danger', confirmText: 'Destruir Registros Permanentemente', requireInput: campoNombre,
             onConfirm: async () => {
                 try {
                     setCargando(true);
+                    const alumnosDeSede = alumnosGlobal.filter(a => a.campo === campoNombre);
+                    const promesasAlumnos = alumnosDeSede.map(a => deleteDoc(doc(db, 'alumnos', a.id)));
                     
-                    // BLINDAJE 1: Borrar Alumnos 1 por 1 garantizando su destrucción
-                    const qAlumnos = query(collection(db, 'alumnos'), where('campo', '==', campoNombre));
-                    const snapAlumnos = await getDocs(qAlumnos);
-                    for (const d of snapAlumnos.docs) { await deleteDoc(doc(db, 'alumnos', d.id)); }
-
-                    // BLINDAJE 2: Borrar Asistencias/Ofrendas 1 por 1 garantizando su destrucción
-                    const qAsistencias = query(collection(db, 'asistencias'), where('campo', '==', campoNombre));
-                    const snapAsistencias = await getDocs(qAsistencias);
-                    for (const d of snapAsistencias.docs) { await deleteDoc(doc(db, 'asistencias', d.id)); }
-
+                    const asistenciasDeSede = asistenciasGlobal.filter(a => a.campo === campoNombre);
+                    const promesasAsistencias = asistenciasDeSede.map(a => deleteDoc(doc(db, 'asistencias', a.id)));
+                    
+                    await Promise.all([...promesasAlumnos, ...promesasAsistencias]);
                     setConfirmState(prev => ({...prev, isOpen: false}));
-                    mostrarExito(`Los datos de "${campoNombre}" han sido vaciados exitosamente.\n\nLa sede está completamente limpia y lista para nuevos registros.`);
+                    setTimeout(() => mostrarExito(`Los datos de "${campoNombre}" han sido vaciados exitosamente.\n\nLa sede está completamente limpia y lista para nuevos registros (Dile al maestro que recargue su pantalla).`), 300);
                 } catch (error) {
-                    alert("❌ Ocurrió un error al intentar vaciar la sede.");
-                } finally {
-                    setCargando(false);
-                }
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                    setTimeout(() => mostrarError("Ocurrió un error al intentar vaciar la sede."), 300);
+                } finally { setCargando(false); }
             }
         });
     };
@@ -148,41 +148,36 @@ export const useAdminLogic = () => {
     const guardarEdicion = async (e: FormEvent) => {
         e.preventDefault();
         if (!editandoUser) return;
-        const coleccion = AuthService.obtenerColeccion(editandoUser.rol);
-        let nuevaEdad = editandoUser.edad;
-        if (editandoUser.fechaNacimiento) {
-            const edadCalculada = calcularEdadExacta(editandoUser.fechaNacimiento);
-            if (typeof edadCalculada === 'number') nuevaEdad = edadCalculada;
-        }
+        try {
+            const coleccion = AuthService.obtenerColeccion(editandoUser.rol);
+            let nuevaEdad = editandoUser.edad;
+            if (editandoUser.fechaNacimiento) {
+                const edadCalculada = calcularEdadExacta(editandoUser.fechaNacimiento);
+                if (typeof edadCalculada === 'number') nuevaEdad = edadCalculada;
+            }
 
-        const datosActualizados: any = {
-            nombre: editandoUser.nombre, nombreNormalizado: editandoUser.nombre.trim().toLowerCase(),
-            fechaNacimiento: editandoUser.fechaNacimiento, edad: nuevaEdad, genero: editandoUser.genero 
-        };
-        if (editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') datosActualizados.campo = editandoUser.campo;
+            const datosActualizados: any = { nombre: editandoUser.nombre, nombreNormalizado: editandoUser.nombre.trim().toLowerCase(), fechaNacimiento: editandoUser.fechaNacimiento, edad: nuevaEdad, genero: editandoUser.genero };
+            if (editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') datosActualizados.campo = editandoUser.campo;
 
-        await updateDoc(doc(db, coleccion, editandoUser.id), datosActualizados);
-        setEditandoUser(null);
-        mostrarExito("Perfil del usuario actualizado correctamente.");
+            await updateDoc(doc(db, coleccion, editandoUser.id), datosActualizados);
+            setEditandoUser(null);
+            mostrarExito("Perfil del usuario actualizado correctamente.");
+        } catch (error) { mostrarError("No se pudieron guardar los cambios."); }
     };
 
     const guardarNuevoUsuario = async (e: FormEvent) => {
         e.preventDefault();
         try {
-            if (!addForm.rol) return alert("Selecciona un rol.");
+            if (!addForm.rol) { mostrarError("Debes seleccionar un rol para el usuario."); return; }
             const coleccion = AuthService.obtenerColeccion(addForm.rol);
             const fechaNacimiento = `${addForm.birthYear}-${addForm.birthMonth.padStart(2, '0')}-${addForm.birthDay.padStart(2, '0')}`;
             const edad = calcularEdadExacta(fechaNacimiento);
 
-            await addDoc(collection(db, coleccion), {
-                nombre: addForm.nombre, nombreNormalizado: addForm.nombre.trim().toLowerCase(),
-                rol: addForm.rol, campo: addForm.campo || '', fechaNacimiento, edad, genero: addForm.genero,
-                clase: addForm.rol, estado: 'Activo', createdAt: Date.now()
-            });
+            await addDoc(collection(db, coleccion), { nombre: addForm.nombre, nombreNormalizado: addForm.nombre.trim().toLowerCase(), rol: addForm.rol, campo: addForm.campo || '', fechaNacimiento, edad, genero: addForm.genero, clase: addForm.rol, estado: 'Activo', createdAt: Date.now() });
             
             setIsAddModalOpen(false); setAddForm(estadoAddInicial);
             mostrarExito(`Usuario ${addForm.nombre} registrado y activado con éxito.`);
-        } catch (error) { alert("❌ Error al crear el usuario."); }
+        } catch (error) { mostrarError("Error al crear el usuario. Verifica tu conexión."); }
     };
 
     const abrirModalNuevoAviso = () => { setAvisoForm(estadoAvisoInicial); setIsAvisoModalOpen(true); };
@@ -204,23 +199,21 @@ export const useAdminLogic = () => {
             }
             setIsAvisoModalOpen(false);
             mostrarExito(avisoForm.id ? "Aviso modificado exitosamente." : "Aviso oficial publicado y enviado.");
-        } catch (error) {
-            alert("Error al procesar el aviso.");
-        } finally {
-            setGuardandoAviso(false);
-        }
+        } catch (error) { mostrarError("Error al procesar el aviso."); } 
+        finally { setGuardandoAviso(false); }
     };
 
     const solicitarEliminarAviso = () => {
         if (!avisoForm.id) return;
         setConfirmState({
-            isOpen: true, title: 'Eliminar Aviso Oficial',
-            message: '¿Estás seguro de que deseas ELIMINAR este aviso permanentemente?\n\nDesaparecerá de las pantallas de todos los usuarios inmediatamente.',
-            type: 'danger', confirmText: 'Sí, Eliminar Aviso', requireInput: '',
+            isOpen: true, title: 'Eliminar Aviso Oficial', message: '¿Estás seguro de que deseas ELIMINAR este aviso permanentemente?\n\nDesaparecerá de las pantallas de todos los usuarios inmediatamente.', type: 'danger', confirmText: 'Sí, Eliminar Aviso', requireInput: '',
             onConfirm: async () => {
-                await deleteDoc(doc(db, 'interacciones_avisos', avisoForm.id));
-                setIsAvisoModalOpen(false);
-                setConfirmState(prev => ({...prev, isOpen: false}));
+                try {
+                    await deleteDoc(doc(db, 'interacciones_avisos', avisoForm.id!));
+                    setIsAvisoModalOpen(false);
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                    setTimeout(() => mostrarExito("El aviso fue eliminado."), 300);
+                } catch (error) { mostrarError("No se pudo eliminar el aviso."); }
             }
         });
     };
@@ -246,7 +239,6 @@ export const useAdminLogic = () => {
             grupos[mesStr].semanas[semanaStr].push(asis);
             grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
         });
-
         return grupos;
     };
 
@@ -256,6 +248,7 @@ export const useAdminLogic = () => {
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
-        confirmState, setConfirmState, confirmInputText, setConfirmInputText
+        confirmState, setConfirmState, confirmInputText, setConfirmInputText,
+        asistenciasHoy, metricasHoy // EXPORTAMOS LA DATA EN VIVO
     };
 };
