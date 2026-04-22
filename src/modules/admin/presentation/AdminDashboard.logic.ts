@@ -11,7 +11,6 @@ export const useAdminLogic = () => {
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // Eliminamos 'reportes' porque ahora vive dentro de 'monitor'
     const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
@@ -106,6 +105,9 @@ export const useAdminLogic = () => {
         });
     }, [asistenciasHoy, alumnosGlobal]);
 
+    // ==========================================
+    // REPORTE GLOBAL - AHORA CON DEMOGRAFÍA EN TODOS LOS ESTADOS
+    // ==========================================
     const agruparMonitorGlobal = () => {
         const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any> }> = {};
         const asistenciasValidas = asistenciasGlobal.filter(a => a.fecha).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
@@ -120,7 +122,9 @@ export const useAdminLogic = () => {
             if (!grupos[mesStr].semanas[semanaStr]) {
                 grupos[mesStr].semanas[semanaStr] = {
                     presentes: 0, ninosPresentes: 0, ninasPresentes: 0,
-                    ausentes: 0, permisos: 0, ofrenda: 0, reportes: 0
+                    ausentes: 0, ninosAusentes: 0, ninasAusentes: 0,
+                    permisos: 0, ninosPermisos: 0, ninasPermisos: 0,
+                    ofrenda: 0, reportes: 0
                 };
             }
 
@@ -135,11 +139,17 @@ export const useAdminLogic = () => {
 
             if (asis.registros) {
                 Object.entries(asis.registros).forEach(([alumnoId, estado]) => {
-                    if (estado === 'Presente') {
-                        const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
-                        if (alumnoInfo) {
+                    const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
+                    if (alumnoInfo) {
+                        if (estado === 'Presente') {
                             if (alumnoInfo.genero === 'Masculino') sem.ninosPresentes++;
                             else if (alumnoInfo.genero === 'Femenino') sem.ninasPresentes++;
+                        } else if (estado === 'Ausente') {
+                            if (alumnoInfo.genero === 'Masculino') sem.ninosAusentes++;
+                            else if (alumnoInfo.genero === 'Femenino') sem.ninasAusentes++;
+                        } else if (estado === 'Permiso') {
+                            if (alumnoInfo.genero === 'Masculino') sem.ninosPermisos++;
+                            else if (alumnoInfo.genero === 'Femenino') sem.ninasPermisos++;
                         }
                     }
                 });
@@ -253,7 +263,6 @@ export const useAdminLogic = () => {
                     up: 0, down: 0, cake: 0, usuarios: {}, leida: false, isCumplePersonal: false, isCumpleEquipo: false, createdAt: ahora.getTime()
                 });
             }
-            // Aquí cerramos el modal y reseteamos el formulario al terminar exitosamente
             setIsAvisoModalOpen(false);
             setAvisoForm(estadoAvisoInicial);
             mostrarExito(avisoForm.id ? "Aviso modificado exitosamente." : "Aviso oficial publicado y enviado.");
