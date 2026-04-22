@@ -61,14 +61,14 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
-            {/* === PESTAÑA HOME MÁGICO (4 Tarjetas) === */}
+            {/* === PESTAÑA HOME MÁGICO (4 Tarjetas, sin la de reportes extra) === */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     
                     <div className="admin-big-card card-rose" onClick={() => setAdminTab('monitor')}>
                         <div className="abc-content">
                             <h3>Monitor en Vivo</h3>
-                            <p>Asistencia consolidada, desgloses y reportes históricos.</p>
+                            <p>Asistencia consolidada de hoy e historial global.</p>
                             <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Reportadas Hoy</span>
                         </div>
                         <i className="fa-solid fa-satellite-dish abc-icon"></i>
@@ -119,6 +119,7 @@ export const AdminDashboard = () => {
                         <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
                     </div>
 
+                    {/* DISEÑO ULTRA-COMPACTO */}
                     <div className="unified-monitor-panel">
                         <div className="ump-box">
                             <div className="ump-title">Presentes</div>
@@ -151,7 +152,6 @@ export const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {/* ACORDEÓN DE SEDES HOY */}
                     <Accordion title={`Estado de Sedes Hoy (${metricasHoy.sedesEnviadas} Recibidas / ${IGLESIAS_CAMPOS.length - metricasHoy.sedesEnviadas} Esperando)`}>
                         <div className="live-fields-grid" style={{ paddingTop: '10px' }}>
                             {IGLESIAS_CAMPOS.map(campo => {
@@ -186,10 +186,10 @@ export const AdminDashboard = () => {
                         </div>
                     </Accordion>
 
-                    {/* SECCIÓN 2: HISTORIAL (REPORTES ANTERIORES) INCORPORADO AQUÍ */}
-                    <div style={{ marginTop: '40px', borderTop: '2px dashed #f1f5f9', paddingTop: '25px' }}>
-                        <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}>
-                            <i className="fa-solid fa-chart-column"></i> Reportes Globales Anteriores
+                    {/* SECCIÓN 2: HISTORIAL GLOBAL INCORPORADO AQUÍ ABAJO */}
+                    <div style={{ marginTop: '35px', borderTop: '2px dashed #f1f5f9', paddingTop: '25px' }}>
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '20px'}}>
+                            <i className="fa-solid fa-chart-column" style={{color: '#8b5cf6'}}></i> Reportes Globales Anteriores
                         </h3>
                         {(() => {
                             const historial = agruparMonitorGlobal();
@@ -212,15 +212,23 @@ export const AdminDashboard = () => {
                                                     <div className="ump-box">
                                                         <div className="ump-title">Ausentes</div>
                                                         <div className="ump-number text-rose">{datosSemana.ausentes}</div>
+                                                        <div className="ump-breakdown">
+                                                            <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosAusentes}</span>
+                                                            <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasAusentes}</span>
+                                                        </div>
                                                     </div>
                                                     <div className="ump-box">
                                                         <div className="ump-title">Permisos</div>
                                                         <div className="ump-number text-amber">{datosSemana.permisos}</div>
+                                                        <div className="ump-breakdown">
+                                                            <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosPermisos}</span>
+                                                            <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPermisos}</span>
+                                                        </div>
                                                     </div>
                                                     <div className="ump-box highlight">
                                                         <div className="ump-title">Ofrenda Total</div>
                                                         <div className="ump-number text-blue">${datosSemana.ofrenda.toFixed(2)}</div>
-                                                        <div className="ump-footer">{datosSemana.reportes} Reportes en la semana</div>
+                                                        <div className="ump-footer">{datosSemana.reportes} Reportes enviaron</div>
                                                     </div>
                                                 </div>
                                             </Accordion>
@@ -341,12 +349,10 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* === AVISOS OFICIALES (CORREGIDO) === */}
             {adminTab === 'avisos' && (
                 <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
                     <div className="admin-aviso-form-card">
                         <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
-                        {/* === AQUI ESTABA EL ERROR: AHORA ES guardarAviso === */}
                         <form onSubmit={guardarAviso}>
                             <div className="admin-form-group">
                                 <label className="admin-label">Público Destinatario</label>
@@ -447,6 +453,47 @@ export const AdminDashboard = () => {
                     {(addForm.rol === 'MAESTRO' || addForm.rol === 'AUXILIAR') && (<div className="admin-form-group animate-fade-in"><label className="admin-label">Campo</label><select className="admin-input" value={addForm.campo} onChange={(e) => setAddForm({...addForm, campo: e.target.value})} required><option value="" disabled>Selecciona...</option>{IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}</select></div>)}
                     <div className="admin-form-group"><label className="admin-label">Contraseña</label><input type="password" placeholder="••••••" className="admin-input" value={addForm.clave} onChange={(e) => setAddForm({...addForm, clave: e.target.value})} required /></div>
                     <div className="admin-actions" style={{ marginTop: '20px' }}><Button type="button" className="btn-denegar" onClick={() => setIsAddModalOpen(false)}>Cancelar</Button><Button type="submit" className="btn-aprobar">Crear Usuario</Button></div>
+                </form>
+            </Modal>
+
+            {/* MODAL DE EDICIÓN DE AVISO (AHORA CON BOTÓN ELIMINAR COMPLETAMENTE VISIBLE E INDEPENDIENTE) */}
+            <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
+                
+                {/* BOTÓN ELIMINAR EXCLUSIVO Y SEPARADO DE LA ACCIÓN "GUARDAR" */}
+                {avisoForm.id && (
+                    <div style={{ marginBottom: '20px', background: '#fee2e2', padding: '15px', borderRadius: '12px', border: '1px solid #fecaca', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '800' }}>¿Ya no necesitas este aviso?</span>
+                        <Button type="button" style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={solicitarEliminarAviso}>
+                            <i className="fa-solid fa-trash"></i> Eliminar Aviso
+                        </Button>
+                    </div>
+                )}
+
+                <form onSubmit={guardarAviso}>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Público Destinatario</label>
+                        <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
+                            <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
+                            {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
+                        </select>
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Título del Aviso</label>
+                        <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Mensaje Detallado</label>
+                        <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
+                    </div>
+                    
+                    <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
+                        <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => setIsAvisoModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" className="btn-aprobar" disabled={guardandoAviso}>
+                            {guardandoAviso ? 'Procesando...' : (avisoForm.id ? 'Guardar Cambios' : 'Publicar Aviso')}
+                        </Button>
+                    </div>
                 </form>
             </Modal>
 
