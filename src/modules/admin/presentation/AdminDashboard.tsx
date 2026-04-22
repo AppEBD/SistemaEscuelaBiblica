@@ -15,7 +15,8 @@ export const AdminDashboard = () => {
         days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
-        confirmState, setConfirmState, confirmInputText, setConfirmInputText
+        confirmState, setConfirmState, confirmInputText, setConfirmInputText,
+        asistenciasHoy, metricasHoy
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -88,6 +89,73 @@ export const AdminDashboard = () => {
                             <span className="abc-stat">{avisosGlobales.length} Avisos Activos</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
+                    </div>
+
+                    {/* === NUEVO: MONITOR EN VIVO DE ASISTENCIAS === */}
+                    <div className="live-monitor-section animate-fade-in" style={{ gridColumn: '1 / -1' }}>
+                        <div className="live-monitor-header">
+                            <h3><i className="fa-solid fa-satellite-dish fa-beat" style={{color: '#ef4444'}}></i> Monitor Global de Hoy</h3>
+                            <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                        </div>
+
+                        <div className="live-global-stats">
+                            <div className="lgs-card lgs-presentes">
+                                <i className="fa-solid fa-children"></i>
+                                <div className="lgs-info">
+                                    <span className="lgs-val">{metricasHoy.presentes}</span>
+                                    <span className="lgs-lbl">Niños Reunidos</span>
+                                </div>
+                            </div>
+                            <div className="lgs-card lgs-ofrenda">
+                                <i className="fa-solid fa-sack-dollar"></i>
+                                <div className="lgs-info">
+                                    <span className="lgs-val">${metricasHoy.ofrenda.toFixed(2)}</span>
+                                    <span className="lgs-lbl">Ofrenda Global</span>
+                                </div>
+                            </div>
+                            <div className="lgs-card lgs-sedes">
+                                <i className="fa-solid fa-church"></i>
+                                <div className="lgs-info">
+                                    <span className="lgs-val">{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length}</span>
+                                    <span className="lgs-lbl">Sedes Reportadas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="live-fields-grid">
+                            {IGLESIAS_CAMPOS.map(campo => {
+                                const reporte = asistenciasHoy.find(a => a.campo === campo);
+                                if (reporte) {
+                                    return (
+                                        <div className="live-field-card reported" key={campo}>
+                                            <div className="lfc-header">
+                                                <h4>{campo}</h4>
+                                                <span className="lfc-badge success"><i className="fa-solid fa-check"></i> Recibido</span>
+                                            </div>
+                                            <div className="lfc-body">
+                                                <span><i className="fa-solid fa-user-check" style={{color: '#10b981'}}></i> {reporte.resumen?.presentes || 0}</span>
+                                                <span><i className="fa-solid fa-user-xmark" style={{color: '#ef4444'}}></i> {reporte.resumen?.ausentes || 0}</span>
+                                                <span><i className="fa-solid fa-user-clock" style={{color: '#f59e0b'}}></i> {reporte.resumen?.permisos || 0}</span>
+                                                <span style={{fontWeight: 900, color: '#0f172a'}}><i className="fa-solid fa-coins" style={{color: '#3b82f6'}}></i> ${parseFloat((reporte.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
+                                            </div>
+                                            <div className="lfc-footer">Por: {reporte.registradoPor}</div>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="live-field-card pending" key={campo}>
+                                            <div className="lfc-header">
+                                                <h4>{campo}</h4>
+                                                <span className="lfc-badge warning"><i className="fa-solid fa-clock"></i> Esperando...</span>
+                                            </div>
+                                            <div className="lfc-body empty">
+                                                Sin reporte hoy.
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            })}
+                        </div>
                     </div>
                 </div>
             )}
@@ -258,7 +326,6 @@ export const AdminDashboard = () => {
                     </div>
                 )}
                 <div className="admin-actions">
-                    {/* Si es tipo "success" o "info", a veces no queremos el botón de cancelar, pero lo dejamos por seguridad salvo que sea un mensaje de éxito simple */}
                     {confirmState.type !== 'success' || confirmState.title.includes('Aprobar') ? (
                         <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => { setConfirmState(prev => ({...prev, isOpen: false})); setConfirmInputText(''); }}>
                             Cancelar
