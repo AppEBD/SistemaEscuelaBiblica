@@ -16,7 +16,7 @@ export const AdminDashboard = () => {
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
-        asistenciasHoy, metricasHoy
+        asistenciasHoy, metricasHoy, agruparMonitorGlobal
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -68,10 +68,19 @@ export const AdminDashboard = () => {
                     <div className="admin-big-card card-rose" onClick={() => setAdminTab('monitor')}>
                         <div className="abc-content">
                             <h3>Monitor en Vivo</h3>
-                            <p>Visualiza asistencia por género, ausentes y permisos de hoy.</p>
-                            <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Reportadas</span>
+                            <p>Asistencia consolidada de hoy en todas las sedes.</p>
+                            <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Reportadas Hoy</span>
                         </div>
                         <i className="fa-solid fa-satellite-dish abc-icon"></i>
+                    </div>
+
+                    <div className="admin-big-card card-purple" onClick={() => setAdminTab('reportes')}>
+                        <div className="abc-content">
+                            <h3>Reportes Anteriores</h3>
+                            <p>Historial global consolidado por meses y semanas.</p>
+                            <span className="abc-stat">Ver Archivo</span>
+                        </div>
+                        <i className="fa-solid fa-chart-column abc-icon"></i>
                     </div>
 
                     <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
@@ -86,8 +95,8 @@ export const AdminDashboard = () => {
                     <div className="admin-big-card card-emerald" onClick={() => setAdminTab('campos')}>
                         <div className="abc-content">
                             <h3>Historial de Sedes</h3>
-                            <p>Verifica el progreso y asistencia semanal de cada campo.</p>
-                            <span className="abc-stat">{IGLESIAS_CAMPOS.length} Campos Registrados</span>
+                            <p>Verifica el progreso y asistencia de cada campo individual.</p>
+                            <span className="abc-stat">{IGLESIAS_CAMPOS.length} Sedes Registradas</span>
                         </div>
                         <i className="fa-solid fa-map-location-dot abc-icon"></i>
                     </div>
@@ -95,7 +104,7 @@ export const AdminDashboard = () => {
                     <div className="admin-big-card card-amber" onClick={() => setAdminTab('avisos')}>
                         <div className="abc-content">
                             <h3>Centro de Comunicaciones</h3>
-                            <p>Envía mensajes y avisos oficiales a tu personal en vivo.</p>
+                            <p>Envía mensajes oficiales a tu personal.</p>
                             <span className="abc-stat">{avisosGlobales.length} Avisos Activos</span>
                         </div>
                         <i className="fa-solid fa-tower-broadcast abc-icon"></i>
@@ -109,7 +118,7 @@ export const AdminDashboard = () => {
                 </button>
             )}
 
-            {/* === PESTAÑA: MONITOR EN VIVO CON ESTADÍSTICAS DETALLADAS === */}
+            {/* === PANEL COMPACTO UNIFICADO: MONITOR EN VIVO === */}
             {adminTab === 'monitor' && (
                 <div className="live-monitor-section animate-fade-in">
                     <div className="live-monitor-header">
@@ -117,61 +126,40 @@ export const AdminDashboard = () => {
                         <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
                     </div>
 
-                    <div className="live-global-stats">
-                        {/* PRESENTES */}
-                        <div className="lgs-card lgs-presentes">
-                            <i className="fa-solid fa-user-check"></i>
-                            <div className="lgs-info">
-                                <span className="lgs-val">{metricasHoy.presentes}</span>
-                                <span className="lgs-lbl">Presentes</span>
-                                <div className="lgs-breakdown">
-                                    <span className="b-nino" title="Niños Presentes"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
-                                    <span className="b-nina" title="Niñas Presentes"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
-                                </div>
+                    {/* DISEÑO UNIFICADO Y COMPACTO */}
+                    <div className="unified-monitor-panel">
+                        <div className="ump-box">
+                            <div className="ump-title">Presentes</div>
+                            <div className="ump-number text-emerald">{metricasHoy.presentes}</div>
+                            <div className="ump-breakdown">
+                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
+                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
                             </div>
                         </div>
-                        {/* AUSENTES */}
-                        <div className="lgs-card lgs-ausentes">
-                            <i className="fa-solid fa-user-xmark"></i>
-                            <div className="lgs-info">
-                                <span className="lgs-val">{metricasHoy.ausentes}</span>
-                                <span className="lgs-lbl">Ausentes</span>
-                                <div className="lgs-breakdown">
-                                    <span className="b-nino" title="Niños Ausentes"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
-                                    <span className="b-nina" title="Niñas Ausentes"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
-                                </div>
+                        <div className="ump-box">
+                            <div className="ump-title">Ausentes</div>
+                            <div className="ump-number text-rose">{metricasHoy.ausentes}</div>
+                            <div className="ump-breakdown">
+                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
+                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
                             </div>
                         </div>
-                        {/* PERMISOS */}
-                        <div className="lgs-card lgs-permisos">
-                            <i className="fa-solid fa-user-clock"></i>
-                            <div className="lgs-info">
-                                <span className="lgs-val">{metricasHoy.permisos}</span>
-                                <span className="lgs-lbl">Con Permiso</span>
-                                <div className="lgs-breakdown">
-                                    <span className="b-nino" title="Niños con Permiso"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
-                                    <span className="b-nina" title="Niñas con Permiso"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
-                                </div>
+                        <div className="ump-box">
+                            <div className="ump-title">Permisos</div>
+                            <div className="ump-number text-amber">{metricasHoy.permisos}</div>
+                            <div className="ump-breakdown">
+                                <span className="b-nino" title="Niños"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
+                                <span className="b-nina" title="Niñas"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
                             </div>
                         </div>
-                        {/* OFRENDA Y SEDES */}
-                        <div className="lgs-card lgs-ofrenda">
-                            <i className="fa-solid fa-sack-dollar"></i>
-                            <div className="lgs-info">
-                                <span className="lgs-val">${metricasHoy.ofrenda.toFixed(2)}</span>
-                                <span className="lgs-lbl">Ofrenda</span>
-                            </div>
-                        </div>
-                        <div className="lgs-card lgs-sedes">
-                            <i className="fa-solid fa-church"></i>
-                            <div className="lgs-info">
-                                <span className="lgs-val">{metricasHoy.sedesEnviadas}/{IGLESIAS_CAMPOS.length}</span>
-                                <span className="lgs-lbl">Sedes Listas</span>
-                            </div>
+                        <div className="ump-box highlight">
+                            <div className="ump-title">Ofrenda Total</div>
+                            <div className="ump-number text-blue">${metricasHoy.ofrenda.toFixed(2)}</div>
+                            <div className="ump-footer">{metricasHoy.sedesEnviadas} / {IGLESIAS_CAMPOS.length} Sedes</div>
                         </div>
                     </div>
 
-                    <Accordion title={`Detalle por Sede (${metricasHoy.sedesEnviadas} Recibidas / ${IGLESIAS_CAMPOS.length - metricasHoy.sedesEnviadas} Esperando)`}>
+                    <Accordion title={`Estado de Sedes Hoy (${metricasHoy.sedesEnviadas} Recibidas / ${IGLESIAS_CAMPOS.length - metricasHoy.sedesEnviadas} Esperando)`}>
                         <div className="live-fields-grid" style={{ paddingTop: '10px' }}>
                             {IGLESIAS_CAMPOS.map(campo => {
                                 const reporte = asistenciasHoy.find(a => a.campo === campo);
@@ -188,7 +176,6 @@ export const AdminDashboard = () => {
                                                 <span title="Permisos"><i className="fa-solid fa-user-clock" style={{color: '#f59e0b'}}></i> {reporte.resumen?.permisos || 0}</span>
                                                 <span style={{fontWeight: 900, color: '#0f172a'}} title="Ofrenda"><i className="fa-solid fa-coins" style={{color: '#3b82f6'}}></i> ${parseFloat((reporte.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
                                             </div>
-                                            <div className="lfc-footer">Por: {reporte.registradoPor}</div>
                                         </div>
                                     );
                                 } else {
@@ -205,6 +192,51 @@ export const AdminDashboard = () => {
                             })}
                         </div>
                     </Accordion>
+                </div>
+            )}
+
+            {/* === NUEVO: PESTAÑA REPORTES GLOBALES (HISTORIAL) === */}
+            {adminTab === 'reportes' && (
+                <div className="animate-fade-in">
+                    <h3 style={{fontSize: '20px', color: '#1e293b', marginBottom: '20px'}}><i className="fa-solid fa-chart-column"></i> Reportes Globales Anteriores</h3>
+                    {(() => {
+                        const historial = agruparMonitorGlobal();
+                        if (Object.keys(historial).length === 0) return <p style={{color: '#64748b'}}>No hay datos históricos almacenados.</p>;
+
+                        return Object.entries(historial).map(([mes, datosMes]) => (
+                            <Accordion key={mes} title={`${mes} (Total: ${datosMes.totalPresentes} Presentes)`}>
+                                <div style={{paddingTop: '10px'}}>
+                                    {Object.entries(datosMes.semanas).map(([semana, datosSemana]) => (
+                                        <Accordion key={semana} title={semana}>
+                                            <div className="unified-monitor-panel" style={{marginBottom: '10px'}}>
+                                                <div className="ump-box">
+                                                    <div className="ump-title">Presentes</div>
+                                                    <div className="ump-number text-emerald">{datosSemana.presentes}</div>
+                                                    <div className="ump-breakdown">
+                                                        <span className="b-nino"><i className="fa-solid fa-child"></i> {datosSemana.ninosPresentes}</span>
+                                                        <span className="b-nina"><i className="fa-solid fa-child-dress"></i> {datosSemana.ninasPresentes}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="ump-box">
+                                                    <div className="ump-title">Ausentes</div>
+                                                    <div className="ump-number text-rose">{datosSemana.ausentes}</div>
+                                                </div>
+                                                <div className="ump-box">
+                                                    <div className="ump-title">Permisos</div>
+                                                    <div className="ump-number text-amber">{datosSemana.permisos}</div>
+                                                </div>
+                                                <div className="ump-box highlight">
+                                                    <div className="ump-title">Ofrenda Total</div>
+                                                    <div className="ump-number text-blue">${datosSemana.ofrenda.toFixed(2)}</div>
+                                                    <div className="ump-footer">{datosSemana.reportes} Reportes en la semana</div>
+                                                </div>
+                                            </div>
+                                        </Accordion>
+                                    ))}
+                                </div>
+                            </Accordion>
+                        ));
+                    })()}
                 </div>
             )}
 
@@ -317,19 +349,37 @@ export const AdminDashboard = () => {
             )}
 
             {adminTab === 'avisos' && (
-                <div className="animate-fade-in">
-                    <div className="admin-toolbar">
-                        <button className="btn-add-new-user" onClick={abrirModalNuevoAviso}>
-                            <i className="fa-solid fa-paper-plane"></i> Crear Nuevo Aviso
-                        </button>
+                <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
+                    <div className="admin-aviso-form-card">
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
+                        <form onSubmit={publicarAviso}>
+                            <div className="admin-form-group">
+                                <label className="admin-label">Público Destinatario</label>
+                                <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
+                                    <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
+                                    {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
+                                </select>
+                            </div>
+                            <div className="admin-form-group">
+                                <label className="admin-label">Título del Aviso</label>
+                                <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
+                            </div>
+                            <div className="admin-form-group">
+                                <label className="admin-label">Mensaje Detallado</label>
+                                <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
+                            </div>
+                            <Button type="submit" disabled={guardandoAviso} style={{ width: '100%', background: '#4f46e5', color: 'white' }}>
+                                {guardandoAviso ? 'Publicando...' : 'Enviar Aviso'}
+                            </Button>
+                        </form>
                     </div>
-
-                    <div className="avisos-grid">
+                    
+                    <div className="avisos-grid" style={{ alignContent: 'start' }}>
+                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '5px'}}><i className="fa-solid fa-tower-broadcast"></i> Avisos Publicados</h3>
+                        <p style={{fontSize: '13px', color: '#64748b', marginBottom: '15px'}}>Clic en una tarjeta para editar o eliminar.</p>
+                        
                         {avisosGlobales.length === 0 ? (
-                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px' }}>
-                                <i className="fa-solid fa-box-open fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i>
-                                No hay avisos publicados en este momento.
-                            </p>
+                            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No hay avisos.</p>
                         ) : (
                             avisosGlobales.map(aviso => (
                                 <div className="aviso-admin-card" key={aviso.id} onClick={() => abrirModalEditarAviso(aviso)} title="Clic para editar o eliminar">
@@ -339,7 +389,7 @@ export const AdminDashboard = () => {
                                     </div>
                                     <p className="aac-mensaje">{aviso.mensaje}</p>
                                     <div className="aac-footer">
-                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha || 'Reciente'}</span>
+                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha} {aviso.hora}</span>
                                         <div className="aac-stats">
                                             <span>👍 {aviso.up || 0}</span>
                                             <span>👎 {aviso.down || 0}</span>
