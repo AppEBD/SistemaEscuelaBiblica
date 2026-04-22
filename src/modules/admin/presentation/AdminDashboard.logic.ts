@@ -11,7 +11,6 @@ export const useAdminLogic = () => {
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    // NUEVO: Agregamos 'monitor' a las pestañas disponibles
     const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
@@ -75,12 +74,11 @@ export const useAdminLogic = () => {
     }, []);
 
     // ==========================================
-    // MOTOR INTELIGENTE DEL MONITOR EN VIVO
+    // CÁLCULO PROFUNDO: PRESENTES, AUSENTES, PERMISOS (CON GÉNERO)
     // ==========================================
     const fechaHoy = new Date().toISOString().split('T')[0];
     const asistenciasHoy = asistenciasGlobal.filter(a => a.fecha === fechaHoy);
     
-    // Calculamos las métricas en vivo cruzando datos con los perfiles de los niños
     const metricasHoy = useMemo(() => {
         return asistenciasHoy.reduce((acc, asis) => {
             acc.presentes += (asis.resumen?.presentes || 0);
@@ -89,20 +87,30 @@ export const useAdminLogic = () => {
             acc.ofrenda += (asis.resumen?.ofrendaTotal || 0);
             acc.sedesEnviadas++;
 
-            // Extraemos género de los presentes
             if (asis.registros) {
                 Object.entries(asis.registros).forEach(([alumnoId, estado]) => {
-                    if (estado === 'Presente') {
-                        const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
-                        if (alumnoInfo) {
+                    const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
+                    if (alumnoInfo) {
+                        if (estado === 'Presente') {
                             if (alumnoInfo.genero === 'Masculino') acc.ninosPresentes++;
                             else if (alumnoInfo.genero === 'Femenino') acc.ninasPresentes++;
+                        } else if (estado === 'Ausente') {
+                            if (alumnoInfo.genero === 'Masculino') acc.ninosAusentes++;
+                            else if (alumnoInfo.genero === 'Femenino') acc.ninasAusentes++;
+                        } else if (estado === 'Permiso') {
+                            if (alumnoInfo.genero === 'Masculino') acc.ninosPermisos++;
+                            else if (alumnoInfo.genero === 'Femenino') acc.ninasPermisos++;
                         }
                     }
                 });
             }
             return acc;
-        }, { presentes: 0, ausentes: 0, permisos: 0, ofrenda: 0, sedesEnviadas: 0, ninosPresentes: 0, ninasPresentes: 0 });
+        }, { 
+            presentes: 0, ninosPresentes: 0, ninasPresentes: 0,
+            ausentes: 0, ninosAusentes: 0, ninasAusentes: 0,
+            permisos: 0, ninosPermisos: 0, ninasPermisos: 0,
+            ofrenda: 0, sedesEnviadas: 0 
+        });
     }, [asistenciasHoy, alumnosGlobal]);
 
     const usuariosFiltrados = usuarios.filter(u => {
