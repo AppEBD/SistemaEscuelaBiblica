@@ -11,7 +11,8 @@ export const useAdminLogic = () => {
     const [avisosGlobales, setAvisosGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor'>('home');
+    // NUEVO: Agregamos 'reportes' a las pestañas
+    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor' | 'reportes'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,13 +32,8 @@ export const useAdminLogic = () => {
     });
     const [confirmInputText, setConfirmInputText] = useState('');
 
-    const mostrarExito = (mensaje: string) => {
-        setConfirmState({ isOpen: true, title: '✅ Operación Exitosa', message: mensaje, type: 'success', confirmText: 'Aceptar', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) });
-    };
-
-    const mostrarError = (mensaje: string) => {
-        setConfirmState({ isOpen: true, title: '❌ Error en la Operación', message: mensaje, type: 'danger', confirmText: 'Entendido', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) });
-    };
+    const mostrarExito = (mensaje: string) => { setConfirmState({ isOpen: true, title: '✅ Operación Exitosa', message: mensaje, type: 'success', confirmText: 'Aceptar', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) }); };
+    const mostrarError = (mensaje: string) => { setConfirmState({ isOpen: true, title: '❌ Error', message: mensaje, type: 'danger', confirmText: 'Entendido', requireInput: '', onConfirm: async () => setConfirmState(prev => ({...prev, isOpen: false})) }); };
 
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -74,7 +70,7 @@ export const useAdminLogic = () => {
     }, []);
 
     // ==========================================
-    // CÁLCULO PROFUNDO: PRESENTES, AUSENTES, PERMISOS (CON GÉNERO)
+    // CÁLCULO EN VIVO (HOY): DEMOGRAFÍA PRECISA
     // ==========================================
     const fechaHoy = new Date().toISOString().split('T')[0];
     const asistenciasHoy = asistenciasGlobal.filter(a => a.fecha === fechaHoy);
@@ -112,6 +108,52 @@ export const useAdminLogic = () => {
             ofrenda: 0, sedesEnviadas: 0 
         });
     }, [asistenciasHoy, alumnosGlobal]);
+
+    // ==========================================
+    // NUEVO: MOTOR PARA EL HISTORIAL GLOBAL (TODAS LAS SEDES SUMADAS)
+    // ==========================================
+    const agruparMonitorGlobal = () => {
+        const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any> }> = {};
+        
+        const asistenciasValidas = asistenciasGlobal.filter(a => a.fecha).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+        asistenciasValidas.forEach(asis => {
+            const dateObj = new Date(asis.fecha + 'T12:00:00');
+            const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+            const semanaNum = Math.ceil(dateObj.getDate() / 7);
+            const semanaStr = `Semana ${semanaNum}`;
+
+            if (!grupos[mesStr]) grupos[mesStr] = { totalPresentes: 0, semanas: {} };
+            if (!grupos[mesStr].semanas[semanaStr]) {
+                grupos[mesStr].semanas[semanaStr] = {
+                    presentes: 0, ninosPresentes: 0, ninasPresentes: 0,
+                    ausentes: 0, permisos: 0, ofrenda: 0, reportes: 0
+                };
+            }
+
+            const sem = grupos[mesStr].semanas[semanaStr];
+            sem.presentes += (asis.resumen?.presentes || 0);
+            sem.ausentes += (asis.resumen?.ausentes || 0);
+            sem.permisos += (asis.resumen?.permisos || 0);
+            sem.ofrenda += (asis.resumen?.ofrendaTotal || 0);
+            sem.reportes++;
+            
+            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
+
+            if (asis.registros) {
+                Object.entries(asis.registros).forEach(([alumnoId, estado]) => {
+                    if (estado === 'Presente') {
+                        const alumnoInfo = alumnosGlobal.find(a => a.id === alumnoId);
+                        if (alumnoInfo) {
+                            if (alumnoInfo.genero === 'Masculino') sem.ninosPresentes++;
+                            else if (alumnoInfo.genero === 'Femenino') sem.ninasPresentes++;
+                        }
+                    }
+                });
+            }
+        });
+        return grupos;
+    };
 
     const usuariosFiltrados = usuarios.filter(u => {
         if (!searchTerm) return true;
@@ -155,10 +197,8 @@ export const useAdminLogic = () => {
                     setCargando(true);
                     const alumnosDeSede = alumnosGlobal.filter(a => a.campo === campoNombre);
                     const promesasAlumnos = alumnosDeSede.map(a => deleteDoc(doc(db, 'alumnos', a.id)));
-                    
                     const asistenciasDeSede = asistenciasGlobal.filter(a => a.campo === campoNombre);
                     const promesasAsistencias = asistenciasDeSede.map(a => deleteDoc(doc(db, 'asistencias', a.id)));
-                    
                     await Promise.all([...promesasAlumnos, ...promesasAsistencias]);
                     setConfirmState(prev => ({...prev, isOpen: false}));
                     setTimeout(() => mostrarExito(`Los datos de "${campoNombre}" han sido vaciados exitosamente.\n\nLa sede está completamente limpia y lista para nuevos registros (Dile al maestro que recargue su pantalla).`), 300);
@@ -180,7 +220,6 @@ export const useAdminLogic = () => {
                 const edadCalculada = calcularEdadExacta(editandoUser.fechaNacimiento);
                 if (typeof edadCalculada === 'number') nuevaEdad = edadCalculada;
             }
-
             const datosActualizados: any = { nombre: editandoUser.nombre, nombreNormalizado: editandoUser.nombre.trim().toLowerCase(), fechaNacimiento: editandoUser.fechaNacimiento, edad: nuevaEdad, genero: editandoUser.genero };
             if (editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') datosActualizados.campo = editandoUser.campo;
 
@@ -199,7 +238,6 @@ export const useAdminLogic = () => {
             const edad = calcularEdadExacta(fechaNacimiento);
 
             await addDoc(collection(db, coleccion), { nombre: addForm.nombre, nombreNormalizado: addForm.nombre.trim().toLowerCase(), rol: addForm.rol, campo: addForm.campo || '', fechaNacimiento, edad, genero: addForm.genero, clase: addForm.rol, estado: 'Activo', createdAt: Date.now() });
-            
             setIsAddModalOpen(false); setAddForm(estadoAddInicial);
             mostrarExito(`Usuario ${addForm.nombre} registrado y activado con éxito.`);
         } catch (error) { mostrarError("Error al crear el usuario. Verifica tu conexión."); }
@@ -274,6 +312,6 @@ export const useAdminLogic = () => {
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
-        asistenciasHoy, metricasHoy
+        asistenciasHoy, metricasHoy, agruparMonitorGlobal
     };
 };
