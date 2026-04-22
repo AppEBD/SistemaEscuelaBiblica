@@ -62,15 +62,14 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
-            {/* PESTAÑA 1: HOME MÁGICO (Ahora con 4 tarjetas) */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     
                     <div className="admin-big-card card-rose" onClick={() => setAdminTab('monitor')}>
                         <div className="abc-content">
                             <h3>Monitor en Vivo</h3>
-                            <p>Visualiza en tiempo real las ofrendas y listas de hoy.</p>
-                            <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Activas Hoy</span>
+                            <p>Visualiza asistencia por género, ausentes y permisos de hoy.</p>
+                            <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Reportadas</span>
                         </div>
                         <i className="fa-solid fa-satellite-dish abc-icon"></i>
                     </div>
@@ -110,7 +109,7 @@ export const AdminDashboard = () => {
                 </button>
             )}
 
-            {/* === NUEVA PESTAÑA: MONITOR EN VIVO AISLADO === */}
+            {/* === PESTAÑA: MONITOR EN VIVO CON ESTADÍSTICAS DETALLADAS === */}
             {adminTab === 'monitor' && (
                 <div className="live-monitor-section animate-fade-in">
                     <div className="live-monitor-header">
@@ -119,29 +118,60 @@ export const AdminDashboard = () => {
                     </div>
 
                     <div className="live-global-stats">
+                        {/* PRESENTES */}
                         <div className="lgs-card lgs-presentes">
-                            <i className="fa-solid fa-children"></i>
+                            <i className="fa-solid fa-user-check"></i>
                             <div className="lgs-info">
                                 <span className="lgs-val">{metricasHoy.presentes}</span>
-                                <span className="lgs-lbl">Total Reunidos</span>
-                                {/* DESGLOSE DE NIÑOS Y NIÑAS */}
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '5px', fontSize: '12px', fontWeight: '800' }}>
-                                    <span style={{ color: '#38bdf8' }}><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
-                                    <span style={{ color: '#f472b6' }}><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
+                                <span className="lgs-lbl">Presentes</span>
+                                <div className="lgs-breakdown">
+                                    <span className="b-nino" title="Niños Presentes"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPresentes}</span>
+                                    <span className="b-nina" title="Niñas Presentes"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPresentes}</span>
                                 </div>
                             </div>
                         </div>
+                        {/* AUSENTES */}
+                        <div className="lgs-card lgs-ausentes">
+                            <i className="fa-solid fa-user-xmark"></i>
+                            <div className="lgs-info">
+                                <span className="lgs-val">{metricasHoy.ausentes}</span>
+                                <span className="lgs-lbl">Ausentes</span>
+                                <div className="lgs-breakdown">
+                                    <span className="b-nino" title="Niños Ausentes"><i className="fa-solid fa-child"></i> {metricasHoy.ninosAusentes}</span>
+                                    <span className="b-nina" title="Niñas Ausentes"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasAusentes}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {/* PERMISOS */}
+                        <div className="lgs-card lgs-permisos">
+                            <i className="fa-solid fa-user-clock"></i>
+                            <div className="lgs-info">
+                                <span className="lgs-val">{metricasHoy.permisos}</span>
+                                <span className="lgs-lbl">Con Permiso</span>
+                                <div className="lgs-breakdown">
+                                    <span className="b-nino" title="Niños con Permiso"><i className="fa-solid fa-child"></i> {metricasHoy.ninosPermisos}</span>
+                                    <span className="b-nina" title="Niñas con Permiso"><i className="fa-solid fa-child-dress"></i> {metricasHoy.ninasPermisos}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {/* OFRENDA Y SEDES */}
                         <div className="lgs-card lgs-ofrenda">
                             <i className="fa-solid fa-sack-dollar"></i>
                             <div className="lgs-info">
                                 <span className="lgs-val">${metricasHoy.ofrenda.toFixed(2)}</span>
-                                <span className="lgs-lbl">Ofrenda Global</span>
+                                <span className="lgs-lbl">Ofrenda</span>
+                            </div>
+                        </div>
+                        <div className="lgs-card lgs-sedes">
+                            <i className="fa-solid fa-church"></i>
+                            <div className="lgs-info">
+                                <span className="lgs-val">{metricasHoy.sedesEnviadas}/{IGLESIAS_CAMPOS.length}</span>
+                                <span className="lgs-lbl">Sedes Listas</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* ACORDEÓN PARA AGRUPAR LAS SEDES */}
-                    <Accordion title={`Estado de Sedes Hoy (${metricasHoy.sedesEnviadas} Recibidos / ${IGLESIAS_CAMPOS.length - metricasHoy.sedesEnviadas} Esperando)`}>
+                    <Accordion title={`Detalle por Sede (${metricasHoy.sedesEnviadas} Recibidas / ${IGLESIAS_CAMPOS.length - metricasHoy.sedesEnviadas} Esperando)`}>
                         <div className="live-fields-grid" style={{ paddingTop: '10px' }}>
                             {IGLESIAS_CAMPOS.map(campo => {
                                 const reporte = asistenciasHoy.find(a => a.campo === campo);
@@ -153,10 +183,10 @@ export const AdminDashboard = () => {
                                                 <span className="lfc-badge success"><i className="fa-solid fa-check"></i> Recibido</span>
                                             </div>
                                             <div className="lfc-body">
-                                                <span><i className="fa-solid fa-user-check" style={{color: '#10b981'}}></i> {reporte.resumen?.presentes || 0}</span>
-                                                <span><i className="fa-solid fa-user-xmark" style={{color: '#ef4444'}}></i> {reporte.resumen?.ausentes || 0}</span>
-                                                <span><i className="fa-solid fa-user-clock" style={{color: '#f59e0b'}}></i> {reporte.resumen?.permisos || 0}</span>
-                                                <span style={{fontWeight: 900, color: '#0f172a'}}><i className="fa-solid fa-coins" style={{color: '#3b82f6'}}></i> ${parseFloat((reporte.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
+                                                <span title="Presentes"><i className="fa-solid fa-user-check" style={{color: '#10b981'}}></i> {reporte.resumen?.presentes || 0}</span>
+                                                <span title="Ausentes"><i className="fa-solid fa-user-xmark" style={{color: '#ef4444'}}></i> {reporte.resumen?.ausentes || 0}</span>
+                                                <span title="Permisos"><i className="fa-solid fa-user-clock" style={{color: '#f59e0b'}}></i> {reporte.resumen?.permisos || 0}</span>
+                                                <span style={{fontWeight: 900, color: '#0f172a'}} title="Ofrenda"><i className="fa-solid fa-coins" style={{color: '#3b82f6'}}></i> ${parseFloat((reporte.resumen?.ofrendaTotal || 0).toString()).toFixed(2)}</span>
                                             </div>
                                             <div className="lfc-footer">Por: {reporte.registradoPor}</div>
                                         </div>
@@ -287,47 +317,29 @@ export const AdminDashboard = () => {
             )}
 
             {adminTab === 'avisos' && (
-                <div className="animate-fade-in" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px'}}>
-                    <div className="admin-aviso-form-card">
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '15px'}}><i className="fa-solid fa-paper-plane" style={{color: '#4f46e5'}}></i> Crear Aviso Oficial</h3>
-                        <form onSubmit={publicarAviso}>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Público Destinatario</label>
-                                <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
-                                    <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
-                                    {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
-                                </select>
-                            </div>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Título del Aviso</label>
-                                <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
-                            </div>
-                            <div className="admin-form-group">
-                                <label className="admin-label">Mensaje Detallado</label>
-                                <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
-                            </div>
-                            <Button type="submit" disabled={publicandoAviso} style={{ width: '100%', background: '#4f46e5', color: 'white' }}>
-                                {publicandoAviso ? 'Publicando...' : 'Enviar Aviso'}
-                            </Button>
-                        </form>
+                <div className="animate-fade-in">
+                    <div className="admin-toolbar">
+                        <button className="btn-add-new-user" onClick={abrirModalNuevoAviso}>
+                            <i className="fa-solid fa-paper-plane"></i> Crear Nuevo Aviso
+                        </button>
                     </div>
-                    
-                    <div className="avisos-grid" style={{ alignContent: 'start' }}>
-                        <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '5px'}}><i className="fa-solid fa-tower-broadcast"></i> Avisos Publicados</h3>
-                        <p style={{fontSize: '13px', color: '#64748b', marginBottom: '15px'}}>Clic en una tarjeta para editar o eliminar.</p>
-                        
+
+                    <div className="avisos-grid">
                         {avisosGlobales.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No hay avisos.</p>
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px' }}>
+                                <i className="fa-solid fa-box-open fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i>
+                                No hay avisos publicados en este momento.
+                            </p>
                         ) : (
                             avisosGlobales.map(aviso => (
-                                <div className="aviso-admin-card" key={aviso.id} onClick={() => abrirModalEditarAviso(aviso)}>
+                                <div className="aviso-admin-card" key={aviso.id} onClick={() => abrirModalEditarAviso(aviso)} title="Clic para editar o eliminar">
                                     <div className="aac-header">
                                         <h4>{aviso.titulo}</h4>
                                         <span className="aac-target">{aviso.targetRole === 'TODOS' ? 'Todos' : aviso.targetRole}</span>
                                     </div>
                                     <p className="aac-mensaje">{aviso.mensaje}</p>
                                     <div className="aac-footer">
-                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha} {aviso.hora}</span>
+                                        <span><i className="fa-regular fa-calendar-days"></i> {aviso.fecha || 'Reciente'}</span>
                                         <div className="aac-stats">
                                             <span>👍 {aviso.up || 0}</span>
                                             <span>👎 {aviso.down || 0}</span>
