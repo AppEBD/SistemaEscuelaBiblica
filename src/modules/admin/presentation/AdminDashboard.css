@@ -17,6 +17,7 @@
 .card-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .card-emerald { background: linear-gradient(135deg, #10b981, #059669); }
 .card-amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.card-rose { background: linear-gradient(135deg, #f43f5e, #e11d48); } /* NUEVA TARJETA */
 
 .abc-content { position: relative; z-index: 2; max-width: 70%; }
 .abc-content h3 { margin: 0 0 8px 0; font-size: 22px; font-weight: 900; }
@@ -25,17 +26,17 @@
 .abc-icon { font-size: 60px; opacity: 0.2; position: absolute; right: 20px; bottom: 20px; transform: rotate(-10deg); transition: 0.3s; }
 .admin-big-card:hover .abc-icon { transform: rotate(0deg) scale(1.1); opacity: 0.3; }
 
-/* === NUEVO: MONITOR EN VIVO === */
-.live-monitor-section { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; margin-top: 20px;}
+/* === MONITOR EN VIVO === */
+.live-monitor-section { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;}
 .live-monitor-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
 .live-monitor-header h3 { margin: 0; font-size: 18px; font-weight: 900; color: #1e293b; display: flex; align-items: center; gap: 10px;}
 .live-date { font-size: 13px; font-weight: 800; color: #4f46e5; background: #e0e7ff; padding: 6px 15px; border-radius: 12px; text-transform: uppercase;}
 
 .live-global-stats { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-.lgs-card { flex: 1; min-width: 150px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; }
+.lgs-card { flex: 1; min-width: 200px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 15px; }
 .lgs-card i { font-size: 28px; opacity: 0.8; }
 .lgs-presentes i { color: #10b981; } .lgs-ofrenda i { color: #3b82f6; } .lgs-sedes i { color: #f59e0b; }
-.lgs-info { display: flex; flex-direction: column; }
+.lgs-info { display: flex; flex-direction: column; width: 100%;}
 .lgs-val { font-size: 24px; font-weight: 900; color: #1e293b; line-height: 1; }
 .lgs-lbl { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 4px; }
 
@@ -52,7 +53,6 @@
 .lfc-body.empty { font-size: 13px; color: #94a3b8; font-style: italic; }
 .lfc-footer { font-size: 11px; color: #94a3b8; font-weight: 700; border-top: 1px solid #f1f5f9; padding-top: 8px; }
 
-/* Buscador en Directorio */
 .admin-toolbar { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
 .admin-search-bar { flex: 1; display: flex; align-items: center; background: white; padding: 16px 20px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
 .admin-search-bar i { color: #94a3b8; font-size: 18px; margin-right: 15px; }
@@ -81,7 +81,7 @@
 .btn-aprobar, .btn-editar, .btn-denegar { flex: 1; padding: 12px; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px;}
 .btn-aprobar { background: #10b981; color: white; } .btn-aprobar:hover { background: #059669; }
 .btn-editar { background: #f1f5f9; color: #475569; } .btn-editar:hover { background: #e2e8f0; color: #1e293b; }
-.btn-denegar { background: #fee2e2; color: #ef4444; } .btn-denegar:hover { background: #fecaca; }
+.btn-denegar { background: #fee2e2; color: #ef4444; } .btn-denegar:hover { background: #ef4444; color: white;}
 
 .avisos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
 .aviso-admin-card { background: white; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 10px;}
@@ -112,7 +112,6 @@
 .pill-pe { background: #fef3c7; color: #d97706; }
 .pill-o { background: #e0f2fe; color: #0284c7; }
 
-/* === BOTÓN VACIAR/RESTAURAR SEDE === */
 .danger-zone { display: flex; justify-content: flex-end; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
 .btn-reset-sede { background: white; border: 2px solid #fee2e2; color: #ef4444; font-weight: 800; font-size: 13px; padding: 12px 20px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
 .btn-reset-sede:hover { background: #ef4444; color: white; border-color: #ef4444; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
