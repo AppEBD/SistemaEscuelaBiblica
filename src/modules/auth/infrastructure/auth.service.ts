@@ -10,19 +10,16 @@ const CLAVES: Record<string, string> = {
 export const AuthService = {
     validarCredenciales: (rol: UserRole, clave: string): boolean => CLAVES[rol] === clave,
 
-    // ¡NUEVO! Crea una carpeta en la base de datos según el rol
     obtenerColeccion: (rol: string) => `usuarios_${rol.toLowerCase()}`,
 
     buscarUsuario: async (rol: UserRole, nombre: string): Promise<AuthUser | null> => {
         const coleccionNombre = AuthService.obtenerColeccion(rol);
-        // Normalizamos el nombre (sin espacios extra y en minúsculas) para evitar duplicados
         const nombreBuscable = nombre.trim().toLowerCase(); 
         
         const q = query(collection(db, coleccionNombre), where("nombreNormalizado", "==", nombreBuscable));
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
-            // Buscamos a los viejos usuarios (por si tienes algunos creados antes de esta actualización)
             const qAntiguo = query(collection(db, coleccionNombre), where("nombre", "==", nombre.trim()));
             const snapAntiguo = await getDocs(qAntiguo);
             if(snapAntiguo.empty) return null;
@@ -32,13 +29,14 @@ export const AuthService = {
         return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
     },
 
-    registrarSolicitud: async (datos: Partial<AuthUser>) => {
+    registrarSolicitud: async (datos: any) => {
         const coleccionNombre = AuthService.obtenerColeccion(datos.rol || 'MAESTRO');
         const nombreBuscable = datos.nombre ? datos.nombre.trim().toLowerCase() : '';
         
         const docRef = await addDoc(collection(db, coleccionNombre), { 
             ...datos, 
-            nombreNormalizado: nombreBuscable, // Guardamos el nombre oculto anti-duplicados
+            nombreNormalizado: nombreBuscable,
+            insignias: [], // NUEVO: Arreglo vacío listo para las insignias del administrador
             estado: 'Pendiente', 
             createdAt: Date.now() 
         });
