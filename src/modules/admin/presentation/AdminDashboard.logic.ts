@@ -32,6 +32,7 @@ export const useAdminLogic = () => {
     const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false);
     const [insigniaActivaParaAsignar, setInsigniaActivaParaAsignar] = useState<any>(null);
     const [usuariosConInsignia, setUsuariosConInsignia] = useState<string[]>([]);
+    const [filtroRolInsignia, setFiltroRolInsignia] = useState<string>('TODOS');
 
     const [confirmState, setConfirmState] = useState({
         isOpen: false, title: '', message: '', confirmText: '', type: 'danger' as 'danger' | 'warning' | 'success', requireInput: '', onConfirm: async () => {}
@@ -231,7 +232,6 @@ export const useAdminLogic = () => {
             }
             
             const requiereSede = editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR';
-            if (requiereSede && !editandoUser.campo) { mostrarError("Debes asignarle una Sede a este usuario."); return; }
 
             const datosActualizados: any = { 
                 nombre: editandoUser.nombre, nombreNormalizado: editandoUser.nombre.trim().toLowerCase(), 
@@ -251,9 +251,7 @@ export const useAdminLogic = () => {
         try {
             if (!addForm.rol) { mostrarError("Debes seleccionar un rol para el usuario."); return; }
             const requiereSede = addForm.rol === 'MAESTRO' || addForm.rol === 'AUXILIAR';
-            if (requiereSede && !addForm.campo) { mostrarError("Debes asignar obligatoriamente una Sede a los Maestros o Auxiliares."); return; }
-            if (!addForm.servicioDay || !addForm.servicioMonth || !addForm.servicioYear) { mostrarError("Debes especificar desde cuándo sirve en la EBD."); return; }
-
+            
             const coleccion = AuthService.obtenerColeccion(addForm.rol);
             const fechaNacimiento = `${addForm.birthYear}-${addForm.birthMonth.padStart(2, '0')}-${addForm.birthDay.padStart(2, '0')}`;
             const edad = calcularEdadExacta(fechaNacimiento);
@@ -272,7 +270,6 @@ export const useAdminLogic = () => {
         } catch (error) { mostrarError("Error al crear el usuario. Verifica tu conexión."); }
     };
 
-    // AVISOS
     const abrirModalNuevoAviso = () => { setAvisoForm(estadoAvisoInicial); setIsAvisoModalOpen(true); };
     const abrirModalEditarAviso = (aviso: any) => { setAvisoForm({ id: aviso.id, titulo: aviso.titulo, mensaje: aviso.mensaje, targetRole: aviso.targetRole || 'TODOS' }); setIsAvisoModalOpen(true); };
 
@@ -310,7 +307,6 @@ export const useAdminLogic = () => {
         });
     };
 
-    // INSIGNIAS
     const abrirModalNuevaInsignia = () => { setInsigniaForm(estadoInsigniaInicial); setIsInsigniaModalOpen(true); };
     const abrirModalEditarInsignia = (insignia: any) => { setInsigniaForm({ id: insignia.id, icono: insignia.icono, titulo: insignia.titulo, descripcion: insignia.descripcion }); setIsInsigniaModalOpen(true); };
 
@@ -340,6 +336,7 @@ export const useAdminLogic = () => {
 
     const abrirModalAsignarInsignia = (insignia: any) => {
         setInsigniaActivaParaAsignar(insignia);
+        setFiltroRolInsignia('TODOS');
         const conInsignia = usuarios.filter(u => u.insignias && u.insignias.includes(insignia.id)).map(u => u.id);
         setUsuariosConInsignia(conInsignia);
         setIsAsignarModalOpen(true);
@@ -373,29 +370,7 @@ export const useAdminLogic = () => {
         finally { setCargando(false); }
     };
 
-    const agruparHistorialPorCampo = (campo: string) => {
-        const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => {
-            const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
-            const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
-            return dateB - dateA;
-        });
-
-        const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
-        asistenciasCampo.forEach(asis => {
-            if (!asis.fecha) return; 
-            const dateObj = new Date(asis.fecha + 'T12:00:00');
-            const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-            const semanaNum = Math.ceil(dateObj.getDate() / 7);
-            const semanaStr = `Semana ${semanaNum}`;
-
-            if (!grupos[mesStr]) grupos[mesStr] = { totalPresentes: 0, semanas: {} };
-            if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
-
-            grupos[mesStr].semanas[semanaStr].push(asis);
-            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
-        });
-        return grupos;
-    };
+    const usuariosParaAsignar = usuarios.filter(u => filtroRolInsignia === 'TODOS' || u.rol === filtroRolInsignia);
 
     return {
         usuarios, cargando, editandoUser, setEditandoUser, solicitarAprobacion, solicitarEliminacion, guardarEdicion,
@@ -406,6 +381,6 @@ export const useAdminLogic = () => {
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
         asistenciasHoy, metricasHoy, agruparMonitorGlobal,
         insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
-        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias
+        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar
     };
 };
