@@ -18,5 +18,6 @@ export const calcularInsigniaTiempoServicio = (fechaInicio: string | undefined) 
     if (anios >= 1) return { icono: '🛡️', titulo: 'Fiel Servidor', descripcion: `${anios} ${anios === 1 ? 'año' : 'años'} de dedicación.` };
     if (meses >= 6) return { icono: '🔥', titulo: 'Compromiso Firme', descripcion: `Más de 6 meses sirviendo activamente.` };
     
+    // Si acaba de empezar o tiene menos de 6 meses
     return { icono: '🌱', titulo: 'Nueva Semilla', descripcion: 'Iniciando su hermoso camino en el ministerio.' };
 };
