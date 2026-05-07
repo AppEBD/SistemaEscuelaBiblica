@@ -10,6 +10,6 @@ export interface AuthUser {
     edad?: number | null;
     grupo?: string;
     clase?: string;
-    fechaInicioServicio?: string; // NUEVO: Fecha en la que inició el ministerio
-    insignias?: string[]; // NUEVO: Array para guardar los ID de las insignias asignadas
+    fechaInicioServicio?: string;
+    insignias?: string[];
 }
