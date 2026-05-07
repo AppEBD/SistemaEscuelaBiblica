@@ -1,13 +1,12 @@
 import React from 'react';
 import { useLoginLogic } from './LoginView.logic';
-import { Button } from '../../../shared/components/Button';
 import { ROLES_CONFIG, IGLESIAS_CAMPOS } from '../../../core/constants/roles';
 import './LoginView.css'; 
 
 export const LoginView: React.FC = () => {
     const { 
         form, setForm, status, recordar, setRecordar, isPending, isReturning, isLoading,
-        days, months, years, handleLogin, limpiarCuenta
+        days, months, years, serviceYears, handleLogin, limpiarCuenta
     } = useLoginLogic();
 
     const rolSeleccionado = ROLES_CONFIG.find(r => r.id === form.rol);
@@ -15,7 +14,6 @@ export const LoginView: React.FC = () => {
     return (
         <div className="ebd-login-root">
             <div className="ebd-card">
-                {/* Cambié también el ícono principal a algo más educativo/infantil o general si gustas, pero dejé el original por ahora */}
                 <i className="fa-solid fa-church ebd-header-icon"></i>
                 <h1 className="ebd-title">Gestión EBD</h1>
                 <p className="ebd-subtitle">Plataforma de Escuela Bíblica</p>
@@ -92,7 +90,6 @@ export const LoginView: React.FC = () => {
 
                                     {(form.rol === 'MAESTRO' || form.rol === 'AUXILIAR') && (
                                         <div className="ebd-form-group animate-fade-in">
-                                            {/* CORRECCIÓN: Ahora dice solo "Campo" */}
                                             <label className="ebd-label">Campo</label>
                                             <select className="ebd-input" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
                                                 <option value="" disabled>Selecciona tu campo...</option>
@@ -100,6 +97,24 @@ export const LoginView: React.FC = () => {
                                             </select>
                                         </div>
                                     )}
+
+                                    {/* === NUEVO: FECHA DE SERVICIO DESDE EL REGISTRO PÚBLICO === */}
+                                    <div className="ebd-form-group animate-fade-in" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '12px', border: '1px solid #bbf7d0', marginTop: '20px', marginBottom: '20px' }}>
+                                        <label style={{ color: '#166534', marginBottom: '8px', display: 'block', fontSize: '13px', fontWeight: '800' }}>
+                                            ¿Desde hace cuánto sirves en el Ministerio? <span style={{fontSize: '10px'}}>(Para tu insignia)</span>
+                                        </label>
+                                        <div className="ebd-date-grid">
+                                            <select className="ebd-input" value={form.servicioDay} onChange={(e) => setForm({...form, servicioDay: e.target.value})} required style={{ borderColor: '#86efac' }}>
+                                                <option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}
+                                            </select>
+                                            <select className="ebd-input" value={form.servicioMonth} onChange={(e) => setForm({...form, servicioMonth: e.target.value})} required style={{ borderColor: '#86efac' }}>
+                                                <option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}
+                                            </select>
+                                            <select className="ebd-input" value={form.servicioYear} onChange={(e) => setForm({...form, servicioYear: e.target.value})} required style={{ borderColor: '#86efac' }}>
+                                                <option value="" disabled>Año</option>{serviceYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </>
                             )}
 
