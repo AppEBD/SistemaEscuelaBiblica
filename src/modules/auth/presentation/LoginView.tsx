@@ -98,7 +98,6 @@ export const LoginView: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* === NUEVO: FECHA DE SERVICIO DESDE EL REGISTRO PÚBLICO === */}
                                     <div className="ebd-form-group animate-fade-in" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '12px', border: '1px solid #bbf7d0', marginTop: '20px', marginBottom: '20px' }}>
                                         <label style={{ color: '#166534', marginBottom: '8px', display: 'block', fontSize: '13px', fontWeight: '800' }}>
                                             ¿Desde hace cuánto sirves en el Ministerio? <span style={{fontSize: '10px'}}>(Para tu insignia)</span>
