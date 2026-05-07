@@ -29,15 +29,15 @@ export const AuthService = {
         return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as AuthUser;
     },
 
-    registrarSolicitud: async (datos: any) => {
+    registrarSolicitud: async (datos: Partial<AuthUser>) => {
         const coleccionNombre = AuthService.obtenerColeccion(datos.rol || 'MAESTRO');
         const nombreBuscable = datos.nombre ? datos.nombre.trim().toLowerCase() : '';
         
         const docRef = await addDoc(collection(db, coleccionNombre), { 
             ...datos, 
-            nombreNormalizado: nombreBuscable,
-            insignias: [], // NUEVO: Arreglo vacío listo para las insignias del administrador
+            nombreNormalizado: nombreBuscable, 
             estado: 'Pendiente', 
+            insignias: [],
             createdAt: Date.now() 
         });
         return docRef.id;
