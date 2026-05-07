@@ -37,8 +37,8 @@ export const useAuth = () => {
         }
     }, []);
 
-    // NUEVO: Agregamos el parámetro "genero"
-    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, genero: string, recordar: boolean, isVerifying: boolean = false) => {
+    // NUEVO: Agregamos fechaInicioServicio al flujo
+    const login = async (rol: UserRole, clave: string, nombre: string, campo: string, fechaNac: string, genero: string, fechaInicioServicio: string, recordar: boolean, isVerifying: boolean = false) => {
         setIsLoading(true);
         try {
             if (!AuthService.validarCredenciales(rol, clave)) return { exito: false, mensaje: "Clave incorrecta." };
@@ -54,8 +54,8 @@ export const useAuth = () => {
                 if (isVerifying) return { exito: false, mensaje: "DENEGADO" };
                 
                 const edad = calcularEdadExacta(fechaNac);
-                // NUEVO: Guardamos el género en Firebase
-                const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, genero, edad, clase: rol } as any);
+                // Pasamos fechaInicioServicio al servicio
+                const nuevoId = await AuthService.registrarSolicitud({ nombre, rol, campo, fechaNacimiento: fechaNac, genero, fechaInicioServicio, edad, clase: rol } as any);
                 return { exito: true, mensaje: "SOLICITUD_ENVIADA", id: nuevoId };
             }
 
