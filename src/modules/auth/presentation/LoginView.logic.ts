@@ -7,7 +7,6 @@ import { AuthService } from '../infrastructure/auth.service';
 export const useLoginLogic = () => {
     const { login, isLoading } = useAuth();
     
-    // NUEVO: Agregamos las variables de servicioDay, Month, Year
     const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '', servicioDay: '', servicioMonth: '', servicioYear: '' };
     const [form, setForm] = useState(estadoInicial);
     const [status, setStatus] = useState({ error: '', info: '' });
@@ -21,7 +20,7 @@ export const useLoginLogic = () => {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
-    const serviceYears = Array.from({ length: 31 }, (_, i) => currentYear - i); // 30 años atrás para el servicio
+    const serviceYears = Array.from({ length: 31 }, (_, i) => currentYear - i);
 
     useEffect(() => {
         if (localStorage.getItem('cuenta_eliminada')) {
