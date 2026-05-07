@@ -7,8 +7,8 @@ import { AuthService } from '../infrastructure/auth.service';
 export const useLoginLogic = () => {
     const { login, isLoading } = useAuth();
     
-    // NUEVO: Agregamos "genero: ''" al estado inicial
-    const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '' };
+    // NUEVO: Agregamos las variables de servicioDay, Month, Year
+    const estadoInicial = { rol: '', nombre: '', clave: '', campo: '', birthDay: '', birthMonth: '', birthYear: '', genero: '', servicioDay: '', servicioMonth: '', servicioYear: '' };
     const [form, setForm] = useState(estadoInicial);
     const [status, setStatus] = useState({ error: '', info: '' });
     
@@ -21,6 +21,7 @@ export const useLoginLogic = () => {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 91 }, (_, i) => currentYear - 10 - i);
+    const serviceYears = Array.from({ length: 31 }, (_, i) => currentYear - i); // 30 años atrás para el servicio
 
     useEffect(() => {
         if (localStorage.getItem('cuenta_eliminada')) {
@@ -72,15 +73,20 @@ export const useLoginLogic = () => {
         if (!form.rol) return setStatus({ ...status, error: "Selecciona tu usuario arriba." });
 
         let fechaCompleta = '';
+        let fechaServicioCompleta = '';
+
         if (form.rol !== 'ADMIN') {
             if (!form.birthDay || !form.birthMonth || !form.birthYear) {
                 return setStatus({ ...status, error: "Completa tu fecha de nacimiento." });
             }
+            if (!form.servicioDay || !form.servicioMonth || !form.servicioYear) {
+                return setStatus({ ...status, error: "Completa desde cuándo sirves en el ministerio." });
+            }
             fechaCompleta = `${form.birthYear}-${form.birthMonth}-${form.birthDay}`;
+            fechaServicioCompleta = `${form.servicioYear}-${form.servicioMonth}-${form.servicioDay}`;
         }
 
-        // NUEVO: Le pasamos form.genero a la función
-        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, form.genero, recordar, isPending);
+        const res = await login(form.rol as any, form.clave, form.nombre, form.campo, fechaCompleta, form.genero, fechaServicioCompleta, recordar, isPending);
         
         if (!res.exito) {
             if (res.mensaje === "DENEGADO") {
@@ -112,6 +118,6 @@ export const useLoginLogic = () => {
 
     return {
         form, setForm, status, recordar, setRecordar, isPending, isReturning, isLoading,
-        days, months, years, handleLogin, limpiarCuenta
+        days, months, years, serviceYears, handleLogin, limpiarCuenta
     };
 };
