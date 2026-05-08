@@ -11,11 +11,13 @@ export const AdminDashboard = () => {
     const { 
         usuarios, cargando, editandoUser, setEditandoUser, solicitarAprobacion, solicitarEliminacion, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
-        days, months, years, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
+        days, months, years, serviceYears, adminTab, setAdminTab, alumnosGlobal, asistenciasGlobal, agruparHistorialPorCampo,
         avisosGlobales, isAvisoModalOpen, setIsAvisoModalOpen, avisoForm, setAvisoForm, 
         guardandoAviso, abrirModalNuevoAviso, abrirModalEditarAviso, guardarAviso, solicitarEliminarAviso, solicitarLimpiarSede,
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
-        asistenciasHoy, metricasHoy, agruparMonitorGlobal
+        asistenciasHoy, metricasHoy, agruparMonitorGlobal,
+        insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
+        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -32,10 +34,10 @@ export const AdminDashboard = () => {
                 </span>
             </div>
             <div className="user-details">
-                {user.campo && <div><i className="fa-solid fa-map-location-dot"></i> <strong>Campo:</strong> {user.campo}</div>}
+                {user.campo && <div><i className="fa-solid fa-map-location-dot"></i> <strong>Sede:</strong> {user.campo}</div>}
                 <div><i className="fa-solid fa-venus-mars"></i> <strong>Género:</strong> {user.genero || 'No especificado'}</div>
-                <div><i className="fa-solid fa-cake-candles"></i> <strong>Nacimiento:</strong> {user.fechaNacimiento || 'Desconocida'} <span style={{ color: '#4f46e5', fontWeight: 'bold' }}> ({calcularEdadExacta(user.fechaNacimiento, user.edad)} años)</span></div>
-                <div><i className="fa-solid fa-calendar-check"></i> <strong>Registrado:</strong> {formatearFechaLocal(user.createdAt)}</div>
+                <div><i className="fa-solid fa-calendar-check"></i> <strong>Inicio Servicio:</strong> {user.fechaInicioServicio ? user.fechaInicioServicio.split('-').reverse().join('/') : 'Sin definir'}</div>
+                <div><i className="fa-solid fa-medal"></i> <strong>Insignias:</strong> {user.insignias?.length || 0} asignadas</div>
             </div>
             <div className="admin-actions">
                 {user.estado === 'Pendiente' ? (
@@ -61,7 +63,6 @@ export const AdminDashboard = () => {
                 <p>Monitoreo global de sedes, personal y comunicación directa.</p>
             </div>
 
-            {/* === PESTAÑA HOME MÁGICO === */}
             {adminTab === 'home' && (
                 <div className="admin-home-grid animate-fade-in">
                     
@@ -72,6 +73,15 @@ export const AdminDashboard = () => {
                             <span className="abc-stat">{metricasHoy.sedesEnviadas} Sedes Reportadas Hoy</span>
                         </div>
                         <i className="fa-solid fa-satellite-dish abc-icon"></i>
+                    </div>
+
+                    <div className="admin-big-card card-cyan" onClick={() => setAdminTab('insignias')}>
+                        <div className="abc-content">
+                            <h3>Insignias y Logros</h3>
+                            <p>Crea medallas y premia a tu equipo por su trabajo.</p>
+                            <span className="abc-stat">{insigniasGlobales.length} Insignias Creadas</span>
+                        </div>
+                        <i className="fa-solid fa-medal abc-icon"></i>
                     </div>
 
                     <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
@@ -109,11 +119,57 @@ export const AdminDashboard = () => {
                 </button>
             )}
 
-            {/* === PANEL COMPACTO UNIFICADO: MONITOR EN VIVO Y REPORTES === */}
+            {adminTab === 'insignias' && (
+                <div className="animate-fade-in">
+                    <div className="admin-toolbar">
+                        <button className="btn-add-new-user" onClick={abrirModalNuevaInsignia} style={{ background: '#06b6d4', width: '100%', justifyContent: 'center' }}>
+                            <i className="fa-solid fa-award"></i> Crear Nueva Insignia
+                        </button>
+                    </div>
+
+                    <div style={{ background: '#e0f2fe', padding: '15px 20px', borderRadius: '16px', marginBottom: '25px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                        <i className="fa-solid fa-circle-info" style={{ color: '#0284c7', fontSize: '24px' }}></i>
+                        <div>
+                            <h4 style={{ margin: '0 0 5px 0', color: '#0f172a', fontSize: '15px', fontWeight: '900' }}>Insignia Automática (Tiempo de Servicio)</h4>
+                            <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: '1.4' }}>
+                                El sistema calcula automáticamente el tiempo que un usuario lleva sirviendo basándose en la <strong>"Fecha de Inicio de Servicio"</strong> que tú le asignas al registrarlo. Esa insignia de años/meses le aparecerá por defecto a todos y no necesitas crearla aquí.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="avisos-grid">
+                        {insigniasGlobales.length === 0 ? (
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px' }}><i className="fa-solid fa-medal fa-2x" style={{ opacity: 0.5, marginBottom: '10px', display: 'block' }}></i> No has creado ninguna insignia personalizada aún.</p>
+                        ) : (
+                            insigniasGlobales.map(insignia => (
+                                <div className="insignia-card" key={insignia.id}>
+                                    <div className="insignia-icon">{insignia.icono}</div>
+                                    <h4 className="insignia-title">{insignia.titulo}</h4>
+                                    <p className="insignia-desc">{insignia.descripcion}</p>
+                                    
+                                    <button className="btn-add-new-user" style={{ background: '#10b981', width: '100%', justifyContent: 'center', marginBottom: '10px', minHeight: '45px', fontSize: '13px' }} onClick={() => abrirModalAsignarInsignia(insignia)}>
+                                        <i className="fa-solid fa-users"></i> Asignar a Usuarios
+                                    </button>
+
+                                    <div className="insignia-actions">
+                                        <button className="btn-editar" style={{ flex: 1 }} onClick={() => abrirModalEditarInsignia(insignia)}><i className="fa-solid fa-pen"></i> Editar</button>
+                                        <button className="btn-denegar" style={{ flex: 1 }} onClick={() => solicitarEliminarInsignia(insignia.id)}><i className="fa-solid fa-trash"></i> Eliminar</button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+
             {adminTab === 'monitor' && (
                 <div className="live-monitor-section animate-fade-in">
                     
-                    {/* MEGA TARJETA VERDE TIPO RESUMEN */}
+                    <div className="live-monitor-header">
+                        <h3><i className="fa-solid fa-satellite-dish fa-beat" style={{color: '#ef4444'}}></i> Monitor Global de Hoy</h3>
+                        <span className="live-date">{new Date().toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                    </div>
+
                     <div className="premium-summary-card">
                         <div className="psc-header">
                             <div className="psc-title"><i className="fa-solid fa-chart-line"></i> Resumen de Hoy</div>
@@ -200,7 +256,6 @@ export const AdminDashboard = () => {
                         </div>
                     </Accordion>
 
-                    {/* SECCIÓN 2: HISTORIAL GLOBAL CON LA MISMA TARJETA VERDE */}
                     <div style={{ marginTop: '35px', borderTop: '2px dashed #f1f5f9', paddingTop: '25px' }}>
                         <h3 style={{fontSize: '18px', color: '#1e293b', marginBottom: '20px'}}>
                             <i className="fa-solid fa-chart-column" style={{color: '#8b5cf6'}}></i> Reportes Globales Anteriores
@@ -438,9 +493,7 @@ export const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* ==========================================
-                SISTEMA MODAL DE CONFIRMACIÓN UNIVERSAL
-                ========================================== */}
+            {/* MODALES DE CONFIGURACIÓN UNIVERSAL */}
             <Modal isOpen={confirmState.isOpen} onClose={() => { setConfirmState(prev => ({...prev, isOpen: false})); setConfirmInputText(''); }} title={confirmState.title}>
                 <div style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                     {confirmState.message}
@@ -466,14 +519,28 @@ export const AdminDashboard = () => {
                 </div>
             </Modal>
 
-            {/* MODALES DE FORMULARIOS */}
+            {/* MODALES DE EDICIÓN DE USUARIOS CON FECHA DE SERVICIO */}
             <Modal isOpen={editandoUser !== null} onClose={() => setEditandoUser(null)} title={`Editar ${editandoUser?.rol}`}>
                 {editandoUser && (
                     <form onSubmit={guardarEdicion}>
                         <div className="admin-form-group"><label className="admin-label">Nombre</label><input className="admin-input" type="text" value={editandoUser.nombre} onChange={e => setEditandoUser({...editandoUser, nombre: e.target.value})} required /></div>
                         <div className="admin-form-group"><label className="admin-label">Género</label><select className="admin-input" value={editandoUser.genero || ''} onChange={e => setEditandoUser({...editandoUser, genero: e.target.value})} required><option value="" disabled>Seleccione...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select></div>
                         <div className="admin-form-group"><label className="admin-label">Nacimiento</label><input className="admin-input" type="date" value={editandoUser.fechaNacimiento || ''} onChange={e => setEditandoUser({...editandoUser, fechaNacimiento: e.target.value})} required /></div>
-                        {(editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') && (<div className="admin-form-group"><label className="admin-label">Campo</label><select className="admin-input" value={editandoUser.campo || ''} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required><option value="" disabled>Seleccione...</option>{IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}</select></div>)}
+                        
+                        <div className="admin-form-group" style={{ background: '#f0fdf4', padding: '10px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                            <label className="admin-label" style={{ color: '#166534' }}>Inicio de Servicio <span style={{fontSize: '10px'}}>(Para insignia)</span></label>
+                            <input className="admin-input" type="date" value={editandoUser.fechaInicioServicio || ''} onChange={e => setEditandoUser({...editandoUser, fechaInicioServicio: e.target.value})} required style={{ borderColor: '#86efac' }} />
+                        </div>
+
+                        {(editandoUser.rol === 'MAESTRO' || editandoUser.rol === 'AUXILIAR') && (
+                            <div className="admin-form-group animate-fade-in">
+                                <label className="admin-label">Sede / Campo Asignado <span style={{color: '#10b981', fontSize: '10px'}}>(Obligatorio)</span></label>
+                                <select className="admin-input" value={editandoUser.campo || ''} onChange={e => setEditandoUser({...editandoUser, campo: e.target.value})} required>
+                                    <option value="" disabled>Seleccione una Sede...</option>
+                                    {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
+                                </select>
+                            </div>
+                        )}
                         <div className="admin-actions"><Button type="button" className="btn-denegar" onClick={() => setEditandoUser(null)}>Cancelar</Button><Button type="submit" className="btn-aprobar">Guardar</Button></div>
                     </form>
                 )}
@@ -481,19 +548,113 @@ export const AdminDashboard = () => {
 
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Registrar Nuevo Personal">
                 <form onSubmit={guardarNuevoUsuario}>
-                    <div className="admin-form-group"><label className="admin-label">Rol</label><select className="admin-input" value={addForm.rol} onChange={e => setAddForm({...addForm, rol: e.target.value})} required><option value="" disabled>Seleccione un rol...</option>{rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
-                    <div className="admin-form-group"><label className="admin-label">Nombre</label><input type="text" className="admin-input" value={addForm.nombre} onChange={(e) => setAddForm({...addForm, nombre: e.target.value})} required /></div>
-                    <div className="admin-form-group"><label className="admin-label">Nacimiento</label><div className="admin-date-grid"><select className="admin-input" value={addForm.birthDay} onChange={(e) => setAddForm({...addForm, birthDay: e.target.value})} required><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}</select><select className="admin-input" value={addForm.birthMonth} onChange={(e) => setAddForm({...addForm, birthMonth: e.target.value})} required><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}</select><select className="admin-input" value={addForm.birthYear} onChange={(e) => setAddForm({...addForm, birthYear: e.target.value})} required><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></div></div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Rol del Sistema</label>
+                        <select className="admin-input" value={addForm.rol} onChange={e => setAddForm({...addForm, rol: e.target.value})} required>
+                            <option value="" disabled>Seleccione un rol primero...</option>
+                            {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                    </div>
+                    
+                    {(addForm.rol === 'MAESTRO' || addForm.rol === 'AUXILIAR') && (
+                        <div className="admin-form-group animate-fade-in">
+                            <label className="admin-label">Sede / Campo Asignado <span style={{color: '#10b981', fontSize: '10px'}}>(Obligatorio)</span></label>
+                            <select className="admin-input" value={addForm.campo} onChange={(e) => setAddForm({...addForm, campo: e.target.value})} required>
+                                <option value="" disabled>Debe Seleccionar una Sede...</option>
+                                {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="admin-form-group"><label className="admin-label">Nombre Completo</label><input type="text" className="admin-input" value={addForm.nombre} onChange={(e) => setAddForm({...addForm, nombre: e.target.value})} required /></div>
+                    
+                    <div className="admin-form-group">
+                        <label className="admin-label">Fecha de Nacimiento</label>
+                        <div className="admin-date-grid">
+                            <select className="admin-input" value={addForm.birthDay} onChange={(e) => setAddForm({...addForm, birthDay: e.target.value})} required><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}</select>
+                            <select className="admin-input" value={addForm.birthMonth} onChange={(e) => setAddForm({...addForm, birthMonth: e.target.value})} required><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}</select>
+                            <select className="admin-input" value={addForm.birthYear} onChange={(e) => setAddForm({...addForm, birthYear: e.target.value})} required><option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                        </div>
+                    </div>
+
                     <div className="admin-form-group"><label className="admin-label">Género</label><select className="admin-input" value={addForm.genero} onChange={(e) => setAddForm({...addForm, genero: e.target.value})} required><option value="" disabled>Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select></div>
-                    {(addForm.rol === 'MAESTRO' || addForm.rol === 'AUXILIAR') && (<div className="admin-form-group animate-fade-in"><label className="admin-label">Campo</label><select className="admin-input" value={addForm.campo} onChange={(e) => setAddForm({...addForm, campo: e.target.value})} required><option value="" disabled>Selecciona...</option>{IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}</select></div>)}
+                    
+                    {/* NUEVA FECHA DE SERVICIO AL CREAR DESDE EL ADMIN */}
+                    <div className="admin-form-group" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '16px', border: '1px solid #bbf7d0', marginTop: '20px' }}>
+                        <label className="admin-label" style={{ color: '#166534' }}>¿Desde cuándo sirve en EBD? <span style={{fontSize: '10px'}}>(Para insignia)</span></label>
+                        <div className="admin-date-grid">
+                            <select className="admin-input" value={addForm.servicioDay} onChange={(e) => setAddForm({...addForm, servicioDay: e.target.value})} required style={{ borderColor: '#86efac' }}><option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}</select>
+                            <select className="admin-input" value={addForm.servicioMonth} onChange={(e) => setAddForm({...addForm, servicioMonth: e.target.value})} required style={{ borderColor: '#86efac' }}><option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}</select>
+                            <select className="admin-input" value={addForm.servicioYear} onChange={(e) => setAddForm({...addForm, servicioYear: e.target.value})} required style={{ borderColor: '#86efac' }}><option value="" disabled>Año</option>{serviceYears.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                        </div>
+                    </div>
+
                     <div className="admin-form-group"><label className="admin-label">Contraseña</label><input type="password" placeholder="••••••" className="admin-input" value={addForm.clave} onChange={(e) => setAddForm({...addForm, clave: e.target.value})} required /></div>
                     <div className="admin-actions" style={{ marginTop: '20px' }}><Button type="button" className="btn-denegar" onClick={() => setIsAddModalOpen(false)}>Cancelar</Button><Button type="submit" className="btn-aprobar">Crear Usuario</Button></div>
                 </form>
             </Modal>
 
-            {/* MODAL DE AVISOS CON BOTÓN ELIMINAR PREMIUM */}
-            <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
+            {/* MODAL DE INSIGNIAS PERSONALIZADAS */}
+            <Modal isOpen={isInsigniaModalOpen} onClose={() => setIsInsigniaModalOpen(false)} title={insigniaForm.id ? "Modificar Insignia" : "Crear Nueva Insignia"}>
+                <form onSubmit={guardarInsignia}>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Icono (Emoji)</label>
+                        <input type="text" className="admin-input" placeholder="Ej: 🌟" maxLength={2} value={insigniaForm.icono} onChange={e => setInsigniaForm({...insigniaForm, icono: e.target.value})} required style={{ fontSize: '30px', textAlign: 'center', height: '60px' }} />
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Título de la Insignia</label>
+                        <input type="text" className="admin-input" placeholder="Ej: Maestro Destacado" value={insigniaForm.titulo} onChange={e => setInsigniaForm({...insigniaForm, titulo: e.target.value})} required />
+                    </div>
+                    <div className="admin-form-group">
+                        <label className="admin-label">Descripción o Motivo</label>
+                        <textarea className="admin-input" rows={3} placeholder="Ej: Por mantener asistencia perfecta..." value={insigniaForm.descripcion} onChange={e => setInsigniaForm({...insigniaForm, descripcion: e.target.value})} required></textarea>
+                    </div>
+                    <div className="admin-actions" style={{ marginTop: '25px' }}>
+                        <Button type="button" className="btn-denegar" onClick={() => setIsInsigniaModalOpen(false)}>Cancelar</Button>
+                        <Button type="submit" className="btn-aprobar">Guardar Insignia</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* MODAL PARA ASIGNAR INSIGNIAS A USUARIOS (CON FILTRO DE ROL) */}
+            <Modal isOpen={isAsignarModalOpen} onClose={() => setIsAsignarModalOpen(false)} title="Asignar Insignia">
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ fontSize: '45px', marginBottom: '10px' }}>{insigniaActivaParaAsignar?.icono}</div>
+                    <h3 style={{ margin: '0 0 5px 0', color: '#1e293b' }}>{insigniaActivaParaAsignar?.titulo}</h3>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Selecciona a los usuarios que merecen portar esta insignia en su perfil.</p>
+                </div>
+
+                <div className="admin-form-group">
+                    <label className="admin-label">Filtrar lista por Rol</label>
+                    <select className="admin-input" value={filtroRolInsignia} onChange={e => setFiltroRolInsignia(e.target.value)} style={{ padding: '10px', fontSize: '14px' }}>
+                        <option value="TODOS">Mostrar todos los usuarios</option>
+                        {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo {r.name}s</option>)}
+                    </select>
+                </div>
                 
+                <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    {usuariosParaAsignar.length === 0 ? <p style={{textAlign: 'center', color: '#94a3b8', padding: '20px'}}>No hay usuarios en esta categoría.</p> : null}
+                    {usuariosParaAsignar.map(u => (
+                        <div key={u.id} className="user-assign-row" onClick={() => toggleUsuarioInsignia(u.id)}>
+                            <div className="user-assign-info">
+                                <strong style={{ fontSize: '14px', color: '#1e293b' }}>{u.nombre}</strong>
+                                <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '800' }}>{u.rol} {u.campo ? `• ${u.campo}` : ''}</span>
+                            </div>
+                            <input type="checkbox" checked={usuariosConInsignia.includes(u.id)} readOnly style={{ width: '20px', height: '20px', accentColor: '#10b981', pointerEvents: 'none' }} />
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="admin-actions">
+                    <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1 }} onClick={() => setIsAsignarModalOpen(false)}>Cancelar</Button>
+                    <Button type="button" className="btn-aprobar" onClick={guardarAsignacionInsignias} disabled={cargando} style={{ flex: 2 }}>
+                        {cargando ? 'Guardando...' : `Asignar a ${usuariosConInsignia.length} usuarios`}
+                    </Button>
+                </div>
+            </Modal>
+
+            {/* MODAL AVISOS */}
+            <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
                 {avisoForm.id && (
                     <div className="aviso-delete-zone animate-fade-in">
                         <span><i className="fa-solid fa-triangle-exclamation"></i> ¿Ya no necesitas este aviso?</span>
