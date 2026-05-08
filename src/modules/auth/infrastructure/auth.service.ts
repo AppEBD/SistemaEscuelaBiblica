@@ -37,7 +37,7 @@ export const AuthService = {
             ...datos, 
             nombreNormalizado: nombreBuscable, 
             estado: 'Pendiente', 
-            insignias: [],
+            insignias: [], // Arreglo listo para insignias del admin
             createdAt: Date.now() 
         });
         return docRef.id;
@@ -50,9 +50,16 @@ export const AuthService = {
             if (datos) storage.setItem('datos_usuario_dominical', JSON.stringify(datos));
         },
         recuperar: () => {
-            const rol = localStorage.getItem('rol_dominical') || sessionStorage.getItem('rol_dominical');
-            const user = localStorage.getItem('datos_usuario_dominical') || sessionStorage.getItem('datos_usuario_dominical');
-            return { rol, user: user ? JSON.parse(user) : null };
+            try {
+                const rol = localStorage.getItem('rol_dominical') || sessionStorage.getItem('rol_dominical');
+                const user = localStorage.getItem('datos_usuario_dominical') || sessionStorage.getItem('datos_usuario_dominical');
+                return { rol, user: user ? JSON.parse(user) : null };
+            } catch (error) {
+                // ESCUDO: Si el JSON falla, borramos la basura para no causar pantalla blanca
+                localStorage.removeItem('rol_dominical');
+                localStorage.removeItem('datos_usuario_dominical');
+                return { rol: null, user: null };
+            }
         },
         borrar: () => {
             localStorage.removeItem('rol_dominical'); localStorage.removeItem('datos_usuario_dominical');
