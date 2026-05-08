@@ -23,30 +23,35 @@ export const useLoginLogic = () => {
     const serviceYears = Array.from({ length: 31 }, (_, i) => currentYear - i);
 
     useEffect(() => {
-        if (localStorage.getItem('cuenta_eliminada')) {
-            localStorage.removeItem('cuenta_eliminada');
-            setStatus({ info: '', error: 'Tu cuenta ha sido eliminada permanentemente por el administrador.' });
-            return;
-        }
-
-        const pendingData = localStorage.getItem('usuario_en_espera');
-        if (pendingData) {
-            const datos = JSON.parse(pendingData);
-            setForm(datos.form);
-            setIsPending(true);
-            setPendingAuth({ id: datos.id, rol: datos.form.rol });
-            setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación." });
-        } else {
-            const recentData = localStorage.getItem('usuario_reciente');
-            if (recentData) {
-                setForm(JSON.parse(recentData));
-                setIsReturning(true);
+        try {
+            if (localStorage.getItem('cuenta_eliminada')) {
+                localStorage.removeItem('cuenta_eliminada');
+                setStatus({ info: '', error: 'Tu cuenta ha sido eliminada permanentemente por el administrador.' });
+                return;
             }
+
+            const pendingData = localStorage.getItem('usuario_en_espera');
+            if (pendingData) {
+                const datos = JSON.parse(pendingData);
+                setForm(datos.form || estadoInicial);
+                setIsPending(true);
+                setPendingAuth({ id: datos.id, rol: datos.form?.rol });
+                setStatus({ error: '', info: "Tu cuenta está pendiente de aprobación." });
+            } else {
+                const recentData = localStorage.getItem('usuario_reciente');
+                if (recentData) {
+                    setForm(JSON.parse(recentData));
+                    setIsReturning(true);
+                }
+            }
+        } catch (e) {
+            localStorage.removeItem('usuario_en_espera');
+            localStorage.removeItem('usuario_reciente');
         }
     }, []);
 
     useEffect(() => {
-        if (!pendingAuth) return;
+        if (!pendingAuth || !pendingAuth.id || !pendingAuth.rol) return;
         const coleccion = AuthService.obtenerColeccion(pendingAuth.rol);
         const unsubscribe = onSnapshot(doc(db, coleccion, pendingAuth.id), (docSnap) => {
             if (!docSnap.exists()) {
