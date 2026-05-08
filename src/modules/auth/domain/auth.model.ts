@@ -5,6 +5,7 @@ export interface AuthUser {
     nombre: string;
     rol: UserRole;
     campo: string;
+    genero?: string; // ¡Faltaba esto! Causaba error de compilación en Vercel
     estado: 'Activo' | 'Pendiente';
     fechaNacimiento?: string;
     edad?: number | null;
