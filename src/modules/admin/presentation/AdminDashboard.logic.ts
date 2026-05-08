@@ -155,8 +155,8 @@ export const useAdminLogic = () => {
                             if (alumnoInfo.genero === 'Masculino') sem.ninosAusentes++;
                             else if (alumnoInfo.genero === 'Femenino') sem.ninasAusentes++;
                         } else if (estado === 'Permiso') {
-                            if (alumnoInfo.genero === 'Masculino') acc.ninosPermisos++;
-                            else if (alumnoInfo.genero === 'Femenino') acc.ninasPermisos++;
+                            if (alumnoInfo.genero === 'Masculino') sem.ninosPermisos++;
+                            else if (alumnoInfo.genero === 'Femenino') sem.ninasPermisos++;
                         }
                     }
                 });
@@ -346,7 +346,6 @@ export const useAdminLogic = () => {
         setUsuariosConInsignia(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
     };
 
-    // === NUEVO: SELECCIÓN MASIVA (Márcalos todos con un click) ===
     const usuariosParaAsignar = usuarios.filter(u => filtroRolInsignia === 'TODOS' || u.rol === filtroRolInsignia);
     
     const toggleTodosDelFiltro = () => {
@@ -382,6 +381,31 @@ export const useAdminLogic = () => {
             mostrarExito("Las insignias han sido distribuidas correctamente al personal seleccionado.");
         } catch (error) { mostrarError("Error al asignar las insignias."); }
         finally { setCargando(false); }
+    };
+
+    // AQUI ESTÁ LA FUNCIÓN RESTAURADA QUE CAUSABA EL ERROR EN PANTALLA ROJA
+    const agruparHistorialPorCampo = (campo: string) => {
+        const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => {
+            const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
+            const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
+            return dateB - dateA;
+        });
+
+        const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
+        asistenciasCampo.forEach(asis => {
+            if (!asis.fecha) return; 
+            const dateObj = new Date(asis.fecha + 'T12:00:00');
+            const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+            const semanaNum = Math.ceil(dateObj.getDate() / 7);
+            const semanaStr = `Semana ${semanaNum}`;
+
+            if (!grupos[mesStr]) grupos[mesStr] = { totalPresentes: 0, semanas: {} };
+            if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
+
+            grupos[mesStr].semanas[semanaStr].push(asis);
+            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
+        });
+        return grupos;
     };
 
     return {
