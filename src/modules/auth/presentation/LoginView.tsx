@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLoginLogic } from './LoginView.logic';
 import { ROLES_CONFIG, IGLESIAS_CAMPOS } from '../../../core/constants/roles';
+import { Button } from '../../../shared/components/Button'; // <--- ¡ESTA ERA LA LÍNEA FALTANTE QUE DESTRUÍA LA APP!
 import './LoginView.css'; 
 
 export const LoginView: React.FC = () => {
@@ -98,9 +99,10 @@ export const LoginView: React.FC = () => {
                                         </div>
                                     )}
 
+                                    {/* === FECHA DE SERVICIO AL REGISTRARSE === */}
                                     <div className="ebd-form-group animate-fade-in" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '12px', border: '1px solid #bbf7d0', marginTop: '20px', marginBottom: '20px' }}>
                                         <label style={{ color: '#166534', marginBottom: '8px', display: 'block', fontSize: '13px', fontWeight: '800' }}>
-                                            ¿Desde hace cuánto sirves en el Ministerio? <span style={{fontSize: '10px'}}>(Para tu insignia)</span>
+                                            ¿Desde hace cuánto sirves en el Ministerio? <span style={{fontSize: '10px'}}>(Para insignia)</span>
                                         </label>
                                         <div className="ebd-date-grid">
                                             <select className="ebd-input" value={form.servicioDay} onChange={(e) => setForm({...form, servicioDay: e.target.value})} required style={{ borderColor: '#86efac' }}>
@@ -128,6 +130,7 @@ export const LoginView: React.FC = () => {
                         </div>
                     )}
 
+                    {/* === EL BOTÓN QUE ESTABA COLAPSANDO LA APP POR FALTA DE IMPORTACIÓN === */}
                     {(form.rol || isPending || isReturning) && (
                         <Button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || (!form.rol && !isReturning)}>
                             {isLoading ? (
