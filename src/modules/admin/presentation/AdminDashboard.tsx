@@ -17,7 +17,7 @@ export const AdminDashboard = () => {
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
         asistenciasHoy, metricasHoy, agruparMonitorGlobal,
         insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
-        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar
+        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar, toggleTodosDelFiltro
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -616,7 +616,7 @@ export const AdminDashboard = () => {
                 </form>
             </Modal>
 
-            {/* MODAL PARA ASIGNAR INSIGNIAS A USUARIOS (CON FILTRO DE ROL) */}
+            {/* MODAL PARA ASIGNAR INSIGNIAS A USUARIOS (CON FILTRO DE ROL Y SELECCIÓN MASIVA) */}
             <Modal isOpen={isAsignarModalOpen} onClose={() => setIsAsignarModalOpen(false)} title="Asignar Insignia">
                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <div style={{ fontSize: '45px', marginBottom: '10px' }}>{insigniaActivaParaAsignar?.icono}</div>
@@ -626,10 +626,15 @@ export const AdminDashboard = () => {
 
                 <div className="admin-form-group">
                     <label className="admin-label">Filtrar lista por Rol</label>
-                    <select className="admin-input" value={filtroRolInsignia} onChange={e => setFiltroRolInsignia(e.target.value)} style={{ padding: '10px', fontSize: '14px' }}>
-                        <option value="TODOS">Mostrar todos los usuarios</option>
-                        {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo {r.name}s</option>)}
-                    </select>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <select className="admin-input" value={filtroRolInsignia} onChange={e => setFiltroRolInsignia(e.target.value)} style={{ padding: '10px', fontSize: '14px', flex: 1 }}>
+                            <option value="TODOS">Mostrar todos los usuarios</option>
+                            {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo {r.name}s</option>)}
+                        </select>
+                        <button type="button" onClick={toggleTodosDelFiltro} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', padding: '0 15px', fontWeight: '800', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            <i className="fa-solid fa-check-double"></i> Marcar Todos
+                        </button>
+                    </div>
                 </div>
                 
                 <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
