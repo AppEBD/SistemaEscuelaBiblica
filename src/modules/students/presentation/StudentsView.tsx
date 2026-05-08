@@ -17,7 +17,8 @@ export const StudentsView = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin,
+        insigniasGlobales // NUEVO
     } = useStudentsLogic();
 
     const cumpleanerosPorMes = obtenerCumpleanerosPorMes();
@@ -64,7 +65,13 @@ export const StudentsView = () => {
                         </div>
                     </div>
 
-                    <BadgesPanel userName={nombreUsuario} />
+                    {/* === EL PANEL DE INSIGNIAS TOTALMENTE DINÁMICO === */}
+                    <BadgesPanel 
+                        userName={nombreUsuario} 
+                        fechaInicioServicio={userData?.fechaInicioServicio}
+                        insigniasUsuario={userData?.insignias || []}
+                        insigniasGlobales={insigniasGlobales || []}
+                    />
 
                     <div className="pd-extras">
                         <h4 className="pd-section-title">Opciones Adicionales</h4>
