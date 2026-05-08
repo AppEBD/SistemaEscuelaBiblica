@@ -1,5 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { getAuth, signOut } from 'firebase/auth'; 
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../core/firebase/firebase.config';
 import { useAuth } from '../../auth/application/useAuth';
 import { calcularEdadExacta } from '../../../core/utils/date.utils';
 import { StudentUseCases } from '../application/student.usecases';
@@ -8,6 +10,7 @@ import { Alumno, AsistenciaDia } from '../domain/student.model';
 export const useStudentsLogic = () => {
     const { userData, logout } = useAuth(); 
     const [alumnos, setAlumnos] = useState<Alumno[]>([]);
+    const [insigniasGlobales, setInsigniasGlobales] = useState<any[]>([]); // NUEVO: Estado para las insignias
     const [cargando, setCargando] = useState(true);
 
     const [mainTab, setMainTab] = useState<'home' | 'alumnos' | 'asistencia' | 'reportes'>('home');
@@ -52,14 +55,22 @@ export const useStudentsLogic = () => {
     const years = Array.from({ length: 20 }, (_, i) => currentYear - i);
 
     useEffect(() => {
-        if (!userData?.campo) {
-            setCargando(false);
-            return;
-        }
-        
         let unsubAlumnos = () => {};
         let unsubAsistencias = () => {};
+        let unsubInsignias = () => {};
 
+        try {
+            // Bajamos las insignias globales desde firebase
+            unsubInsignias = onSnapshot(collection(db, 'insignias_creadas'), (snap) => {
+                setInsigniasGlobales(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            });
+        } catch(e) { console.error(e); }
+
+        if (!userData?.campo) {
+            setCargando(false);
+            return () => { unsubInsignias(); };
+        }
+        
         try {
             unsubAlumnos = StudentUseCases.obtenerAlumnosActivos(userData.campo, (data) => {
                 setAlumnos(data || []); 
@@ -121,7 +132,7 @@ export const useStudentsLogic = () => {
             });
         } catch(e) { console.error(e); }
 
-        return () => { unsubAlumnos(); unsubAsistencias(); };
+        return () => { unsubAlumnos(); unsubAsistencias(); unsubInsignias(); };
     }, [userData]);
 
     const metaLeccionesAdmin = 0; 
@@ -208,7 +219,7 @@ export const useStudentsLogic = () => {
                 fecha: fechaHoy, 
                 registros: registrosFinales, 
                 resumen: { ...resumenAsistencia, ofrendaTotal: ofrendaNumerica }, 
-                registradoPor: userData.nombre, 
+                registadoPor: userData.nombre, 
                 numeroLeccion: numeroLeccion, 
                 leccionDada: seDioLeccion 
             }; 
@@ -260,6 +271,7 @@ export const useStudentsLogic = () => {
         reportTab, setReportTab, obtenerRanking, obtenerHistorialPorMes, edadMin, setEdadMin, edadMax, setEdadMax, obtenerAlumnosPorEdad,
         desdeD, setDesdeD, desdeM, setDesdeM, desdeY, setDesdeY, hastaD, setHastaD, hastaM, setHastaM, hastaY, setHastaY, limpiarFiltrosRanking,
         isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp,
-        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin
+        maxLeccionImpartida, porcentajeLecciones, metaLeccionesAdmin,
+        insigniasGlobales // Pasamos las insignias a la vista
     };
 };
