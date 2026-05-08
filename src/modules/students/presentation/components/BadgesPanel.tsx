@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { calcularInsigniaTiempoServicio } from '../../../shared/utils/insignias.utils';
+// CORRECCIÓN: Faltaba un nivel "../" para llegar correctamente a la carpeta "shared" desde "components"
+import { calcularInsigniaTiempoServicio } from '../../../../shared/utils/insignias.utils';
 import './BadgesPanel.css';
 
 interface BadgesPanelProps { 
