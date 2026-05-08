@@ -12,12 +12,16 @@ export const calcularInsigniaTiempoServicio = (fechaInicio: string | undefined) 
         meses += 12;
     }
 
-    // Lógica de gamificación: Mientras más años, mejor insignia
-    if (anios >= 10) return { icono: '👑', titulo: 'Leyenda de EBD', descripcion: `Más de ${anios} años de servicio ininterrumpido.` };
-    if (anios >= 5) return { icono: '🌟', titulo: 'Maestro Veterano', descripcion: `Más de ${anios} años sirviendo con amor.` };
-    if (anios >= 1) return { icono: '🛡️', titulo: 'Fiel Servidor', descripcion: `${anios} ${anios === 1 ? 'año' : 'años'} de dedicación.` };
-    if (meses >= 6) return { icono: '🔥', titulo: 'Compromiso Firme', descripcion: `Más de 6 meses sirviendo activamente.` };
+    // Texto dinámico que muestra exactamente los años o meses reales
+    const tiempoExacto = anios > 0 
+        ? `${anios} ${anios === 1 ? 'año' : 'años'}` 
+        : `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+
+    // Lógica de gamificación
+    if (anios >= 10) return { icono: '👑', titulo: 'Leyenda de EBD', descripcion: `${tiempoExacto} de servicio ininterrumpido.` };
+    if (anios >= 5) return { icono: '🌟', titulo: 'Maestro Veterano', descripcion: `${tiempoExacto} sirviendo con amor.` };
+    if (anios >= 1) return { icono: '🛡️', titulo: 'Fiel Servidor', descripcion: `${tiempoExacto} de dedicación.` };
+    if (meses >= 6) return { icono: '🔥', titulo: 'Compromiso Firme', descripcion: `${tiempoExacto} sirviendo activamente.` };
     
-    // Si acaba de empezar o tiene menos de 6 meses
     return { icono: '🌱', titulo: 'Nueva Semilla', descripcion: 'Iniciando su hermoso camino en el ministerio.' };
 };
