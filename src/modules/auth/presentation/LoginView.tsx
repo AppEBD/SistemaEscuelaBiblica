@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLoginLogic } from './LoginView.logic';
 import { ROLES_CONFIG, IGLESIAS_CAMPOS } from '../../../core/constants/roles';
-import { Button } from '../../../shared/components/Button'; // <--- ¡ESTA ERA LA LÍNEA FALTANTE QUE DESTRUÍA LA APP!
+import { Button } from '../../../shared/components/Button';
 import './LoginView.css'; 
 
 export const LoginView: React.FC = () => {
@@ -10,7 +10,7 @@ export const LoginView: React.FC = () => {
         days, months, years, serviceYears, handleLogin, limpiarCuenta
     } = useLoginLogic();
 
-    const rolSeleccionado = ROLES_CONFIG.find(r => r.id === form.rol);
+    const rolSeleccionado = ROLES_CONFIG?.find(r => r.id === form.rol);
 
     return (
         <div className="ebd-login-root">
@@ -28,7 +28,7 @@ export const LoginView: React.FC = () => {
                         <div className="animate-fade-in">
                             <p className="ebd-role-selector-title">¿Cómo deseas ingresar?</p>
                             <div className="ebd-roles-grid">
-                                {ROLES_CONFIG.map(role => (
+                                {ROLES_CONFIG?.map(role => (
                                     <button 
                                         key={role.id} 
                                         type="button" 
@@ -69,13 +69,16 @@ export const LoginView: React.FC = () => {
                                         <label className="ebd-label">Fecha de Nacimiento</label>
                                         <div className="ebd-date-grid">
                                             <select className="ebd-input" value={form.birthDay} onChange={(e) => setForm({...form, birthDay: e.target.value})} required>
-                                                <option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}
+                                                <option value="" disabled>Día</option>
+                                                {days?.map(d => <option key={d} value={d < 10 ? `0${d}` : `${d}`}>{d}</option>)}
                                             </select>
                                             <select className="ebd-input" value={form.birthMonth} onChange={(e) => setForm({...form, birthMonth: e.target.value})} required>
-                                                <option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}
+                                                <option value="" disabled>Mes</option>
+                                                {months?.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : `${i + 1}`}>{m}</option>)}
                                             </select>
                                             <select className="ebd-input" value={form.birthYear} onChange={(e) => setForm({...form, birthYear: e.target.value})} required>
-                                                <option value="" disabled>Año</option>{years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                <option value="" disabled>Año</option>
+                                                {years?.map(y => <option key={y} value={`${y}`}>{y}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -94,25 +97,27 @@ export const LoginView: React.FC = () => {
                                             <label className="ebd-label">Campo</label>
                                             <select className="ebd-input" value={form.campo} onChange={(e) => setForm({...form, campo: e.target.value})} required>
                                                 <option value="" disabled>Selecciona tu campo...</option>
-                                                {IGLESIAS_CAMPOS.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
+                                                {IGLESIAS_CAMPOS?.map(iglesia => <option key={iglesia} value={iglesia}>{iglesia}</option>)}
                                             </select>
                                         </div>
                                     )}
 
-                                    {/* === FECHA DE SERVICIO AL REGISTRARSE === */}
                                     <div className="ebd-form-group animate-fade-in" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '12px', border: '1px solid #bbf7d0', marginTop: '20px', marginBottom: '20px' }}>
                                         <label style={{ color: '#166534', marginBottom: '8px', display: 'block', fontSize: '13px', fontWeight: '800' }}>
                                             ¿Desde hace cuánto sirves en el Ministerio? <span style={{fontSize: '10px'}}>(Para insignia)</span>
                                         </label>
                                         <div className="ebd-date-grid">
                                             <select className="ebd-input" value={form.servicioDay} onChange={(e) => setForm({...form, servicioDay: e.target.value})} required style={{ borderColor: '#86efac' }}>
-                                                <option value="" disabled>Día</option>{days.map(d => <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>)}
+                                                <option value="" disabled>Día</option>
+                                                {days?.map(d => <option key={d} value={d < 10 ? `0${d}` : `${d}`}>{d}</option>)}
                                             </select>
                                             <select className="ebd-input" value={form.servicioMonth} onChange={(e) => setForm({...form, servicioMonth: e.target.value})} required style={{ borderColor: '#86efac' }}>
-                                                <option value="" disabled>Mes</option>{months.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : i + 1}>{m}</option>)}
+                                                <option value="" disabled>Mes</option>
+                                                {months?.map((m, i) => <option key={m} value={i + 1 < 10 ? `0${i + 1}` : `${i + 1}`}>{m}</option>)}
                                             </select>
                                             <select className="ebd-input" value={form.servicioYear} onChange={(e) => setForm({...form, servicioYear: e.target.value})} required style={{ borderColor: '#86efac' }}>
-                                                <option value="" disabled>Año</option>{serviceYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                                <option value="" disabled>Año</option>
+                                                {serviceYears?.map(y => <option key={y} value={`${y}`}>{y}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -130,7 +135,6 @@ export const LoginView: React.FC = () => {
                         </div>
                     )}
 
-                    {/* === EL BOTÓN QUE ESTABA COLAPSANDO LA APP POR FALTA DE IMPORTACIÓN === */}
                     {(form.rol || isPending || isReturning) && (
                         <Button type="submit" className="ebd-submit-btn" disabled={isLoading || isPending || (!form.rol && !isReturning)}>
                             {isLoading ? (
