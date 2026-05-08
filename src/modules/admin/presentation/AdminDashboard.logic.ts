@@ -170,6 +170,7 @@ export const useAdminLogic = () => {
         return (u.nombre && u.nombre.toLowerCase().includes(searchTerm.toLowerCase())) || (u.campo && u.campo.toLowerCase().includes(searchTerm.toLowerCase()));
     });
 
+    // === FUNCIONES CRUD DE USUARIOS COMPLETAMENTE RESTAURADAS ===
     const solicitarAprobacion = (user: any) => {
         setConfirmState({
             isOpen: true, title: 'Aprobar Acceso', message: `¿Estás seguro de que deseas dar acceso al sistema a ${user.nombre}?`, type: 'success', confirmText: 'Sí, Aprobar Usuario', requireInput: '',
@@ -270,6 +271,7 @@ export const useAdminLogic = () => {
         } catch (error) { mostrarError("Error al crear el usuario. Verifica tu conexión."); }
     };
 
+    // AVISOS
     const abrirModalNuevoAviso = () => { setAvisoForm(estadoAvisoInicial); setIsAvisoModalOpen(true); };
     const abrirModalEditarAviso = (aviso: any) => { setAvisoForm({ id: aviso.id, titulo: aviso.titulo, mensaje: aviso.mensaje, targetRole: aviso.targetRole || 'TODOS' }); setIsAvisoModalOpen(true); };
 
@@ -307,6 +309,7 @@ export const useAdminLogic = () => {
         });
     };
 
+    // INSIGNIAS
     const abrirModalNuevaInsignia = () => { setInsigniaForm(estadoInsigniaInicial); setIsInsigniaModalOpen(true); };
     const abrirModalEditarInsignia = (insignia: any) => { setInsigniaForm({ id: insignia.id, icono: insignia.icono, titulo: insignia.titulo, descripcion: insignia.descripcion }); setIsInsigniaModalOpen(true); };
 
@@ -368,6 +371,31 @@ export const useAdminLogic = () => {
             mostrarExito("Las insignias han sido distribuidas correctamente al personal seleccionado.");
         } catch (error) { mostrarError("Error al asignar las insignias."); }
         finally { setCargando(false); }
+    };
+
+    // === LA FUNCIÓN FALTANTE QUE CAUSABA EL ERROR REFERENCE_ERROR ESTÁ AQUÍ ===
+    const agruparHistorialPorCampo = (campo: string) => {
+        const asistenciasCampo = asistenciasGlobal.filter(a => a.campo === campo).sort((a, b) => {
+            const dateA = a.fecha ? new Date(a.fecha).getTime() : 0;
+            const dateB = b.fecha ? new Date(b.fecha).getTime() : 0;
+            return dateB - dateA;
+        });
+
+        const grupos: Record<string, { totalPresentes: number, semanas: Record<string, any[]> }> = {};
+        asistenciasCampo.forEach(asis => {
+            if (!asis.fecha) return; 
+            const dateObj = new Date(asis.fecha + 'T12:00:00');
+            const mesStr = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+            const semanaNum = Math.ceil(dateObj.getDate() / 7);
+            const semanaStr = `Semana ${semanaNum}`;
+
+            if (!grupos[mesStr]) grupos[mesStr] = { totalPresentes: 0, semanas: {} };
+            if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
+
+            grupos[mesStr].semanas[semanaStr].push(asis);
+            grupos[mesStr].totalPresentes += (asis.resumen?.presentes || 0);
+        });
+        return grupos;
     };
 
     const usuariosParaAsignar = usuarios.filter(u => filtroRolInsignia === 'TODOS' || u.rol === filtroRolInsignia);
