@@ -18,7 +18,8 @@ export const AdminDashboard = () => {
         asistenciasHoy, metricasHoy, agruparMonitorGlobal,
         insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
         isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar, toggleTodosDelFiltro,
-        abrirModalAsignarInsignia // <--- ¡AQUÍ ESTÁ IMPORTADA LISTA PARA USARSE!
+        abrirModalAsignarInsignia,
+        rendimientoDesde, setRendimientoDesde, rendimientoHasta, setRendimientoHasta, obtenerRendimientoMaestros
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -85,6 +86,16 @@ export const AdminDashboard = () => {
                         <i className="fa-solid fa-medal abc-icon"></i>
                     </div>
 
+                    {/* NUEVO BOTÓN: RENDIMIENTO DOCENTE */}
+                    <div className="admin-big-card card-rose" onClick={() => setAdminTab('rendimiento')} style={{background: 'linear-gradient(135deg, #e11d48, #fb7185)'}}>
+                        <div className="abc-content">
+                            <h3>Rendimiento y Premiación</h3>
+                            <p>Ranking de maestros por constancia y cantidad de niños.</p>
+                            <span className="abc-stat">Ver Estadísticas</span>
+                        </div>
+                        <i className="fa-solid fa-trophy abc-icon"></i>
+                    </div>
+
                     <div className="admin-big-card card-blue" onClick={() => setAdminTab('directorio')}>
                         <div className="abc-content">
                             <h3>Gestión de Personal</h3>
@@ -118,6 +129,68 @@ export const AdminDashboard = () => {
                 <button className="btn-back-admin animate-fade-in" onClick={() => setAdminTab('home')}>
                     <i className="fa-solid fa-arrow-left"></i> Volver al Menú Principal
                 </button>
+            )}
+
+            {/* === NUEVA PESTAÑA: RENDIMIENTO Y PREMIACIÓN === */}
+            {adminTab === 'rendimiento' && (
+                <div className="animate-fade-in">
+                    <div className="admin-header" style={{ marginBottom: '20px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                        <h2 style={{ fontSize: '22px' }}><i className="fa-solid fa-trophy" style={{color: '#f59e0b'}}></i> Rendimiento de Maestros</h2>
+                        <p>Evalúa la constancia y el tamaño de los grupos para identificar a los mejores maestros.</p>
+                    </div>
+
+                    <div className="filter-box" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-end', marginBottom: '25px', background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                        <div className="admin-form-group" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+                            <label className="admin-label">Evaluar Desde la Fecha:</label>
+                            <input type="date" className="admin-input" value={rendimientoDesde} onChange={e => setRendimientoDesde(e.target.value)} />
+                        </div>
+                        <div className="admin-form-group" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+                            <label className="admin-label">Evaluar Hasta la Fecha:</label>
+                            <input type="date" className="admin-input" value={rendimientoHasta} onChange={e => setRendimientoHasta(e.target.value)} />
+                        </div>
+                        <button className="btn-add-new-user" onClick={() => { setRendimientoDesde(''); setRendimientoHasta(''); }} style={{ background: '#f1f5f9', color: '#475569', minHeight: '53px' }}>
+                            <i className="fa-solid fa-eraser"></i> Limpiar Fechas
+                        </button>
+                    </div>
+
+                    <div className="users-grid">
+                        {obtenerRendimientoMaestros().length === 0 ? (
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', padding: '30px' }}>No hay reportes de asistencia en el rango de fechas seleccionado.</p>
+                        ) : (
+                            obtenerRendimientoMaestros().map((stats, index) => {
+                                const isTop = index < 3;
+                                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                                return (
+                                    <div className="user-card animate-fade-in" key={index} style={{ borderLeft: isTop ? `6px solid ${index === 0 ? '#f59e0b' : index === 1 ? '#94a3b8' : '#d97706'}` : '1px solid #f1f5f9' }}>
+                                        <div className="user-card-header" style={{ marginBottom: '15px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                <div style={{ fontSize: '28px', width: '40px', textAlign: 'center', background: '#f8fafc', padding: '5px', borderRadius: '12px' }}>{medalla}</div>
+                                                <div>
+                                                    <h3 className="user-name" style={{ fontSize: '18px' }}>{stats.maestro}</h3>
+                                                    <span className="user-role" style={{ background: '#e0e7ff', color: '#4f46e5' }}>{stats.campo}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="user-details" style={{ margin: 0 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '12px 15px', borderRadius: '12px', marginBottom: '8px' }}>
+                                                <span style={{ color: '#475569', fontWeight: 'bold', fontSize: '14px' }}><i className="fa-solid fa-calendar-check" style={{color: '#10b981'}}></i> Clases Reportadas:</span>
+                                                <span style={{ color: '#10b981', fontWeight: '900', fontSize: '15px' }}>{stats.reportes}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '12px 15px', borderRadius: '12px', marginBottom: '8px' }}>
+                                                <span style={{ color: '#475569', fontWeight: 'bold', fontSize: '14px' }}><i className="fa-solid fa-users" style={{color: '#3b82f6'}}></i> Asistencia Total:</span>
+                                                <span style={{ color: '#3b82f6', fontWeight: '900', fontSize: '15px' }}>{stats.totalNinos} niños</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '12px 15px', borderRadius: '12px' }}>
+                                                <span style={{ color: '#475569', fontWeight: 'bold', fontSize: '14px' }}><i className="fa-solid fa-chart-pie" style={{color: '#8b5cf6'}}></i> Promedio por Clase:</span>
+                                                <span style={{ color: '#8b5cf6', fontWeight: '900', fontSize: '15px' }}>{Math.round(stats.totalNinos / stats.reportes)} niños</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
             )}
 
             {adminTab === 'insignias' && (
@@ -580,6 +653,7 @@ export const AdminDashboard = () => {
 
                     <div className="admin-form-group"><label className="admin-label">Género</label><select className="admin-input" value={addForm.genero} onChange={(e) => setAddForm({...addForm, genero: e.target.value})} required><option value="" disabled>Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select></div>
                     
+                    {/* NUEVA FECHA DE SERVICIO AL CREAR DESDE EL ADMIN */}
                     <div className="admin-form-group" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '16px', border: '1px solid #bbf7d0', marginTop: '20px' }}>
                         <label className="admin-label" style={{ color: '#166534' }}>¿Desde cuándo sirve en EBD? <span style={{fontSize: '10px'}}>(Para insignia)</span></label>
                         <div className="admin-date-grid">
@@ -656,45 +730,6 @@ export const AdminDashboard = () => {
                         {cargando ? 'Guardando...' : `Asignar a ${usuariosConInsignia.length} usuarios`}
                     </Button>
                 </div>
-            </Modal>
-
-            {/* MODAL AVISOS */}
-            <Modal isOpen={isAvisoModalOpen} onClose={() => setIsAvisoModalOpen(false)} title={avisoForm.id ? "Modificar Aviso" : "Crear Nuevo Aviso"}>
-                {avisoForm.id && (
-                    <div className="aviso-delete-zone animate-fade-in">
-                        <span><i className="fa-solid fa-triangle-exclamation"></i> ¿Ya no necesitas este aviso?</span>
-                        <button type="button" className="btn-eliminar-aviso-premium" onClick={solicitarEliminarAviso}>
-                            <i className="fa-solid fa-trash"></i> Eliminar Aviso Permanentemente
-                        </button>
-                    </div>
-                )}
-
-                <form onSubmit={guardarAviso}>
-                    <div className="admin-form-group">
-                        <label className="admin-label">Público Destinatario</label>
-                        <select className="admin-input" value={avisoForm.targetRole} onChange={e => setAvisoForm({...avisoForm, targetRole: e.target.value})} required>
-                            <option value="TODOS">📢 Enviar a Todos los Usuarios</option>
-                            {rolesParaDirectorio.map(r => <option key={r.id} value={r.id}>Solo a {r.name}s</option>)}
-                        </select>
-                    </div>
-                    <div className="admin-form-group">
-                        <label className="admin-label">Título del Aviso</label>
-                        <input type="text" className="admin-input" placeholder="Ej: Reunión Urgente" value={avisoForm.titulo} onChange={e => setAvisoForm({...avisoForm, titulo: e.target.value})} required />
-                    </div>
-                    <div className="admin-form-group">
-                        <label className="admin-label">Mensaje Detallado</label>
-                        <textarea className="admin-input" rows={4} placeholder="Escribe los detalles aquí..." value={avisoForm.mensaje} onChange={e => setAvisoForm({...avisoForm, mensaje: e.target.value})} required></textarea>
-                    </div>
-                    
-                    <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
-                        <Button type="button" style={{ background: '#f1f5f9', color: '#475569', flex: 1, padding: '12px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }} onClick={() => setIsAvisoModalOpen(false)}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit" className="btn-aprobar" disabled={guardandoAviso}>
-                            {guardandoAviso ? 'Procesando...' : (avisoForm.id ? 'Guardar Cambios' : 'Publicar Aviso')}
-                        </Button>
-                    </div>
-                </form>
             </Modal>
 
         </div>
