@@ -12,7 +12,8 @@ export const useAdminLogic = () => {
     const [insigniasGlobales, setInsigniasGlobales] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     
-    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor' | 'insignias'>('home');
+    // NUEVA PESTAÑA: 'rendimiento'
+    const [adminTab, setAdminTab] = useState<'home' | 'directorio' | 'campos' | 'avisos' | 'monitor' | 'insignias' | 'rendimiento'>('home');
 
     const [editandoUser, setEditandoUser] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +34,10 @@ export const useAdminLogic = () => {
     const [insigniaActivaParaAsignar, setInsigniaActivaParaAsignar] = useState<any>(null);
     const [usuariosConInsignia, setUsuariosConInsignia] = useState<string[]>([]);
     const [filtroRolInsignia, setFiltroRolInsignia] = useState<string>('TODOS');
+
+    // NUEVO: FILTROS PARA RENDIMIENTO
+    const [rendimientoDesde, setRendimientoDesde] = useState('');
+    const [rendimientoHasta, setRendimientoHasta] = useState('');
 
     const [confirmState, setConfirmState] = useState({
         isOpen: false, title: '', message: '', confirmText: '', type: 'danger' as 'danger' | 'warning' | 'success', requireInput: '', onConfirm: async () => {}
@@ -334,7 +339,6 @@ export const useAdminLogic = () => {
         });
     };
 
-    // === ESTA ERA LA FUNCIÓN QUE FALTABA EXPORTAR ===
     const abrirModalAsignarInsignia = (insignia: any) => {
         setInsigniaActivaParaAsignar(insignia);
         setFiltroRolInsignia('TODOS');
@@ -408,6 +412,36 @@ export const useAdminLogic = () => {
         return grupos;
     };
 
+    // === NUEVA FUNCIÓN PARA EL RANKING DE RENDIMIENTO DE MAESTROS ===
+    const obtenerRendimientoMaestros = () => {
+        let validas = asistenciasGlobal || [];
+        if (rendimientoDesde) {
+            validas = validas.filter(a => a.fecha && a.fecha >= rendimientoDesde);
+        }
+        if (rendimientoHasta) {
+            validas = validas.filter(a => a.fecha && a.fecha <= rendimientoHasta);
+        }
+
+        const stats: Record<string, { maestro: string, campo: string, reportes: number, totalNinos: number }> = {};
+
+        validas.forEach(asis => {
+            const maestro = asis.registradoPor || 'Desconocido';
+            const campo = asis.campo || 'Sin Campo';
+            const llave = maestro + '-' + campo;
+
+            if (!stats[llave]) {
+                stats[llave] = { maestro, campo, reportes: 0, totalNinos: 0 };
+            }
+            stats[llave].reportes += 1;
+            stats[llave].totalNinos += (asis.resumen?.presentes || 0);
+        });
+
+        return Object.values(stats).sort((a, b) => {
+            if (b.reportes !== a.reportes) return b.reportes - a.reportes; // Primero el que tiene más reportes enviados
+            return b.totalNinos - a.totalNinos; // Desempata con el que tenga el grupo de niños más grande
+        });
+    };
+
     return {
         usuarios, cargando, editandoUser, setEditandoUser, solicitarAprobacion, solicitarEliminacion, guardarEdicion,
         searchTerm, setSearchTerm, usuariosFiltrados, isAddModalOpen, setIsAddModalOpen, addForm, setAddForm, guardarNuevoUsuario,
@@ -418,6 +452,7 @@ export const useAdminLogic = () => {
         asistenciasHoy, metricasHoy, agruparMonitorGlobal,
         insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
         isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar, toggleTodosDelFiltro,
-        abrirModalAsignarInsignia // <--- ¡AQUÍ ESTÁ LA EXPORTACIÓN QUE FALTABA!
+        abrirModalAsignarInsignia,
+        rendimientoDesde, setRendimientoDesde, rendimientoHasta, setRendimientoHasta, obtenerRendimientoMaestros // Exportados para usarse en la vista
     };
 };
