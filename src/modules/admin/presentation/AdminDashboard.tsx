@@ -17,7 +17,8 @@ export const AdminDashboard = () => {
         confirmState, setConfirmState, confirmInputText, setConfirmInputText,
         asistenciasHoy, metricasHoy, agruparMonitorGlobal,
         insigniasGlobales, isInsigniaModalOpen, setIsInsigniaModalOpen, insigniaForm, setInsigniaForm, abrirModalNuevaInsignia, abrirModalEditarInsignia, guardarInsignia, solicitarEliminarInsignia,
-        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar, toggleTodosDelFiltro
+        isAsignarModalOpen, setIsAsignarModalOpen, insigniaActivaParaAsignar, usuariosConInsignia, toggleUsuarioInsignia, guardarAsignacionInsignias, filtroRolInsignia, setFiltroRolInsignia, usuariosParaAsignar, toggleTodosDelFiltro,
+        abrirModalAsignarInsignia // <--- ¡AQUÍ ESTÁ IMPORTADA LISTA PARA USARSE!
     } = useAdminLogic();
 
     const rolesParaDirectorio = ROLES_CONFIG.filter(rol => rol.id !== 'ADMIN');
@@ -579,7 +580,6 @@ export const AdminDashboard = () => {
 
                     <div className="admin-form-group"><label className="admin-label">Género</label><select className="admin-input" value={addForm.genero} onChange={(e) => setAddForm({...addForm, genero: e.target.value})} required><option value="" disabled>Selecciona...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select></div>
                     
-                    {/* NUEVA FECHA DE SERVICIO AL CREAR DESDE EL ADMIN */}
                     <div className="admin-form-group" style={{ background: '#f0fdf4', padding: '15px', borderRadius: '16px', border: '1px solid #bbf7d0', marginTop: '20px' }}>
                         <label className="admin-label" style={{ color: '#166534' }}>¿Desde cuándo sirve en EBD? <span style={{fontSize: '10px'}}>(Para insignia)</span></label>
                         <div className="admin-date-grid">
