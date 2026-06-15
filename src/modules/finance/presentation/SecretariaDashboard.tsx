@@ -53,7 +53,7 @@ const TransactionCard = ({ tx, months }: { tx: any, months: string[] }) => {
                 </div>
             </div>
             
-            {/* DESCRIPCIÓN MINIMALISTA CON PUNTITOS */}
+            {/* NUEVA DESCRIPCIÓN MINIMALISTA CON PUNTITOS */}
             {tx.descripcion && (
                 <div className="tx-desc-container" onClick={() => setIsDescOpen(!isDescOpen)}>
                     <p className={`tx-desc-text ${isDescOpen ? 'open' : 'closed'}`}>
@@ -156,7 +156,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / SECRETARÍA === */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Secretaría</h1>
@@ -233,9 +233,10 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MODAL EXCLUSIVO DE REGISTRO CON INPUT GIGANTE */}
+            {/* MODAL EXCLUSIVO DE REGISTRO CON CLASE SCROLLABLE */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
-                <form onSubmit={guardarTransaccion}>
+                {/* LA NUEVA CLASE 'modal-scrollable-form' PERMITE BAJAR SI LA PANTALLA ES PEQUEÑA */}
+                <form onSubmit={guardarTransaccion} className="modal-scrollable-form">
 
                     <div className="admin-form-group">
                         <label className="admin-label">Monto de la Transacción</label>
