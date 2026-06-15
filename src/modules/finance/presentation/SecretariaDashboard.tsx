@@ -20,7 +20,7 @@ export const SecretariaDashboard = () => {
     const nombreUsuario = userData?.nombre || 'Secretaría';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
 
-    // Componente interno para dibujar una tarjeta de transacción y mantener el código limpio
+    // Componente interno reutilizable para dibujar las tarjetas de transacciones sin duplicar código
     const renderTransactionCard = (tx: any) => (
         <div className="tx-card" key={tx.id}>
             <div className="tx-header">
@@ -28,7 +28,7 @@ export const SecretariaDashboard = () => {
                     <div className={`tx-icon ${tx.tipo}`}>
                         {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
                     </div>
-                    <div>
+                    <div className="tx-text-wrap">
                         <h4 className="tx-motivo">{tx.motivo}</h4>
                         <div className="tx-datetime-badges">
                             <span className="badge-date"><i className="fa-regular fa-calendar"></i> {tx.fecha ? tx.fecha.split('-').reverse().join('/') : '--'}</span>
@@ -50,7 +50,7 @@ export const SecretariaDashboard = () => {
             )}
 
             <div className="tx-footer">
-                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Registrado por: <strong>{tx.registradoPor}</strong></span>
+                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Por: <strong>{tx.registradoPor}</strong></span>
                 <span className="tx-lock"><i className="fa-solid fa-lock"></i> Registro Inmutable</span>
             </div>
         </div>
@@ -59,6 +59,7 @@ export const SecretariaDashboard = () => {
     return (
         <div className={`secretaria-dashboard theme-${appTheme}`}>
 
+            {/* CABECERA PRINCIPAL */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -69,6 +70,7 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
+            {/* MENÚ LATERAL DE PERFIL */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -112,6 +114,7 @@ export const SecretariaDashboard = () => {
                 </div>
             </div>
 
+            {/* PESTAÑA HOME */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
@@ -128,7 +131,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
+            {/* PESTAÑA DE TESORERÍA / FINANZAS */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -156,11 +159,11 @@ export const SecretariaDashboard = () => {
                                 <Accordion key={mes} title={mes}>
                                     <div style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                         
-                                        {/* SUBCATEGORÍA 1: SOLO INGRESOS */}
+                                        {/* SEPARACIÓN EXACTA DE FONDOS POR ACORDEONES SEPARADOS */}
                                         <Accordion title={`🟢 Total Ingresos: +$${datosMes.totalIngresos.toFixed(2)}`}>
                                             <div style={{ paddingTop: '10px' }}>
                                                 {Object.keys(datosMes.semanasIngresos).length === 0 ? (
-                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No hubo ingresos registrados este mes.</p>
+                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '10px' }}>No hubo ingresos registrados este mes.</p>
                                                 ) : (
                                                     Object.entries(datosMes.semanasIngresos).map(([semana, txs]) => (
                                                         <Accordion key={semana} title={semana}>
@@ -173,11 +176,10 @@ export const SecretariaDashboard = () => {
                                             </div>
                                         </Accordion>
 
-                                        {/* SUBCATEGORÍA 2: SOLO RETIROS */}
                                         <Accordion title={`🔴 Total Retiros: -$${datosMes.totalRetiros.toFixed(2)}`}>
                                             <div style={{ paddingTop: '10px' }}>
                                                 {Object.keys(datosMes.semanasRetiros).length === 0 ? (
-                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No hubo retiros registrados este mes.</p>
+                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '10px' }}>No hubo retiros registrados este mes.</p>
                                                 ) : (
                                                     Object.entries(datosMes.semanasRetiros).map(([semana, txs]) => (
                                                         <Accordion key={semana} title={semana}>
@@ -218,10 +220,9 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MODAL EXCLUSIVO (Bloqueado en el tipo que elijas) */}
+            {/* MODAL EXCLUSIVO DE REGISTRO */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
                 <form onSubmit={guardarTransaccion}>
-
                     <div className="admin-form-group">
                         <label className="admin-label">Monto ($)</label>
                         <input type="number" step="0.01" min="0.01" className="admin-input" placeholder="Ej: 50.00" value={txForm.monto} onChange={e => setTxForm({...txForm, monto: e.target.value})} required style={{ fontSize: '24px', fontWeight: '900' }} />
