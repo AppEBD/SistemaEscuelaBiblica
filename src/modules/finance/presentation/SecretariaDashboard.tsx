@@ -95,7 +95,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === NUEVA PESTAÑA DE FINANZAS / TESORERÍA === */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -134,7 +134,8 @@ export const SecretariaDashboard = () => {
                                                                     </div>
                                                                     <div>
                                                                         <h4 className="tx-motivo">{tx.motivo}</h4>
-                                                                        <p className="tx-fecha">{tx.fecha.split('-').reverse().join('/')}</p>
+                                                                        {/* MOSTRANDO FECHA Y HORA DE LA TRANSACCIÓN AUTOMÁTICA */}
+                                                                        <p className="tx-fecha">{tx.fecha.split('-').reverse().join('/')} • {tx.hora}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className={`tx-amount ${tx.tipo}`}>
@@ -190,13 +191,9 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MODAL PARA AGREGAR INGRESO O RETIRO */}
+            {/* MODAL EXCLUSIVO (Bloqueado en el tipo que elijas) */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
                 <form onSubmit={guardarTransaccion}>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <button type="button" className="admin-input" style={{ flex: 1, background: txForm.tipo === 'ingreso' ? '#dcfce7' : '#f8fafc', borderColor: txForm.tipo === 'ingreso' ? '#10b981' : '#e2e8f0', color: txForm.tipo === 'ingreso' ? '#059669' : '#64748b', fontWeight: 'bold' }} onClick={() => setTxForm({...txForm, tipo: 'ingreso'})}>Ingreso</button>
-                        <button type="button" className="admin-input" style={{ flex: 1, background: txForm.tipo === 'retiro' ? '#fee2e2' : '#f8fafc', borderColor: txForm.tipo === 'retiro' ? '#ef4444' : '#e2e8f0', color: txForm.tipo === 'retiro' ? '#dc2626' : '#64748b', fontWeight: 'bold' }} onClick={() => setTxForm({...txForm, tipo: 'retiro'})}>Retiro</button>
-                    </div>
 
                     <div className="admin-form-group">
                         <label className="admin-label">Monto ($)</label>
@@ -212,10 +209,11 @@ export const SecretariaDashboard = () => {
                         <label className="admin-label">Descripción Detallada</label>
                         <textarea className="admin-input" rows={3} placeholder="Explica detalladamente para qué se usó el dinero o de dónde proviene..." value={txForm.descripcion} onChange={e => setTxForm({...txForm, descripcion: e.target.value})} required></textarea>
                     </div>
-
-                    <div className="admin-form-group">
-                        <label className="admin-label">Fecha de la Transacción</label>
-                        <input type="date" className="admin-input" value={txForm.fecha} onChange={e => setTxForm({...txForm, fecha: e.target.value})} required />
+                    
+                    {/* Alerta visible para que sepa que la hora es automática */}
+                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="fa-solid fa-shield-halved"></i> 
+                        La fecha y hora se registrarán automáticamente por seguridad.
                     </div>
                     
                     <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
