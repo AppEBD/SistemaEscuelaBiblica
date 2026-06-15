@@ -14,7 +14,7 @@ export const SecretariaDashboard = () => {
         confirmState, setConfirmState,
         transacciones, totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
-        guardarTransaccion, solicitarEliminarTx, estadoTxInicial
+        guardarTransaccion, estadoTxInicial
     } = useSecretariaLogic();
 
     const nombreUsuario = userData?.nombre || 'Secretaría';
@@ -23,7 +23,6 @@ export const SecretariaDashboard = () => {
     return (
         <div className={`secretaria-dashboard theme-${appTheme}`}>
 
-            {/* CABECERA GLOBAL */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -34,7 +33,6 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MENÚ DE PERFIL (DRAWER) */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -78,7 +76,6 @@ export const SecretariaDashboard = () => {
                 </div>
             </div>
 
-            {/* PESTAÑA PRINCIPAL (HOME) */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
@@ -95,7 +92,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA CON NUEVO DISEÑO === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -120,8 +117,21 @@ export const SecretariaDashboard = () => {
                     {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando registros...</p> : (
                         Object.keys(agruparTransaccionesPorMes()).length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay transacciones registradas.</p> : (
                             Object.entries(agruparTransaccionesPorMes()).map(([mes, datosMes]) => (
-                                <Accordion key={mes} title={`${mes} (Ingresos: $${datosMes.totalIngresos.toFixed(2)} | Retiros: $${datosMes.totalRetiros.toFixed(2)})`}>
-                                    <div style={{ paddingTop: '10px' }}>
+                                <Accordion key={mes} title={mes}>
+                                    
+                                    {/* NUEVO: Tarjetas de Resumen Mensual */}
+                                    <div className="month-summary-grid">
+                                        <div className="ms-card ingreso">
+                                            <span>Total Ingresos</span>
+                                            <h4>+${datosMes.totalIngresos.toFixed(2)}</h4>
+                                        </div>
+                                        <div className="ms-card retiro">
+                                            <span>Total Retiros</span>
+                                            <h4>-${datosMes.totalRetiros.toFixed(2)}</h4>
+                                        </div>
+                                    </div>
+
+                                    <div>
                                         {Object.entries(datosMes.semanas).map(([semana, txs]) => (
                                             <Accordion key={semana} title={semana}>
                                                 <div style={{ paddingTop: '10px' }}>
@@ -130,12 +140,15 @@ export const SecretariaDashboard = () => {
                                                             <div className="tx-header">
                                                                 <div className="tx-info">
                                                                     <div className={`tx-icon ${tx.tipo}`}>
-                                                                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-plus"></i> : <i className="fa-solid fa-minus"></i>}
+                                                                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
                                                                     </div>
                                                                     <div>
                                                                         <h4 className="tx-motivo">{tx.motivo}</h4>
-                                                                        {/* MOSTRANDO FECHA Y HORA DE LA TRANSACCIÓN AUTOMÁTICA */}
-                                                                        <p className="tx-fecha">{tx.fecha.split('-').reverse().join('/')} • {tx.hora}</p>
+                                                                        {/* NUEVO: Badges Estéticos de Fecha y Hora */}
+                                                                        <div className="tx-datetime-badges">
+                                                                            <span className="badge-date"><i className="fa-regular fa-calendar"></i> {tx.fecha ? tx.fecha.split('-').reverse().join('/') : '--'}</span>
+                                                                            {tx.hora && <span className="badge-time"><i className="fa-regular fa-clock"></i> {tx.hora}</span>}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                                 <div className={`tx-amount ${tx.tipo}`}>
@@ -153,10 +166,9 @@ export const SecretariaDashboard = () => {
                                                             )}
 
                                                             <div className="tx-footer">
-                                                                <span>Registrado por: {tx.registradoPor}</span>
-                                                                <button onClick={() => solicitarEliminarTx(tx.id, tx.tipo, tx.monto)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                                    <i className="fa-solid fa-trash"></i> Eliminar
-                                                                </button>
+                                                                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Registrado por: <strong>{tx.registradoPor}</strong></span>
+                                                                {/* NUEVO: Candado de Inmutabilidad en lugar del botón eliminar */}
+                                                                <span className="tx-lock"><i className="fa-solid fa-lock"></i> Registro Inmutable</span>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -191,7 +203,6 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MODAL EXCLUSIVO (Bloqueado en el tipo que elijas) */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
                 <form onSubmit={guardarTransaccion}>
 
@@ -210,10 +221,9 @@ export const SecretariaDashboard = () => {
                         <textarea className="admin-input" rows={3} placeholder="Explica detalladamente para qué se usó el dinero o de dónde proviene..." value={txForm.descripcion} onChange={e => setTxForm({...txForm, descripcion: e.target.value})} required></textarea>
                     </div>
                     
-                    {/* Alerta visible para que sepa que la hora es automática */}
-                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1.4' }}>
                         <i className="fa-solid fa-shield-halved"></i> 
-                        La fecha y hora se registrarán automáticamente por seguridad.
+                        Este registro será inmutable. La fecha y hora exactas se guardarán automáticamente en el servidor para efectos de auditoría.
                     </div>
                     
                     <div className="admin-actions" style={{ marginTop: '25px', gap: '10px' }}>
@@ -223,7 +233,6 @@ export const SecretariaDashboard = () => {
                 </form>
             </Modal>
 
-            {/* MODAL UNIVERSAL DE CONFIRMACIÓN */}
             <Modal isOpen={confirmState.isOpen} onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))} title={confirmState.title}>
                 <div style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                     {confirmState.message}
