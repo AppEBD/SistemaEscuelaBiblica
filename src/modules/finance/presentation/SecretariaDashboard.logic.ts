@@ -63,16 +63,13 @@ export const useSecretariaLogic = () => {
         }, 0);
     }, [transacciones]);
 
-    // === NUEVA ESTRUCTURA: Mes -> Semanas (Mezcladas cronológicamente con totales) ===
     const agruparTransaccionesPorMes = () => {
-        // Estructura: Record<Mes, { totalIn, totalOut, semanas: Record<Semana, { totalIn, totalOut, movs, txs: [] }> }>
         const grupos: Record<string, { 
             totalIngresos: number, 
             totalRetiros: number, 
             semanas: Record<string, { totalIngresos: number, totalRetiros: number, movimientos: number, txs: Transaccion[] }> 
         }> = {};
 
-        // Ordenar primero de más reciente a más antiguo
         const txsOrdenadas = [...transacciones].sort((a, b) => b.createdAt - a.createdAt);
 
         txsOrdenadas.forEach(tx => {
@@ -89,7 +86,6 @@ export const useSecretariaLogic = () => {
                 grupos[mesStr].semanas[semanaStr] = { totalIngresos: 0, totalRetiros: 0, movimientos: 0, txs: [] };
             }
 
-            // Insertamos la transacción en su semana correspondiente
             grupos[mesStr].semanas[semanaStr].txs.push(tx);
             grupos[mesStr].semanas[semanaStr].movimientos += 1;
 
@@ -103,6 +99,19 @@ export const useSecretariaLogic = () => {
         });
 
         return grupos;
+    };
+
+    // === NUEVO: FUNCIÓN DE FORMATEO AUTOMÁTICO DE DINERO ===
+    const manejarCambioMonto = (valor: string) => {
+        const rawDigits = valor.replace(/\D/g, ''); // Extrae solo los números
+        if (!rawDigits) {
+            setTxForm({ ...txForm, monto: '' });
+            return;
+        }
+        // Convierte a número y divide entre 100 para forzar los centavos
+        const numerico = parseInt(rawDigits, 10);
+        const formateado = (numerico / 100).toFixed(2);
+        setTxForm({ ...txForm, monto: formateado });
     };
 
     const guardarTransaccion = async (e: FormEvent) => {
@@ -148,6 +157,6 @@ export const useSecretariaLogic = () => {
         confirmState, setConfirmState,
         transacciones, totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
-        guardarTransaccion, estadoTxInicial, months
+        guardarTransaccion, estadoTxInicial, months, manejarCambioMonto
     };
 };
