@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSecretariaLogic } from './SecretariaDashboard.logic';
 import { NotificationsWidget } from '../../../shared/components/notifications/NotificationsWidget';
 import { BadgesPanel } from '../../students/presentation/components/BadgesPanel';
@@ -7,6 +7,27 @@ import { Button } from '../../../shared/components/Button';
 import Accordion from '../../../shared/components/Accordion'; 
 import './SecretariaDashboard.css';
 
+// === COMPONENTE INTERNO: ACORDEÓN FINANCIERO ELEGANTE ===
+const FinanceAccordion = ({ title, subtitle, inAmount, outAmount, children, defaultOpen = false, isWeek = false }: any) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className={`fin-group ${isWeek ? 'week-group' : ''}`}>
+            <div className="fin-header" onClick={() => setIsOpen(!isOpen)}>
+                <div className="fin-title-area">
+                    <h4 className="fin-title">{title}</h4>
+                    {subtitle && <span className="fin-subtitle">{subtitle}</span>}
+                </div>
+                <div className="fin-stats-area">
+                    {inAmount > 0 && <span className="fin-stat-pill fin-stat-in">+${inAmount.toFixed(2)}</span>}
+                    {outAmount > 0 && <span className="fin-stat-pill fin-stat-out">-${outAmount.toFixed(2)}</span>}
+                    <i className={`fa-solid fa-chevron-${isOpen ? 'up' : 'down'} fin-icon`}></i>
+                </div>
+            </div>
+            {isOpen && <div className="fin-content">{children}</div>}
+        </div>
+    );
+};
+
 export const SecretariaDashboard = () => {
     const { 
         userData, cargando, mainTab, setMainTab,
@@ -14,52 +35,55 @@ export const SecretariaDashboard = () => {
         confirmState, setConfirmState,
         totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
-        guardarTransaccion, estadoTxInicial
+        guardarTransaccion, estadoTxInicial, months
     } = useSecretariaLogic();
 
     const nombreUsuario = userData?.nombre || 'Secretaría';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
 
-    // Componente interno reutilizable para dibujar las tarjetas de transacciones sin duplicar código
-    const renderTransactionCard = (tx: any) => (
-        <div className="tx-card" key={tx.id}>
-            <div className="tx-header">
-                <div className="tx-info">
-                    <div className={`tx-icon ${tx.tipo}`}>
-                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
-                    </div>
-                    <div className="tx-text-wrap">
-                        <h4 className="tx-motivo">{tx.motivo}</h4>
-                        <div className="tx-datetime-badges">
-                            <span className="badge-date"><i className="fa-regular fa-calendar"></i> {tx.fecha ? tx.fecha.split('-').reverse().join('/') : '--'}</span>
-                            {tx.hora && <span className="badge-time"><i className="fa-regular fa-clock"></i> {tx.hora}</span>}
+    // Dibuja cada transacción sin romperse en pantallas pequeñas
+    const renderTransactionCard = (tx: any) => {
+        // Formateo de fecha limpio (Ej: 15 Jun 2026 • 10:30 AM)
+        const d = tx.fecha.split('-');
+        const mesCorto = d[1] ? months[parseInt(d[1], 10) - 1].substring(0, 3) : '';
+        const fechaLimpia = `${d[2]} ${mesCorto} ${d[0]} • ${tx.hora}`;
+
+        return (
+            <div className="tx-card" key={tx.id}>
+                <div className="tx-header">
+                    <div className="tx-info">
+                        <div className={`tx-icon ${tx.tipo}`}>
+                            {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
+                        </div>
+                        <div className="tx-text-wrap">
+                            <h4 className="tx-motivo">{tx.motivo}</h4>
+                            <span className="tx-date-clean"><i className="fa-regular fa-clock"></i> {fechaLimpia}</span>
                         </div>
                     </div>
+                    <div className={`tx-amount ${tx.tipo}`}>
+                        {tx.tipo === 'ingreso' ? '+' : '-'}${tx.monto.toFixed(2)}
+                    </div>
                 </div>
-                <div className={`tx-amount ${tx.tipo}`}>
-                    {tx.tipo === 'ingreso' ? '+' : '-'}${tx.monto.toFixed(2)}
-                </div>
-            </div>
-            
-            {tx.descripcion && (
-                <Accordion title="Ver Descripción Detallada">
-                    <p style={{ margin: 0, fontSize: '13px', color: '#475569', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                        {tx.descripcion}
-                    </p>
-                </Accordion>
-            )}
+                
+                {tx.descripcion && (
+                    <Accordion title="Ver Descripción Detallada">
+                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                            {tx.descripcion}
+                        </p>
+                    </Accordion>
+                )}
 
-            <div className="tx-footer">
-                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Por: <strong>{tx.registradoPor}</strong></span>
-                <span className="tx-lock"><i className="fa-solid fa-lock"></i> Registro Inmutable</span>
+                <div className="tx-footer">
+                    <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Por: <strong>{tx.registradoPor}</strong></span>
+                    <span className="tx-lock"><i className="fa-solid fa-lock"></i> Inmutable</span>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className={`secretaria-dashboard theme-${appTheme}`}>
 
-            {/* CABECERA PRINCIPAL */}
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
@@ -70,7 +94,6 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MENÚ LATERAL DE PERFIL */}
             <div className={`profile-overlay ${isProfileOpen ? 'open' : ''}`} onClick={() => setIsProfileOpen(false)}></div>
             <div className={`profile-drawer ${isProfileOpen ? 'open' : ''}`}>
                 <div className="pd-header">
@@ -114,7 +137,6 @@ export const SecretariaDashboard = () => {
                 </div>
             </div>
 
-            {/* PESTAÑA HOME */}
             {mainTab === 'home' && (
                 <div className="animate-fade-in">
                     <div className="home-widgets-grid">
@@ -131,7 +153,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* PESTAÑA DE TESORERÍA / FINANZAS */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA (NUEVA ESTRUCTURA) === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -156,44 +178,33 @@ export const SecretariaDashboard = () => {
                     {cargando ? <p style={{ textAlign: 'center', color: '#94a3b8' }}><i className="fa-solid fa-spinner fa-spin"></i> Cargando registros...</p> : (
                         Object.keys(agruparTransaccionesPorMes()).length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay transacciones registradas.</p> : (
                             Object.entries(agruparTransaccionesPorMes()).map(([mes, datosMes]) => (
-                                <Accordion key={mes} title={mes}>
-                                    <div style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                        
-                                        {/* SEPARACIÓN EXACTA DE FONDOS POR ACORDEONES SEPARADOS */}
-                                        <Accordion title={`🟢 Total Ingresos: +$${datosMes.totalIngresos.toFixed(2)}`}>
-                                            <div style={{ paddingTop: '10px' }}>
-                                                {Object.keys(datosMes.semanasIngresos).length === 0 ? (
-                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '10px' }}>No hubo ingresos registrados este mes.</p>
-                                                ) : (
-                                                    Object.entries(datosMes.semanasIngresos).map(([semana, txs]) => (
-                                                        <Accordion key={semana} title={semana}>
-                                                            <div style={{ paddingTop: '10px' }}>
-                                                                {txs.map(tx => renderTransactionCard(tx))}
-                                                            </div>
-                                                        </Accordion>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </Accordion>
+                                
+                                /* NIVEL 1: MES (Muestra totales mensuales) */
+                                <FinanceAccordion 
+                                    key={mes} 
+                                    title={mes} 
+                                    inAmount={datosMes.totalIngresos} 
+                                    outAmount={datosMes.totalRetiros}
+                                >
+                                    <div>
+                                        {Object.entries(datosMes.semanas).map(([semana, datosSemana]) => (
+                                            
+                                            /* NIVEL 2: SEMANA (Muestra movimientos mezclados y totales de la semana) */
+                                            <FinanceAccordion 
+                                                key={semana} 
+                                                title={semana} 
+                                                subtitle={`${datosSemana.movimientos} movimientos`}
+                                                inAmount={datosSemana.totalIngresos}
+                                                outAmount={datosSemana.totalRetiros}
+                                                isWeek={true}
+                                            >
+                                                {/* NIVEL 3: TRANSACCIONES CHRONOLÓGICAS */}
+                                                {datosSemana.txs.map(tx => renderTransactionCard(tx))}
+                                            </FinanceAccordion>
 
-                                        <Accordion title={`🔴 Total Retiros: -$${datosMes.totalRetiros.toFixed(2)}`}>
-                                            <div style={{ paddingTop: '10px' }}>
-                                                {Object.keys(datosMes.semanasRetiros).length === 0 ? (
-                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '10px' }}>No hubo retiros registrados este mes.</p>
-                                                ) : (
-                                                    Object.entries(datosMes.semanasRetiros).map(([semana, txs]) => (
-                                                        <Accordion key={semana} title={semana}>
-                                                            <div style={{ paddingTop: '10px' }}>
-                                                                {txs.map(tx => renderTransactionCard(tx))}
-                                                            </div>
-                                                        </Accordion>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </Accordion>
-
+                                        ))}
                                     </div>
-                                </Accordion>
+                                </FinanceAccordion>
                             ))
                         )
                     )}
