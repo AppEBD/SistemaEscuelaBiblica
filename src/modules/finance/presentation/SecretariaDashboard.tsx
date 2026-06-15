@@ -4,7 +4,6 @@ import { NotificationsWidget } from '../../../shared/components/notifications/No
 import { BadgesPanel } from '../../students/presentation/components/BadgesPanel';
 import Modal from '../../../shared/components/Modal'; 
 import { Button } from '../../../shared/components/Button';
-import Accordion from '../../../shared/components/Accordion'; 
 import './SecretariaDashboard.css';
 
 // === COMPONENTE INTERNO: ACORDEÓN FINANCIERO ELEGANTE ===
@@ -28,6 +27,50 @@ const FinanceAccordion = ({ title, subtitle, inAmount, outAmount, children, defa
     );
 };
 
+// === COMPONENTE INTERNO: TARJETA DE TRANSACCIÓN CON DESCRIPCIÓN ACORDEÓN ===
+const TransactionCard = ({ tx, months }: { tx: any, months: string[] }) => {
+    const [isDescOpen, setIsDescOpen] = useState(false);
+    
+    // Formateo de fecha limpio
+    const d = tx.fecha.split('-');
+    const mesCorto = d[1] ? months[parseInt(d[1], 10) - 1].substring(0, 3) : '';
+    const fechaLimpia = `${d[2]} ${mesCorto} ${d[0]} • ${tx.hora}`;
+
+    return (
+        <div className="tx-card">
+            <div className="tx-header">
+                <div className="tx-info">
+                    <div className={`tx-icon ${tx.tipo}`}>
+                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
+                    </div>
+                    <div className="tx-text-wrap">
+                        <h4 className="tx-motivo">{tx.motivo}</h4>
+                        <span className="tx-date-clean"><i className="fa-regular fa-clock"></i> {fechaLimpia}</span>
+                    </div>
+                </div>
+                <div className={`tx-amount ${tx.tipo}`}>
+                    {tx.tipo === 'ingreso' ? '+' : '-'}${parseFloat(tx.monto).toFixed(2)}
+                </div>
+            </div>
+            
+            {/* NUEVA DESCRIPCIÓN MINIMALISTA CON PUNTITOS */}
+            {tx.descripcion && (
+                <div className="tx-desc-container" onClick={() => setIsDescOpen(!isDescOpen)}>
+                    <p className={`tx-desc-text ${isDescOpen ? 'open' : 'closed'}`}>
+                        {tx.descripcion}
+                    </p>
+                </div>
+            )}
+
+            <div className="tx-footer">
+                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Por: <strong>{tx.registradoPor}</strong></span>
+                <span className="tx-lock"><i className="fa-solid fa-lock"></i> Inmutable</span>
+            </div>
+        </div>
+    );
+};
+
+
 export const SecretariaDashboard = () => {
     const { 
         userData, cargando, mainTab, setMainTab,
@@ -35,51 +78,11 @@ export const SecretariaDashboard = () => {
         confirmState, setConfirmState,
         totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
-        guardarTransaccion, estadoTxInicial, months
+        guardarTransaccion, estadoTxInicial, months, manejarCambioMonto
     } = useSecretariaLogic();
 
     const nombreUsuario = userData?.nombre || 'Secretaría';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
-
-    // Dibuja cada transacción sin romperse en pantallas pequeñas
-    const renderTransactionCard = (tx: any) => {
-        // Formateo de fecha limpio (Ej: 15 Jun 2026 • 10:30 AM)
-        const d = tx.fecha.split('-');
-        const mesCorto = d[1] ? months[parseInt(d[1], 10) - 1].substring(0, 3) : '';
-        const fechaLimpia = `${d[2]} ${mesCorto} ${d[0]} • ${tx.hora}`;
-
-        return (
-            <div className="tx-card" key={tx.id}>
-                <div className="tx-header">
-                    <div className="tx-info">
-                        <div className={`tx-icon ${tx.tipo}`}>
-                            {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
-                        </div>
-                        <div className="tx-text-wrap">
-                            <h4 className="tx-motivo">{tx.motivo}</h4>
-                            <span className="tx-date-clean"><i className="fa-regular fa-clock"></i> {fechaLimpia}</span>
-                        </div>
-                    </div>
-                    <div className={`tx-amount ${tx.tipo}`}>
-                        {tx.tipo === 'ingreso' ? '+' : '-'}${tx.monto.toFixed(2)}
-                    </div>
-                </div>
-                
-                {tx.descripcion && (
-                    <Accordion title="Ver Descripción Detallada">
-                        <p style={{ margin: 0, fontSize: '13px', color: '#475569', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                            {tx.descripcion}
-                        </p>
-                    </Accordion>
-                )}
-
-                <div className="tx-footer">
-                    <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Por: <strong>{tx.registradoPor}</strong></span>
-                    <span className="tx-lock"><i className="fa-solid fa-lock"></i> Inmutable</span>
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className={`secretaria-dashboard theme-${appTheme}`}>
@@ -153,7 +156,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / TESORERÍA (NUEVA ESTRUCTURA) === */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -179,7 +182,6 @@ export const SecretariaDashboard = () => {
                         Object.keys(agruparTransaccionesPorMes()).length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay transacciones registradas.</p> : (
                             Object.entries(agruparTransaccionesPorMes()).map(([mes, datosMes]) => (
                                 
-                                /* NIVEL 1: MES (Muestra totales mensuales) */
                                 <FinanceAccordion 
                                     key={mes} 
                                     title={mes} 
@@ -189,7 +191,6 @@ export const SecretariaDashboard = () => {
                                     <div>
                                         {Object.entries(datosMes.semanas).map(([semana, datosSemana]) => (
                                             
-                                            /* NIVEL 2: SEMANA (Muestra movimientos mezclados y totales de la semana) */
                                             <FinanceAccordion 
                                                 key={semana} 
                                                 title={semana} 
@@ -198,8 +199,9 @@ export const SecretariaDashboard = () => {
                                                 outAmount={datosSemana.totalRetiros}
                                                 isWeek={true}
                                             >
-                                                {/* NIVEL 3: TRANSACCIONES CHRONOLÓGICAS */}
-                                                {datosSemana.txs.map(tx => renderTransactionCard(tx))}
+                                                {datosSemana.txs.map(tx => (
+                                                    <TransactionCard key={tx.id} tx={tx} months={months} />
+                                                ))}
                                             </FinanceAccordion>
 
                                         ))}
@@ -231,12 +233,24 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
-            {/* MODAL EXCLUSIVO DE REGISTRO */}
+            {/* MODAL EXCLUSIVO DE REGISTRO CON INPUT GIGANTE */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
                 <form onSubmit={guardarTransaccion}>
+
                     <div className="admin-form-group">
-                        <label className="admin-label">Monto ($)</label>
-                        <input type="number" step="0.01" min="0.01" className="admin-input" placeholder="Ej: 50.00" value={txForm.monto} onChange={e => setTxForm({...txForm, monto: e.target.value})} required style={{ fontSize: '24px', fontWeight: '900' }} />
+                        <label className="admin-label">Monto de la Transacción</label>
+                        <div className={`finance-amount-wrapper ${txForm.tipo}`}>
+                            <span className="finance-amount-currency">$</span>
+                            <input 
+                                type="text" 
+                                inputMode="numeric" 
+                                className="finance-amount-input" 
+                                placeholder="0.00" 
+                                value={txForm.monto} 
+                                onChange={e => manejarCambioMonto(e.target.value)} 
+                                required 
+                            />
+                        </div>
                     </div>
                     
                     <div className="admin-form-group">
