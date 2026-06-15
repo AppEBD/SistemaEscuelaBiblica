@@ -95,7 +95,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* NUEVA PESTAÑA DE FINANZAS / REPORTES */}
+            {/* === NUEVA PESTAÑA DE FINANZAS / TESORERÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
