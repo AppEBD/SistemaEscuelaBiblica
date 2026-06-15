@@ -90,7 +90,7 @@ export const SecretariaDashboard = () => {
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
-                    <p className="app-brand-subtitle">{userData?.rol || 'Secretaría'}</p>
+                    <p className="app-brand-subtitle">{userData?.rol || 'Tesoretaría'}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
                     <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
