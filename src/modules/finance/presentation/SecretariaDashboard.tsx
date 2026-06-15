@@ -53,7 +53,7 @@ const TransactionCard = ({ tx, months }: { tx: any, months: string[] }) => {
                 </div>
             </div>
             
-            {/* NUEVA DESCRIPCIÓN MINIMALISTA CON PUNTITOS */}
+            {/* DESCRIPCIÓN MINIMALISTA CON PUNTITOS */}
             {tx.descripcion && (
                 <div className="tx-desc-container" onClick={() => setIsDescOpen(!isDescOpen)}>
                     <p className={`tx-desc-text ${isDescOpen ? 'open' : 'closed'}`}>
@@ -90,7 +90,7 @@ export const SecretariaDashboard = () => {
             <div className="app-global-header">
                 <div className="app-brand">
                     <h2 className="app-brand-title">EBD 2.0</h2>
-                    <p className="app-brand-subtitle">{userData?.rol || 'Tesoretaría'}</p>
+                    <p className="app-brand-subtitle">{userData?.rol || 'Secretaría'}</p>
                 </div>
                 <button className="profile-pill-btn" onClick={() => setIsProfileOpen(true)}>
                     <i className="fa-solid fa-circle-user"></i> {nombreUsuario.split(' ')[0]}
@@ -156,11 +156,11 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
+            {/* === PESTAÑA DE FINANZAS / SECRETARÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
-                    <h1 className="st-header-title">Tesorería</h1>
-                    <p className="st-header-subtitle">Control de ingresos y retiros de fondos.</p>
+                    <h1 className="st-header-title">Secretaría</h1>
+                    <p className="st-header-subtitle">Control de ingresos y retiros de fondos de caja.</p>
 
                     <div className="funds-master-card">
                         <div className="fmc-label">Fondo Total Disponible</div>
