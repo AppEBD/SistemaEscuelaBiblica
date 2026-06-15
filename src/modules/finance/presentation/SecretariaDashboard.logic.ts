@@ -36,6 +36,7 @@ export const useSecretariaLogic = () => {
     const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     
+    // Eliminamos la fecha manual del estado inicial
     const estadoTxInicial = { tipo: 'ingreso' as 'ingreso' | 'retiro', monto: '', motivo: '', descripcion: '' };
     const [txForm, setTxForm] = useState(estadoTxInicial);
 
@@ -60,14 +61,22 @@ export const useSecretariaLogic = () => {
         }
     };
 
+    // Cálculos financieros automáticos
     const totalFondos = useMemo(() => {
         return transacciones.reduce((total, tx) => {
             return tx.tipo === 'ingreso' ? total + tx.monto : total - tx.monto;
         }, 0);
     }, [transacciones]);
 
+    // Agrupación de transacciones totalmente separada (Ingresos vs Retiros)
     const agruparTransaccionesPorMes = () => {
-        const grupos: Record<string, { totalIngresos: number, totalRetiros: number, semanas: Record<string, Transaccion[]> }> = {};
+        const grupos: Record<string, { 
+            totalIngresos: number, 
+            totalRetiros: number, 
+            semanasIngresos: Record<string, Transaccion[]>, 
+            semanasRetiros: Record<string, Transaccion[]> 
+        }> = {};
+        
         const txsOrdenadas = [...transacciones].sort((a, b) => b.createdAt - a.createdAt);
 
         txsOrdenadas.forEach(tx => {
@@ -76,17 +85,26 @@ export const useSecretariaLogic = () => {
             const semanaNum = Math.ceil(dateObj.getDate() / 7);
             const semanaStr = `Semana ${semanaNum}`;
 
-            if (!grupos[mesStr]) grupos[mesStr] = { totalIngresos: 0, totalRetiros: 0, semanas: {} };
-            if (!grupos[mesStr].semanas[semanaStr]) grupos[mesStr].semanas[semanaStr] = [];
+            // Si el mes no existe, creamos su molde con listas separadas
+            if (!grupos[mesStr]) {
+                grupos[mesStr] = { totalIngresos: 0, totalRetiros: 0, semanasIngresos: {}, semanasRetiros: {} };
+            }
 
-            grupos[mesStr].semanas[semanaStr].push(tx);
-            if (tx.tipo === 'ingreso') grupos[mesStr].totalIngresos += tx.monto;
-            if (tx.tipo === 'retiro') grupos[mesStr].totalRetiros += tx.monto;
+            if (tx.tipo === 'ingreso') {
+                if (!grupos[mesStr].semanasIngresos[semanaStr]) grupos[mesStr].semanasIngresos[semanaStr] = [];
+                grupos[mesStr].semanasIngresos[semanaStr].push(tx);
+                grupos[mesStr].totalIngresos += tx.monto;
+            } else {
+                if (!grupos[mesStr].semanasRetiros[semanaStr]) grupos[mesStr].semanasRetiros[semanaStr] = [];
+                grupos[mesStr].semanasRetiros[semanaStr].push(tx);
+                grupos[mesStr].totalRetiros += tx.monto;
+            }
         });
 
         return grupos;
     };
 
+    // Guardar Transacción con Fecha y Hora Automática
     const guardarTransaccion = async (e: FormEvent) => {
         e.preventDefault();
         const montoNum = parseFloat(txForm.monto);
@@ -101,8 +119,9 @@ export const useSecretariaLogic = () => {
             return;
         }
 
+        // Generamos la fecha y hora exacta en el momento de darle clic a guardar
         const ahora = new Date();
-        const fechaActual = ahora.toISOString().split('T')[0]; 
+        const fechaActual = ahora.toISOString().split('T')[0]; // Formato YYYY-MM-DD
         const horaActual = ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
 
         try {
