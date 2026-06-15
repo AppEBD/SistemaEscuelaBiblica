@@ -36,7 +36,8 @@ export const useSecretariaLogic = () => {
     const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     
-    const estadoTxInicial = { tipo: 'ingreso' as 'ingreso' | 'retiro', monto: '', motivo: '', descripcion: '', fecha: new Date().toISOString().split('T')[0] };
+    // Eliminamos la fecha manual del estado inicial
+    const estadoTxInicial = { tipo: 'ingreso' as 'ingreso' | 'retiro', monto: '', motivo: '', descripcion: '' };
     const [txForm, setTxForm] = useState(estadoTxInicial);
 
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -91,7 +92,7 @@ export const useSecretariaLogic = () => {
         return grupos;
     };
 
-    // Guardar Transacción
+    // Guardar Transacción con Fecha y Hora Automática
     const guardarTransaccion = async (e: FormEvent) => {
         e.preventDefault();
         const montoNum = parseFloat(txForm.monto);
@@ -106,15 +107,21 @@ export const useSecretariaLogic = () => {
             return;
         }
 
+        // Generamos la fecha y hora exacta en el momento de darle clic a guardar
+        const ahora = new Date();
+        const fechaActual = ahora.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const horaActual = ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+
         try {
             await FinanceService.registrarTransaccion({
                 tipo: txForm.tipo,
                 monto: montoNum,
                 motivo: txForm.motivo,
                 descripcion: txForm.descripcion,
-                fecha: txForm.fecha,
+                fecha: fechaActual,
+                hora: horaActual,
                 registradoPor: userData?.nombre || 'Secretaría',
-                createdAt: Date.now()
+                createdAt: ahora.getTime()
             });
             setIsTxModalOpen(false);
             setTxForm(estadoTxInicial);
