@@ -12,13 +12,49 @@ export const SecretariaDashboard = () => {
         userData, cargando, mainTab, setMainTab,
         isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp, insigniasGlobales,
         confirmState, setConfirmState,
-        transacciones, totalFondos, agruparTransaccionesPorMes,
+        totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
         guardarTransaccion, estadoTxInicial
     } = useSecretariaLogic();
 
     const nombreUsuario = userData?.nombre || 'Secretaría';
     const inicial = nombreUsuario.charAt(0).toUpperCase();
+
+    // Componente interno para dibujar una tarjeta de transacción y mantener el código limpio
+    const renderTransactionCard = (tx: any) => (
+        <div className="tx-card" key={tx.id}>
+            <div className="tx-header">
+                <div className="tx-info">
+                    <div className={`tx-icon ${tx.tipo}`}>
+                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
+                    </div>
+                    <div>
+                        <h4 className="tx-motivo">{tx.motivo}</h4>
+                        <div className="tx-datetime-badges">
+                            <span className="badge-date"><i className="fa-regular fa-calendar"></i> {tx.fecha ? tx.fecha.split('-').reverse().join('/') : '--'}</span>
+                            {tx.hora && <span className="badge-time"><i className="fa-regular fa-clock"></i> {tx.hora}</span>}
+                        </div>
+                    </div>
+                </div>
+                <div className={`tx-amount ${tx.tipo}`}>
+                    {tx.tipo === 'ingreso' ? '+' : '-'}${tx.monto.toFixed(2)}
+                </div>
+            </div>
+            
+            {tx.descripcion && (
+                <Accordion title="Ver Descripción Detallada">
+                    <p style={{ margin: 0, fontSize: '13px', color: '#475569', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                        {tx.descripcion}
+                    </p>
+                </Accordion>
+            )}
+
+            <div className="tx-footer">
+                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Registrado por: <strong>{tx.registradoPor}</strong></span>
+                <span className="tx-lock"><i className="fa-solid fa-lock"></i> Registro Inmutable</span>
+            </div>
+        </div>
+    );
 
     return (
         <div className={`secretaria-dashboard theme-${appTheme}`}>
@@ -92,7 +128,7 @@ export const SecretariaDashboard = () => {
                 </div>
             )}
 
-            {/* === PESTAÑA DE FINANZAS / TESORERÍA CON NUEVO DISEÑO === */}
+            {/* === PESTAÑA DE FINANZAS / TESORERÍA === */}
             {mainTab === 'reportes' && (
                 <div className="animate-fade-in">
                     <h1 className="st-header-title">Tesorería</h1>
@@ -118,63 +154,42 @@ export const SecretariaDashboard = () => {
                         Object.keys(agruparTransaccionesPorMes()).length === 0 ? <p style={{ color: '#94a3b8', textAlign: 'center' }}>No hay transacciones registradas.</p> : (
                             Object.entries(agruparTransaccionesPorMes()).map(([mes, datosMes]) => (
                                 <Accordion key={mes} title={mes}>
-                                    
-                                    {/* NUEVO: Tarjetas de Resumen Mensual */}
-                                    <div className="month-summary-grid">
-                                        <div className="ms-card ingreso">
-                                            <span>Total Ingresos</span>
-                                            <h4>+${datosMes.totalIngresos.toFixed(2)}</h4>
-                                        </div>
-                                        <div className="ms-card retiro">
-                                            <span>Total Retiros</span>
-                                            <h4>-${datosMes.totalRetiros.toFixed(2)}</h4>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        {Object.entries(datosMes.semanas).map(([semana, txs]) => (
-                                            <Accordion key={semana} title={semana}>
-                                                <div style={{ paddingTop: '10px' }}>
-                                                    {txs.map(tx => (
-                                                        <div className="tx-card" key={tx.id}>
-                                                            <div className="tx-header">
-                                                                <div className="tx-info">
-                                                                    <div className={`tx-icon ${tx.tipo}`}>
-                                                                        {tx.tipo === 'ingreso' ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
-                                                                    </div>
-                                                                    <div>
-                                                                        <h4 className="tx-motivo">{tx.motivo}</h4>
-                                                                        {/* NUEVO: Badges Estéticos de Fecha y Hora */}
-                                                                        <div className="tx-datetime-badges">
-                                                                            <span className="badge-date"><i className="fa-regular fa-calendar"></i> {tx.fecha ? tx.fecha.split('-').reverse().join('/') : '--'}</span>
-                                                                            {tx.hora && <span className="badge-time"><i className="fa-regular fa-clock"></i> {tx.hora}</span>}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className={`tx-amount ${tx.tipo}`}>
-                                                                    {tx.tipo === 'ingreso' ? '+' : '-'}${tx.monto.toFixed(2)}
-                                                                </div>
+                                    <div style={{ paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                        
+                                        {/* SUBCATEGORÍA 1: SOLO INGRESOS */}
+                                        <Accordion title={`🟢 Total Ingresos: +$${datosMes.totalIngresos.toFixed(2)}`}>
+                                            <div style={{ paddingTop: '10px' }}>
+                                                {Object.keys(datosMes.semanasIngresos).length === 0 ? (
+                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No hubo ingresos registrados este mes.</p>
+                                                ) : (
+                                                    Object.entries(datosMes.semanasIngresos).map(([semana, txs]) => (
+                                                        <Accordion key={semana} title={semana}>
+                                                            <div style={{ paddingTop: '10px' }}>
+                                                                {txs.map(tx => renderTransactionCard(tx))}
                                                             </div>
-                                                            
-                                                            {/* ACORDEÓN INTERNO PARA LA DESCRIPCIÓN LARGA */}
-                                                            {tx.descripcion && (
-                                                                <Accordion title="Ver Descripción Detallada">
-                                                                    <p style={{ margin: 0, fontSize: '13px', color: '#475569', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                                                                        {tx.descripcion}
-                                                                    </p>
-                                                                </Accordion>
-                                                            )}
+                                                        </Accordion>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </Accordion>
 
-                                                            <div className="tx-footer">
-                                                                <span><i className="fa-solid fa-user-pen" style={{marginRight: '5px'}}></i> Registrado por: <strong>{tx.registradoPor}</strong></span>
-                                                                {/* NUEVO: Candado de Inmutabilidad en lugar del botón eliminar */}
-                                                                <span className="tx-lock"><i className="fa-solid fa-lock"></i> Registro Inmutable</span>
+                                        {/* SUBCATEGORÍA 2: SOLO RETIROS */}
+                                        <Accordion title={`🔴 Total Retiros: -$${datosMes.totalRetiros.toFixed(2)}`}>
+                                            <div style={{ paddingTop: '10px' }}>
+                                                {Object.keys(datosMes.semanasRetiros).length === 0 ? (
+                                                    <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No hubo retiros registrados este mes.</p>
+                                                ) : (
+                                                    Object.entries(datosMes.semanasRetiros).map(([semana, txs]) => (
+                                                        <Accordion key={semana} title={semana}>
+                                                            <div style={{ paddingTop: '10px' }}>
+                                                                {txs.map(tx => renderTransactionCard(tx))}
                                                             </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </Accordion>
-                                        ))}
+                                                        </Accordion>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </Accordion>
+
                                     </div>
                                 </Accordion>
                             ))
@@ -203,6 +218,7 @@ export const SecretariaDashboard = () => {
                 </button>
             </div>
 
+            {/* MODAL EXCLUSIVO (Bloqueado en el tipo que elijas) */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title={`Registrar ${txForm.tipo === 'ingreso' ? 'Ingreso al Fondo' : 'Retiro del Fondo'}`}>
                 <form onSubmit={guardarTransaccion}>
 
@@ -233,6 +249,7 @@ export const SecretariaDashboard = () => {
                 </form>
             </Modal>
 
+            {/* MODAL UNIVERSAL DE CONFIRMACIÓN */}
             <Modal isOpen={confirmState.isOpen} onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))} title={confirmState.title}>
                 <div style={{ fontSize: '15px', color: '#475569', marginBottom: '20px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                     {confirmState.message}
