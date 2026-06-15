@@ -36,19 +36,16 @@ export const useSecretariaLogic = () => {
     const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     
-    // Eliminamos la fecha manual del estado inicial
     const estadoTxInicial = { tipo: 'ingreso' as 'ingreso' | 'retiro', monto: '', motivo: '', descripcion: '' };
     const [txForm, setTxForm] = useState(estadoTxInicial);
 
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
     useEffect(() => {
-        // Suscripción a insignias
         const unsubInsignias = onSnapshot(collection(db, 'insignias_creadas'), (snap) => {
             setInsigniasGlobales(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
 
-        // Suscripción a transacciones financieras
         const unsubFinanzas = FinanceService.suscribirTransacciones((datos) => {
             setTransacciones(datos);
             setCargando(false);
@@ -63,14 +60,12 @@ export const useSecretariaLogic = () => {
         }
     };
 
-    // Cálculos financieros automáticos
     const totalFondos = useMemo(() => {
         return transacciones.reduce((total, tx) => {
             return tx.tipo === 'ingreso' ? total + tx.monto : total - tx.monto;
         }, 0);
     }, [transacciones]);
 
-    // Agrupación en Acordeón por Meses y Semanas
     const agruparTransaccionesPorMes = () => {
         const grupos: Record<string, { totalIngresos: number, totalRetiros: number, semanas: Record<string, Transaccion[]> }> = {};
         const txsOrdenadas = [...transacciones].sort((a, b) => b.createdAt - a.createdAt);
@@ -92,7 +87,6 @@ export const useSecretariaLogic = () => {
         return grupos;
     };
 
-    // Guardar Transacción con Fecha y Hora Automática
     const guardarTransaccion = async (e: FormEvent) => {
         e.preventDefault();
         const montoNum = parseFloat(txForm.monto);
@@ -107,9 +101,8 @@ export const useSecretariaLogic = () => {
             return;
         }
 
-        // Generamos la fecha y hora exacta en el momento de darle clic a guardar
         const ahora = new Date();
-        const fechaActual = ahora.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const fechaActual = ahora.toISOString().split('T')[0]; 
         const horaActual = ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
 
         try {
@@ -131,34 +124,12 @@ export const useSecretariaLogic = () => {
         }
     };
 
-    // Eliminar Transacción
-    const solicitarEliminarTx = (id: string | undefined, tipo: string, monto: number) => {
-        if (!id) return;
-        setConfirmState({
-            isOpen: true, 
-            title: 'Eliminar Registro', 
-            message: `¿Estás seguro de que deseas eliminar este ${tipo} de $${monto.toFixed(2)}?\n\nEl fondo total se recalculará automáticamente.`, 
-            type: 'danger', 
-            confirmText: 'Sí, Eliminar',
-            onConfirm: async () => {
-                try {
-                    await FinanceService.eliminarTransaccion(id);
-                    setConfirmState(prev => ({...prev, isOpen: false}));
-                    setTimeout(() => mostrarExito("Registro eliminado con éxito."), 300);
-                } catch (error) {
-                    mostrarError("No se pudo eliminar el registro.");
-                }
-            }
-        });
-    };
-
     return {
         userData, cargando, mainTab, setMainTab,
         isProfileOpen, setIsProfileOpen, appTheme, setAppTheme, cerrarSesionApp, insigniasGlobales,
         confirmState, setConfirmState,
-        // Datos Financieros
         transacciones, totalFondos, agruparTransaccionesPorMes,
         isTxModalOpen, setIsTxModalOpen, txForm, setTxForm,
-        guardarTransaccion, solicitarEliminarTx, estadoTxInicial
+        guardarTransaccion, estadoTxInicial
     };
 };
